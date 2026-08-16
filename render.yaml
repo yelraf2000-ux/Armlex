@@ -10,8 +10,16 @@ services:
     name: armlex
     runtime: node
     plan: free
-    region: frankfurt # closest offered region to Armenia and to the Neon database
-    buildCommand: npm ci && npm run build
+    # Match the Neon database's region (us-east-2), not the user's location. A
+    # turn makes several sequential database round trips — session read, vector
+    # search, chunk write — so cross-continent latency is paid several times per
+    # answer, while the user pays it once.
+    region: ohio
+    # `--include=dev` is required, not incidental: NODE_ENV=production makes
+    # `npm ci` skip devDependencies, and both vite (build) and tsx (start) live
+    # there. Without it the build fails, or worse, succeeds and the start
+    # command dies with "tsx: not found".
+    buildCommand: npm ci --include=dev && npm run build
     startCommand: npm start
     healthCheckPath: /api/health
     envVars:
