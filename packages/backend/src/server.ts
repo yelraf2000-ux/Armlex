@@ -21,13 +21,24 @@ const app = Fastify({ logger: { transport: { target: 'pino-pretty' } } });
  * can spend from. Failing to boot is the only response that cannot be ignored —
  * a warning in a log nobody reads is how this goes wrong quietly.
  */
-if (process.env['NODE_ENV'] === 'production' && !authEnabled()) {
-  console.error(
-    'REFUSING TO START: NODE_ENV=production but APP_PASSWORD is not set.\n' +
-      'Every answer costs real API credit; an unauthenticated public URL is a\n' +
-      'bill anyone can run up. Set APP_PASSWORD (and SESSION_SECRET) and retry.',
-  );
-  process.exit(1);
+if (process.env['NODE_ENV'] === 'production') {
+  const missing = [
+    !authEnabled() ? 'APP_PASSWORD' : null,
+    // Required too, not merely recommended: the session cookie is an HMAC of
+    // the password under this secret. With it empty the cookie is derivable by
+    // anyone who knows the password, so revoking access would mean changing the
+    // password itself rather than rotating a secret.
+    !process.env['SESSION_SECRET'] ? 'SESSION_SECRET' : null,
+  ].filter(Boolean);
+
+  if (missing.length > 0) {
+    console.error(
+      `REFUSING TO START: NODE_ENV=production but ${missing.join(' and ')} not set.\n` +
+        'Every answer costs real API credit; an unauthenticated public URL is a\n' +
+        'bill anyone can run up. Set them in the host environment and redeploy.',
+    );
+    process.exit(1);
+  }
 }
 
 app.addHook('preHandler', requireAuth);
