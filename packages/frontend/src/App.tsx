@@ -157,12 +157,18 @@ export function App() {
     void (async () => {
       try {
         const res = await fetch('/api/auth');
-        const { authRequired } = (await res.json()) as { authRequired: boolean };
-        if (!authRequired) return setAuthed(true);
+        // Fail CLOSED. Any answer that isn't a clear "no password needed" is
+        // treated as "password needed", so a malformed or errored response
+        // shows the login screen instead of a workbench where every request
+        // 401s — which is exactly what happened when /api/auth was itself
+        // gated and `authRequired` came back undefined.
+        if (!res.ok) return setAuthed(false);
+        const data = (await res.json()) as { authRequired?: boolean };
+        if (data.authRequired === false) return setAuthed(true);
         const probe = await fetch('/api/corpus');
         setAuthed(probe.status !== 401);
       } catch {
-        setAuthed(true); // API unreachable is a different problem; let it surface
+        setAuthed(false);
       }
     })();
   }, []);

@@ -20,8 +20,16 @@ import type { FastifyReply, FastifyRequest } from 'fastify';
 
 const COOKIE = 'armlex_auth';
 
-/** Paths reachable without a session. */
-const PUBLIC_PATHS = new Set(['/api/login', '/api/health', '/health']);
+/**
+ * Paths reachable without a session.
+ *
+ * `/api/auth` must be here: it is how the UI asks whether a password is needed
+ * at all, before it can possibly have a cookie. Gating it created a loop where
+ * the answer to "do I need to log in?" was itself 401 — and since the error
+ * body has no `authRequired` field, the UI read `undefined` as "no" and showed
+ * the workbench with every request failing, instead of the login screen.
+ */
+const PUBLIC_PATHS = new Set(['/api/login', '/api/auth', '/api/health', '/health']);
 
 function token(): string {
   const password = process.env['APP_PASSWORD'] ?? '';
