@@ -1,0 +1,24 @@
+services:
+  db:
+    # pgvector image tracks Postgres 16 with the vector extension preinstalled.
+    image: pgvector/pgvector:pg16
+    container_name: armlex-db
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: armlex
+      POSTGRES_PASSWORD: armlex
+      POSTGRES_DB: armlex
+      # Armenian and Russian both sort/compare more sanely under ICU than C.
+      POSTGRES_INITDB_ARGS: "--encoding=UTF8 --locale-provider=icu --icu-locale=hy-AM"
+    ports:
+      - "5433:5432"
+    volumes:
+      - armlex_pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U armlex -d armlex"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+
+volumes:
+  armlex_pgdata:

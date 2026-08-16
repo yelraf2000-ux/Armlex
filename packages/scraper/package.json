@@ -1,0 +1,19 @@
+{
+  "name": "@armlex/scraper",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "audit": "tsx src/audit/run.ts",
+    "test": "tsx --test src/**/*.test.ts",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@armlex/shared": "*",
+    "cheerio": "^1.0.0"
+  },
+  "main": "./src/index.ts",
+  "exports": {
+    ".": "./src/index.ts"
+  }
+}

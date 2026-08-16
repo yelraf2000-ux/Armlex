@@ -1,0 +1,42 @@
+{
+  "name": "armlex",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Legal RAG assistant for Armenian tax law, grounded in ARLIS official texts",
+  "type": "module",
+  "workspaces": [
+    "packages/shared",
+    "packages/scraper",
+    "packages/backend",
+    "packages/frontend"
+  ],
+  "engines": {
+    "node": ">=22"
+  },
+  "scripts": {
+    "build": "npm run build -w @armlex/frontend",
+    "typecheck": "npm run typecheck --workspaces --if-present",
+    "db:up": "docker compose up -d",
+    "db:down": "docker compose down",
+    "migrate": "npm run migrate -w @armlex/backend",
+    "db:verify": "npm run db:verify -w @armlex/backend",
+    "reembed": "npm run reembed -w @armlex/backend",
+    "audit": "npm run audit -w @armlex/scraper",
+    "test": "npm run test --workspaces --if-present",
+    "ingest": "npm run ingest -w @armlex/backend",
+    "dev": "concurrently -n api,web -c blue,green \"npm:dev:api\" \"npm:dev:web\"",
+    "dev:api": "npm run dev -w @armlex/backend",
+    "dev:web": "npm run dev -w @armlex/frontend",
+    "crawl": "npm run crawl -w @armlex/backend",
+    "start": "tsx packages/backend/src/server.ts"
+  },
+  "devDependencies": {
+    "@types/node": "^22.9.0",
+    "concurrently": "^10.0.4",
+    "tsx": "^4.19.2",
+    "typescript": "^5.6.3"
+  },
+  "dependencies": {
+    "js-tiktoken": "^1.0.21"
+  }
+}

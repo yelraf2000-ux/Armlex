@@ -1,0 +1,40 @@
+# Render blueprint. Connecting this repo picks these settings up automatically,
+# so the service is defined in version control rather than in dashboard clicks
+# nobody can review.
+#
+# The four secrets are deliberately NOT here: `sync: false` makes Render prompt
+# for them at deploy time and store them encrypted. Anything written in this
+# file lands in git.
+services:
+  - type: web
+    name: armlex
+    runtime: node
+    plan: free
+    region: frankfurt # closest offered region to Armenia and to the Neon database
+    buildCommand: npm ci && npm run build
+    startCommand: npm start
+    healthCheckPath: /api/health
+    envVars:
+      - key: NODE_ENV
+        value: production
+      # Neon connection string.
+      - key: DATABASE_URL
+        sync: false
+      # Answer generation and the contextualiser.
+      - key: ANTHROPIC_API_KEY
+        sync: false
+      # Query and corpus embeddings.
+      - key: GEMINI_API_KEY
+        sync: false
+      # Cross-encoder reranking. Retrieval degrades to vector-only without it.
+      - key: VOYAGE_API_KEY
+        sync: false
+      # The shared password. The server refuses to start in production without
+      # it — every answer spends real credit, so an open URL is a bill anyone
+      # can run up.
+      - key: APP_PASSWORD
+        sync: false
+      # Signs the session cookie. Generated once by Render; changing it logs
+      # everyone out, which is the intended way to revoke access.
+      - key: SESSION_SECRET
+        generateValue: true
