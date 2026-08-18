@@ -837,5 +837,5 @@ body { font-family: var(--sans); }
   cursor: pointer;
 }
 .rail-toggle:hover { color: var(--fg); }
-.rail-toggle[aria-pressed="true"] { background: var(--accent-bg); color: var(--accent); border-color: var(--accent); }
+.rail-toggle[aria-expanded="true"] { color: var(--fg); }
 .rail-toggle:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }

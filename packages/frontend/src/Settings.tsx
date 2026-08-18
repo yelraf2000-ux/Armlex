@@ -72,7 +72,7 @@ export function useSettings(): Settings {
 
 /** Compact switchers for the provenance bar. */
 export function SettingsControls() {
-  const { lang, setLang, theme, setTheme, railOpen, toggleRail, t } = useSettings();
+  const { lang, setLang, theme, setTheme, t } = useSettings();
 
   const themes: { key: Theme; glyph: string; label: string }[] = [
     { key: 'auto', glyph: '◐', label: t('theme.auto') },
@@ -82,15 +82,6 @@ export function SettingsControls() {
 
   return (
     <div className="settings">
-      <button
-        className="rail-toggle"
-        onClick={toggleRail}
-        aria-pressed={railOpen}
-        title={t('nav.consultations')}
-      >
-        <span aria-hidden="true">☰</span>
-        <span className="sr-only">{t('nav.consultations')}</span>
-      </button>
       <div className="switcher" role="group" aria-label="Language">
         {LANGS.map((l) => (
           <button
@@ -118,5 +109,30 @@ export function SettingsControls() {
         ))}
       </div>
     </div>
+  );
+}
+
+/**
+ * The rail toggle, kept separate from the other controls so it can sit at the
+ * far left of the bar.
+ *
+ * Placed between the mode tabs and the language switcher it read as a fourth
+ * mode and went unnoticed; a navigation toggle belongs before the brand, where
+ * every other application puts one. The icon also states which way it acts —
+ * ☰ to open, ✕ to close — because a pressed-state colour alone does not say
+ * what the button will do next.
+ */
+export function RailToggle() {
+  const { railOpen, toggleRail, t } = useSettings();
+  return (
+    <button
+      className="rail-toggle"
+      onClick={toggleRail}
+      aria-expanded={railOpen}
+      title={t('nav.consultations')}
+    >
+      <span aria-hidden="true">{railOpen ? '✕' : '☰'}</span>
+      <span className="sr-only">{t('nav.consultations')}</span>
+    </button>
   );
 }

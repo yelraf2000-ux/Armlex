@@ -11,7 +11,7 @@ import type { Chunk } from './types.js';
 import { ChunkCard } from './ChunkCard.js';
 import { Chat } from './Chat.js';
 import { Login } from './Login.js';
-import { SettingsControls, SettingsProvider, useSettings } from './Settings.js';
+import { RailToggle, SettingsControls, SettingsProvider, useSettings } from './Settings.js';
 
 type Mode = 'search' | 'ask' | 'chat';
 
@@ -212,6 +212,7 @@ function Workbench() {
         professional asks of an answer they intend to rely on.
       */}
       <header className="provenance">
+        <RailToggle />
         <span className="brand">ArmLex</span>
         {corpus ? (
           <>
