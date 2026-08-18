@@ -10,6 +10,7 @@ import { retrieve, warmRetrieval } from './retrieval/retrieve.js';
 import { db } from './db/pool.js';
 import { ask, isConfigured } from './answer/ask.js';
 import { chat } from './answer/chat.js';
+import { DEFAULT_MODEL } from './answer/llm.js';
 
 const app = Fastify({ logger: { transport: { target: 'pino-pretty' } } });
 
@@ -62,6 +63,24 @@ app.get('/api/warm', async () => {
   warmRetrieval();
   return { ok: true };
 });
+
+/**
+ * What is this server actually running?
+ *
+ * "Is the deploy current, and which model writes the answers?" kept being
+ * answered by inference — comparing bundle hashes, reading dashboard events.
+ * A deployment should state its own configuration. Render injects the commit
+ * as RENDER_GIT_COMMIT; locally it is absent and reported as such.
+ *
+ * Public like /api/health: the repo is public, so the commit hash reveals
+ * nothing, and a status endpoint behind a password gate cannot answer the
+ * question it exists for when the session has expired.
+ */
+app.get('/api/version', async () => ({
+  commit: (process.env['RENDER_GIT_COMMIT'] ?? 'local').slice(0, 9),
+  generationModel: DEFAULT_MODEL,
+  oneHopExpansion: process.env['EXPAND_ONE_HOP'] !== '0',
+}));
 
 /**
  * Streaming chat over Server-Sent Events.

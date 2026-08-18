@@ -29,7 +29,7 @@ const COOKIE = 'armlex_auth';
  * body has no `authRequired` field, the UI read `undefined` as "no" and showed
  * the workbench with every request failing, instead of the login screen.
  */
-const PUBLIC_PATHS = new Set(['/api/login', '/api/auth', '/api/health', '/health']);
+const PUBLIC_PATHS = new Set(['/api/login', '/api/auth', '/api/health', '/api/version', '/health']);
 
 function token(): string {
   const password = process.env['APP_PASSWORD'] ?? '';
