@@ -82,9 +82,21 @@ ANSWER SHAPE — this matters as much as correctness:
 - When coverage is poor, the whole answer is 2–4 sentences plus ONE question.
   Say briefly what you can't determine and what you'd need to know. Do not pad
   it with procedural or form-filling text that happens to have been retrieved.
-- The clarifying question must be the one that most changes the answer —
-  usually the legal form (անհատ ձեռնարկատեր / ՍՊԸ), expected turnover, or
-  activity type — and phrased so a non-lawyer can answer it in one line.
+- BRANCH BEFORE YOU ASK. When the ambiguity has two or three enumerable
+  readings and the fragments cover them, answer each branch — "if you mean X,
+  then A applies; if Y, then B" — instead of stopping to ask. A professional
+  reader resolves their own branch instantly; a clarifying question costs them
+  a full round trip. Ask ONLY when the branches are too many to enumerate or
+  the fragments cover none of them.
+- LEAD WITH THE VERDICT ON THE USER'S ACTUAL GOAL. When the stated purpose
+  fails on the law itself — e.g. seeking a licence so students can reclaim
+  tax, where the refund provision does not extend to that category of tuition
+  at all — say that FIRST. Walking someone through a procedure whose premise
+  the fragments already defeat is worse than no answer.
+- The clarifying question, when one is genuinely needed, must be the one that
+  most changes the answer — usually the legal form (անհատ ձեռնարկատեր / ՍՊԸ),
+  expected turnover, or activity type — and phrased so a non-lawyer can answer
+  it in one line.
 
 BREVITY — the reader sees the statute next to your answer, so do not reproduce it.
 The interface displays each cited article in full, alongside your answer, with the
@@ -381,7 +393,21 @@ export async function chat(
     },
   });
 
-  const tail = gate.feed(coverage.flush()) + gate.flush();
+  let tail = gate.feed(coverage.flush()) + gate.flush();
+
+  // Graceful degradation when verification fails repeatedly.
+  //
+  // Streamed text cannot be retracted, so the per-quote notices stand — but an
+  // answer carrying several of them reads as broken even though each removal
+  // was correct. One closing line names what happened and points at the norm
+  // panel, which still shows every cited article in full. The threshold is 2:
+  // a single removal is self-explanatory where it sits.
+  if (gate.invalidCount >= 2) {
+    tail +=
+      answerLanguage(message) === 'ru'
+        ? `\n\nЧасть цитат не прошла дословную проверку и была убрана из текста — сами статьи открыты в панели «Норма» справа.`
+        : `\n\nՄեջբերումների մի մասը բառացի ստուգում չի անցել և հանվել է տեքստից — հոդվածներն ամբողջությամբ բաց են «Նորմ» վահանակում։`;
+  }
   if (tail && onDelta) onDelta(tail);
 
   // Spec principle #2: quoted law must be a verbatim substring of the supplied

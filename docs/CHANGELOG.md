@@ -685,6 +685,28 @@ slice — and since retrieval max-pools slices, the withdrawn wording was still
 attracting queries. The loader now dedupes by id (last line wins); details in
 GOTCHAS.md.
 
+**2026-08-18** — **Second external analysis triaged; two ideas adopted, the
+rest already measured or already built.** Verified its claims first: Հոդված
+160.1 (tuition income-tax refund) IS in the corpus and retrieval returns it at
+**rank 1** for the language-courses question the analysis said fails —
+pinned into the golden set (now 26 questions, 84.6% hit@5). Education
+licensing law is out of corpus by v1 scope, not by accident.
+
+Adopted:
+- **Branch before you ask** (prompt): when an ambiguity has 2–3 enumerable
+  readings covered by the fragments, answer each branch instead of stopping
+  for a clarifying question; and when the user's stated goal fails on the law
+  itself, say that first rather than walking them through a doomed procedure.
+- **Graceful degradation** on repeated quote removals: streamed notices stand,
+  but ≥2 removals now close with one line pointing at the norm panel, where
+  every cited article is shown in full anyway.
+
+Rejected again, same grounds as before: fuzzy/semantic quote matching (a
+one-digit difference is legally opposite and ~96% similar), hybrid keyword
+search (measured worse, MRR 0.609→0.445), parent-child chunking (measured
+worse, hit@5 34.8%→17.4%). Cross-document 1512↔1513 linkage remains blocked on
+ingesting N 1513-Ն — a corpus decision, not architecture.
+
 ---
 
 *Next entry goes here — append below this line, don't insert above.*
