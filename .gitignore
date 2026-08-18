@@ -22,3 +22,7 @@ data/audit/*.md
 
 # Claude Code local settings (machine-specific permissions)
 .claude/settings.local.json
+
+# Harvested third-party forum content: internal evaluation only, never republished.
+data/eval/accountant-am.jsonl
+data/eval/triage-results.jsonl
