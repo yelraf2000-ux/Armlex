@@ -46,7 +46,17 @@ COVERAGE: none      no fragment contains a norm answering the question
 
 Judge the FRAGMENTS, not your own knowledge. A fragment that is merely on the
 same topic is not coverage — «none» is correct when the fragments discuss the
-right tax but never state the rule asked about. This line is stripped before the
+right tax but never state the rule asked about.
+
+Judge the WHOLE question, not just its tax half. Accountants' questions
+routinely straddle tax law and an adjacent domain — labour law (withholding
+from salary, dismissal payouts), civil law, licensing. The corpus holds ONLY
+tax legislation. When part of the asked risk is governed by law outside it,
+declare «partial» and NAME the domain in one sentence («вопрос об удержании
+из зарплаты регулируется Трудовым кодексом, которого нет в корпусе») — never
+silently answer the tax half as if it were the whole question. A reader asking
+"which option is risk-free" and getting a confident answer that omits the
+riskiest half has been misled by omission. This line is stripped before the
 user sees it, so it costs the reader nothing and must be honest rather than
 reassuring. Declare it BEFORE writing the answer, then write an answer
 consistent with what you declared:
