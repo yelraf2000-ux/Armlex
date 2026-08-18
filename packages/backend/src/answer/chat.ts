@@ -13,7 +13,7 @@
  * Grounding is unchanged: every legal claim still comes from a chunk in
  * context, and carried-over chunks are cited the same way as fresh ones.
  */
-import Anthropic from '@anthropic-ai/sdk';
+import { generate } from './llm.js';
 import { db } from '../db/pool.js';
 import { retrieve } from '../retrieval/retrieve.js';
 import type { RetrievedChunk } from '../retrieval/retrieve.js';
@@ -24,7 +24,6 @@ import type { Coverage } from './coverage.js';
 import { answerLanguage } from './language.js';
 import type { Turn } from './contextualize.js';
 
-const MODEL = 'claude-sonnet-5';
 
 /**
  * Chunk budget. Armenian runs ~1.7 tokens per character, so a handful of
@@ -38,7 +37,7 @@ const CARRIED_LIMIT = 5;
 // and measurably biased answers toward Russian even for Armenian questions —
 // the prompt's own language outweighs an "answer in the user's language" rule.
 // English is neutral between the two user languages.
-const SYSTEM = `You are a reference tool for the tax law of the Republic of Armenia, operating as a dialogue.
+export const SYSTEM = `You are a reference tool for the tax law of the Republic of Armenia, operating as a dialogue.
 
 FIRST LINE OF EVERY RESPONSE — declare coverage, exactly this format, nothing else on the line:
 COVERAGE: full      the fragments contain the norms that answer the question
@@ -86,8 +85,19 @@ ANSWER SHAPE — this matters as much as correctness:
 - The clarifying question must be the one that most changes the answer —
   usually the legal form (անհատ ձեռնարկատեր / ՍՊԸ), expected turnover, or
   activity type — and phrased so a non-lawyer can answer it in one line.
-- Quote the law ONLY where the quote carries the answer. Two precise quotes
-  beat six padding ones.
+
+BREVITY — the reader sees the statute next to your answer, so do not reproduce it.
+The interface displays each cited article in full, alongside your answer, with the
+operative passage highlighted. Long inline quotations therefore duplicate what is
+already on screen, and Armenian is the most expensive text to generate, so padding
+costs the reader time twice over.
+- Quote ONLY the words that carry the decision — a clause, not a paragraph.
+  Ten to twenty words is usually right. If a quote runs past one sentence, cite
+  the article instead and let the panel show the rest.
+- At most TWO quotations per answer. A third means you are transcribing.
+- Aim for under 200 words of your own prose. State the rule, cite it, apply it
+  to the situation, stop.
+- Never restate a provision in prose AND quote it. Choose one.
 
 QUOTATION MARKS ARE RESERVED FOR THE LAW. Wrap text in « » only when it is a
 verbatim fragment of a supplied article. Never put your own prose, headings, or
@@ -95,9 +105,16 @@ the closing disclaimer in quotation marks — quoted text is machine-checked
 against the article texts, and anything quoted that is not law is stripped from
 your answer as unverifiable.
 
-End every answer with the disclaimer, in the answer's language, unquoted:
-Armenian: Սա տեղեկատվական գործիք է, ոչ իրավաբանական խորհրդատվություն։ Ստուգեք վկայակոչված հոդվածների ամբողջական տեքստը ARLIS-ում։
-Russian: Это информационный инструмент, а не юридическая консультация. Проверьте полный текст процитированных статей по ссылке на ARLIS.`;
+End every answer with the disclaimer, unquoted, in the answer's language —
+exactly ONE of these two lines, never both, never spliced together. Emitting the
+Armenian sentence to a Russian reader (or a hybrid of the two) reads as a
+malfunction and undermines the disclaimer it is supposed to deliver:
+
+If answering in Armenian, end with exactly:
+Սա տեղեկատվական գործիք է, ոչ իրավաբանական խորհրդատվություն։ Ստուգեք վկայակոչված հոդվածների ամբողջական տեքստը ARLIS-ում։
+
+If answering in Russian, end with exactly:
+Это информационный инструмент, а не юридическая консультация. Проверьте полный текст процитированных статей по ссылке на ARLIS.`;
 
 export interface ChatResult {
   sessionId: string;
@@ -275,7 +292,6 @@ export async function chat(
 ): Promise<ChatResult> {
   const tStart = Date.now();
   onStage?.('understanding');
-  const client = new Anthropic();
 
   const sessionId =
     sessionIdIn ??
@@ -342,70 +358,29 @@ export async function chat(
     `\n\nLegal act fragments:\n\n${renderChunks(fresh, carried)}`,
   ].join('');
 
-  // --- prompt caching -------------------------------------------------------
-  //
-  // Caching is a PREFIX match, so layout is what makes it work: the request is
-  // ordered stable-first (system prompt → append-only history) with the only
-  // volatile part last (this turn's message + freshly retrieved chunks, which
-  // differ every turn). A breakpoint after the final history message therefore
-  // caches everything reusable.
-  //
-  // This matters disproportionately here: Armenian runs ~1.7 tokens/character,
-  // so a multi-turn conversation resends tens of thousands of tokens of history
-  // on every request. Cache reads bill at ~0.1x against 1.25x for writes, so
-  // the second turn already pays for the first.
-  //
-  // Two breakpoints (limit is 4): the system prompt, and the end of history.
-  // The system prompt alone may fall under the 1024-token minimum and silently
-  // not cache — harmless, and it becomes part of the cached prefix from the
-  // first history breakpoint onward.
-  const historyMessages: Anthropic.MessageParam[] = history.map((t, i) => ({
-    role: t.role,
-    content: [
-      {
-        type: 'text' as const,
-        text: t.content,
-        ...(i === history.length - 1
-          ? { cache_control: { type: 'ephemeral' as const } }
-          : {}),
-      },
-    ],
-  }));
-
-  // Always stream, whether or not the caller wants deltas.
-  //
-  // One code path, not two. The alternative — batch for callers that don't
-  // stream, streaming for those that do — means the quote gate is exercised
-  // only on the streaming path, and the guarantee that matters most would be
-  // the one with the least coverage.
+  // Prompt-cache layout now lives in the LLM seam (`llm.ts`), which is also
+  // where provider differences are absorbed. This file no longer knows which
+  // vendor answers.
   const chunkTexts = [...fresh, ...carried].map((c) => c.text);
   const gate = new QuoteStreamGate(chunkTexts, answerLanguage(message));
   // Order matters: the coverage header is stripped BEFORE the quote gate sees
   // the text, so the gate never mistakes it for prose or a quotation.
   const coverage = new CoverageParser();
 
-  const stream = client.messages.stream({
-    model: MODEL,
-    max_tokens: 16000,
-    system: [
-      { type: 'text', text: SYSTEM, cache_control: { type: 'ephemeral' } },
-    ],
-    output_config: { effort: 'medium' },
-    messages: [
-      ...historyMessages,
-      { role: 'user' as const, content: userContent },
-    ],
-  });
-
   onStage?.('writing');
   let tFirstToken = 0;
-  stream.on('text', (delta) => {
-    tFirstToken ||= Date.now();
-    const safe = gate.feed(coverage.feed(delta));
-    if (safe && onDelta) onDelta(safe);
+
+  const usage = await generate({
+    system: SYSTEM,
+    history,
+    user: userContent,
+    onText: (delta) => {
+      tFirstToken ||= Date.now();
+      const safe = gate.feed(coverage.feed(delta));
+      if (safe && onDelta) onDelta(safe);
+    },
   });
 
-  const res = await stream.finalMessage();
   const tail = gate.feed(coverage.flush()) + gate.flush();
   if (tail && onDelta) onDelta(tail);
 
@@ -455,15 +430,15 @@ export async function chat(
     standaloneQuery: ctx.standaloneQuery,
     freshChunks: fresh,
     carriedChunks: carried,
-    model: res.model,
+    model: usage.model,
     factSummary: ctx.factSummary,
     invalidQuotes: gate.invalidCount,
     coverage: coverage.coverage,
     usage: {
-      inputTokens: res.usage.input_tokens,
-      cacheReadTokens: res.usage.cache_read_input_tokens ?? 0,
-      cacheCreationTokens: res.usage.cache_creation_input_tokens ?? 0,
-      outputTokens: res.usage.output_tokens,
+      inputTokens: usage.inputTokens,
+      cacheReadTokens: usage.cacheReadTokens,
+      cacheCreationTokens: usage.cacheCreationTokens,
+      outputTokens: usage.outputTokens,
     },
     timings: {
         dbLoad: tLoaded - tStart,

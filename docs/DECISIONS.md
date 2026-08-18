@@ -211,3 +211,34 @@ the point: losing the vector leg drops retrieval to ~0% while the app still
 produces confident-looking "no relevant fragments" answers — indistinguishable
 from a genuine miss, so it must be noisy. Losing the reranker drops it to
 73.9% hit@5, which is degraded but honest.
+
+## Generation sits behind an `LLM` seam; the model is config, not code
+
+The spec asked for this from the start and it was skipped — `chat.ts` called
+Anthropic directly, so every model experiment meant editing the generation path
+and reverting it. `answer/llm.ts` now absorbs the provider difference, and
+`GENERATION_MODEL` selects. Streaming is the only mode: the quote gate runs on
+the stream, and a second batch path would leave the system's most important
+guarantee exercised by the least-used code.
+
+Measured through the seam, same prompt and articles:
+
+| | Russian question | Armenian question |
+|---|---|---|
+| claude-sonnet-5 | 13.4s, 0 bad quotes | 44.8s, 1 bad quote |
+| gemini-3.5-flash-lite | **1.2s**, 0 bad quotes | **3.0s**, 3 bad quotes |
+
+Flash-Lite is 11–15× faster with comparable structure, coverage honesty and
+language handling, but violates the quotation rule more often. Its violations
+are act titles wrapped in « » rather than fabricated law — a prompt-adherence
+gap, not a grounding failure, and the validator catches it either way. The
+default stays Sonnet until the quote rate is fixed and a native reader has
+judged the Armenian; the point of the seam is that changing it is now one
+environment variable.
+
+Two implementation traps worth recording. Gemini 3.x spends part of
+`maxOutputTokens` reasoning before writing — set to 4000 it returned
+300-character fragments with no `COVERAGE` line, which reads like a bad model
+rather than a bad config. And Gemini separates SSE frames with `\r\n\r\n`, not
+`\n\n`: splitting on the latter silently never matches, so the buffer grows
+forever and the answer arrives completely empty with HTTP 200.

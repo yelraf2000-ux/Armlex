@@ -20,6 +20,7 @@ import { join } from 'node:path';
 import {
   ftsRetriever,
   vectorSearch,
+  expandOneHop,
 
   closeRetrieval,
 } from '../retrieval/retrieve.js';
@@ -328,7 +329,8 @@ async function main(): Promise<void> {
       const qv = cached.get(q);
       if (!qv) return [];
       const pool = await vectorSearch(qv, Number(process.env['RERANK_POOL'] ?? 30));
-      return (await rerankChunks(q, pool, TOP_K)).map((h) => `${h.arlisId}#${h.ref}`);
+      const expanded = process.env['EXPAND_ONE_HOP'] !== '0' ? await expandOneHop(pool) : pool;
+      return (await rerankChunks(q, expanded, TOP_K)).map((h) => `${h.arlisId}#${h.ref}`);
     };
 
     runs.push(await score('vector (pgvector)', restrict(vectorRank), golden));

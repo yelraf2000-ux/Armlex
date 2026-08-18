@@ -328,6 +328,81 @@ export const hybridRetriever: Retriever = async (query, limit) => {
 const RERANK_POOL = 50;
 
 /**
+ * How many top candidates get their citations pulled in.
+ *
+ * Only the strongest hits are expanded. A provision cited by a rank-40
+ * candidate is two steps of guesswork from the question, and every extra
+ * candidate is noise the reranker has to sift.
+ */
+const EXPAND_FROM = 8;
+
+/**
+ * On by default: measured on the 25-question golden set it improves every
+ * metric — hit@5 80.0% -> 84.0%, hit@8 84.0% -> 88.0%, recall@8 76.7% -> 78.7%,
+ * MRR 0.609 -> 0.625. Set EXPAND_ONE_HOP=0 to measure without it.
+ */
+const EXPAND_ENABLED = process.env['EXPAND_ONE_HOP'] !== '0';
+
+/**
+ * Add the provisions that the strongest candidates cite (spec pipeline step 3).
+ *
+ * Armenian tax law defers constantly, and the deferral often points at the
+ * article that actually carries the rule. Measured case: "what expenses are
+ * deductible under turnover tax" retrieves Հոդված 260, which cites Հոդված 258
+ * — and 258 is the article containing the answer. Embedding similarity cannot
+ * find 258 there, because the question's vocabulary matches the profit-tax
+ * expense chapter instead; the citation graph can.
+ *
+ * Expansion follows OUTBOUND edges only — what a hit cites, not what cites it.
+ * Inbound would drag in every provision referring to a popular article, which
+ * is most of the Code for something like Հոդված 53.
+ */
+export async function expandOneHop(candidates: RetrievedChunk[]): Promise<RetrievedChunk[]> {
+  if (candidates.length === 0) return candidates;
+
+  const seed = candidates.slice(0, EXPAND_FROM).map((c) => c.articleId);
+  const have = new Set(candidates.map((c) => c.articleId));
+
+  const rows = await db()<
+    {
+      id: string;
+      title_hy: string;
+      arlis_id: number;
+      article_number: string;
+      text_hy: string;
+      doc_type: string;
+      act_number: string | null;
+    }[]
+  >`
+    SELECT DISTINCT a.id, d.title_hy, d.arlis_id, a.article_number, a.text_hy,
+           d.doc_type::text AS doc_type, d.act_number
+    FROM article_refs r
+    JOIN articles a ON a.id = r.to_article_id
+    JOIN documents d ON d.id = a.document_id
+    WHERE r.from_article_id = ANY(${seed}::bigint[])
+      AND d.rag_eligible AND d.status = 'in_force' AND a.status = 'in_force'
+    LIMIT 40
+  `;
+
+  const added = rows
+    .filter((r) => !have.has(String(r.id)))
+    .map((r) => ({
+      articleId: String(r.id),
+      documentTitle: r.title_hy,
+      arlisId: r.arlis_id,
+      ref: r.article_number,
+      // Cited provisions carry no similarity score of their own; they earn
+      // their place from the reranker or not at all.
+      score: 0,
+      text: r.text_hy,
+      docType: r.doc_type,
+      actNumber: r.act_number,
+    }));
+
+  return [...candidates, ...added];
+}
+
+/**
  * Vector retrieval followed by cross-encoder reranking.
  *
  * The two stages do different jobs: the bi-encoder finds plausible candidates
@@ -338,7 +413,8 @@ const RERANK_POOL = 50;
 export const rerankedRetriever: Retriever = async (query, limit) => {
   const candidates = await vectorRetriever(query, RERANK_POOL);
   if (candidates.length === 0) return [];
-  return rerankChunks(query, candidates, limit);
+  const expanded = EXPAND_ENABLED ? await expandOneHop(candidates) : candidates;
+  return rerankChunks(query, expanded, limit);
 };
 
 /**

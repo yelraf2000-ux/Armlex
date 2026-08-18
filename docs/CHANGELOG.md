@@ -594,6 +594,81 @@ clicking a citation swaps the panel (`Հոդված 63` → `Հավելված 1, 
 dates parse from the chunk header, and a live answer rendered `Հոդված 229` with
 `Ред. 03.07.2026` correctly flagged as recent.
 
+**2026-08-18** — **Answers shortened; the norm panel made the prompt obsolete.**
+Since the workbench shows each cited article beside the answer with the quoted
+passage highlighted, inline quotation blocks reproduce what is already on
+screen — and Armenian is the most expensive text we generate. The prompt now
+caps quotations at two, asks for the clause rather than the paragraph, and
+targets under 200 words of prose. Measured on the same question, same model:
+
+| | before | after |
+|---|---|---|
+| total | 36s | **26.3s** |
+| characters | 2001 | **900** |
+| output tokens | ~1700 | **515** (−70%) |
+| invalid quotes | 0 | 0 |
+
+Also fixed the doubled disclaimer (`Са տեղեկատվական…` — both language variants
+spliced together, with a Cyrillic С). The prompt listed both and the model
+merged them; it now names one line per language explicitly.
+
+**2026-08-18** — **A user-reported failure, diagnosed into three separate
+problems.** A question about import deductions under turnover tax produced an
+answer riddled with `[quote failed verification]` placeholders and a
+self-contradiction. Checked against the corpus:
+
+1. **Retrieval miss (the real bug).** `109017#Հոդված 258` holds the answer —
+   the 9.5%-of-documented-expenses rule introduced by ՀՕ-285-Ն — and was not
+   retrieved for natural phrasings. Both failing questions pulled the
+   profit-tax expense chapter (Հոդված 110–121) instead: a large, dense, very
+   on-topic-looking cluster that drowns the single turnover-tax article.
+   Retrieval only found 258 when the query already contained "9.5 процентов
+   документированных расходов" — i.e. when the asker already knew the answer.
+2. **Corpus gap.** SRC order N 1513-Ն is genuinely not ingested (only N 1512-Ն
+   is, as arlis 199961). The model knew it from pretraining, cited it, and the
+   validator purged it. **That is the guard working correctly** — refusing to
+   show a citation we cannot display.
+3. **Presentation.** An answer peppered with removal notices is unreadable even
+   when every individual removal was right.
+
+**Rejected: fuzzy/semantic citation matching.** It was proposed as the fix and
+would break the property that makes this tool worth using. A quote differing by
+a negation or one digit is semantically near-identical and legally opposite;
+tests cover exactly that (`20-ը`→`25-ը`, inserted negation). In this very
+incident the validator was *correct* — semantic matching would have passed a
+citation to a document we do not hold. The false positives we have had were
+fixed by naming specific meaning-free differences (trailing punctuation,
+ellipsis, restored part numbers), taking the rate from ~1.75 to ~0.4 per answer
+with exactness intact.
+
+**2026-08-18** — **One-hop expansion through `article_refs` shipped** (spec
+pipeline step 3, the remaining half of the cross-reference work). The top 8
+vector candidates contribute the provisions they cite; the reranker then judges
+the enlarged pool. Outbound edges only — inbound would drag in every provision
+referring to a popular article like Հոդված 53. Measured on 25 questions,
+pool 50:
+
+| | hit@5 | hit@8 | recall@5 | recall@8 | MRR |
+|---|---|---|---|---|---|
+| without | 80.0% | 84.0% | 66.0% | 76.7% | 0.609 |
+| **with** | **84.0%** | **88.0%** | **70.0%** | **78.7%** | **0.625** |
+
+Better on every metric, so it ships. `EXPAND_ONE_HOP=0` disables it for
+measurement.
+
+**Two honest caveats.** First, the win did not come from the questions it was
+built for: "Нужно ли платить НДС при импорте товаров?" went MISS → **rank 2**,
+while both newly-added questions still fail in the benchmark. Second, and more
+important: **`score.ts` embeds the raw question and never runs the
+contextualiser**, so it measures a harder task than the app performs. On the
+real pipeline — contextualiser terms plus expansion — "Какие расходы
+вычитаются при налоге с оборота" now returns `Հոդված 258` at **rank 1**.
+
+The import variant still misses: "импортирую товар" pulls the VAT-import
+articles strongly enough to bury the turnover-tax rule. It needs the system to
+understand that the stated *regime* overrides the *transaction* signal, which
+neither embedding similarity nor the citation graph provides.
+
 ---
 
 *Next entry goes here — append below this line, don't insert above.*

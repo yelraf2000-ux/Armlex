@@ -24,12 +24,18 @@ shipped (`DECISIONS.md`). The next priority is answer quality — item 10.
    error. Remaining upside: re-test hybrid FTS+vector *under* the reranker —
    RRF alone failed because it had no way to discard lexical noise, and the
    reranker does.
-8. **`article_refs` (749 edges) are surfaced in the UI but not used by
-   retrieval.** The workbench lists what an article defers to, so a reader can
-   follow the chain manually. The spec's automatic one-hop expansion — pulling
-   cited provisions into the candidate pool before reranking — is still open.
-   Measure on the golden set before shipping: the reranker already sees 50
-   candidates, so expansion has to earn its place rather than add noise.
+8. ~~**`article_refs` unused by retrieval.**~~ **DONE 2026-08-18.** One-hop
+   expansion ships: top-8 candidates contribute the provisions they cite, then
+   the reranker judges the enlarged pool. hit@5 80.0% → 84.0% on 25 questions.
+
+   **Still open — two retrieval gaps it did not close:**
+   - A question naming both a transaction and a regime ("на налоге с оборота,
+     импортирую товар") follows the transaction. `Հոդված 258` loses to the
+     VAT-import articles. Needs regime awareness, which neither embeddings nor
+     the citation graph supply.
+   - **`score.ts` measures retrieval WITHOUT the contextualiser**, so the
+     benchmark understates the shipped pipeline. Worth adding a live-path arm
+     before trusting either number as "the" figure.
 9. ~~**`fact_summary` doesn't exist.**~~ **DONE 2026-08-15.** The
    contextualiser maintains a running summary of USER-stated facts, persisted
    to `sessions.fact_summary`, and feeds it into both the search query and the
@@ -76,6 +82,11 @@ shipped (`DECISIONS.md`). The next priority is answer quality — item 10.
     bug. Budget note: ~$0.09 per chat turn.
 
 ## Corpus / evaluation
+
+19. **SRC order N 1513-Ն is not ingested.** Only N 1512-Ն is (arlis 199961).
+    Both were passed 2024-11-20 and operate as one reform from 2025-01-01, so a
+    question about the new personal-account rules gets half the picture — and
+    the validator correctly purges any citation to the missing half.
 
 13. **7 of 30 golden questions unresolved.** 2 are a confirmed scope gap
     (IT-startup incentive law never ingested — `DECISIONS.md`); 5 need a
