@@ -11,6 +11,7 @@ import type { Chunk } from './types.js';
 import { ChunkCard } from './ChunkCard.js';
 import { Chat } from './Chat.js';
 import { Login } from './Login.js';
+import { SettingsControls, SettingsProvider, useSettings } from './Settings.js';
 
 type Mode = 'search' | 'ask' | 'chat';
 
@@ -144,7 +145,8 @@ interface CorpusInfo {
   lastChecked: string | null;
 }
 
-export function App() {
+function Workbench() {
+  const { t } = useSettings();
   const [mode, setMode] = useState<Mode>('chat');
   const [corpus, setCorpus] = useState<CorpusInfo | null>(null);
   /** null = not yet known; the gate is off entirely in local development. */
@@ -214,10 +216,10 @@ export function App() {
         {corpus ? (
           <>
             <span>
-              Корпус: <span className="num">{corpus.documents}</span> актов ·{' '}
-              <span className="num">{corpus.chunks}</span> фрагментов
+              <span className="num">{corpus.documents}</span> {t('corpus.acts')} ·{' '}
+              <span className="num">{corpus.chunks}</span> {t('corpus.chunks')}
             </span>
-            {synced ? <span>Сверено с ARLIS <span className="num">{synced}</span></span> : null}
+            {synced ? <span>{t('corpus.synced')} <span className="num">{synced}</span></span> : null}
           </>
         ) : null}
 
@@ -230,13 +232,14 @@ export function App() {
               className={mode === m ? 'seg active' : 'seg'}
               onClick={() => setMode(m)}
             >
-              {m === 'search' ? 'Поиск' : m === 'ask' ? 'Разовый' : 'Диалог'}
+              {t(`mode.${m}`)}
             </button>
           ))}
         </div>
 
+        <SettingsControls />
         <span className="spacer" />
-        <span className="disclaimer">Не юридическая консультация — проверяйте полный текст</span>
+        <span className="disclaimer">{t('corpus.disclaimer')}</span>
       </header>
 
       {mode === 'chat' ? (
@@ -245,5 +248,17 @@ export function App() {
         <div className="wrap"><OneShot mode={mode} /></div>
       )}
     </>
+  );
+}
+
+/**
+ * Settings wrap everything, including the login screen — someone who cannot get
+ * past the password gate should still be able to read it in their own language.
+ */
+export function App() {
+  return (
+    <SettingsProvider>
+      <Workbench />
+    </SettingsProvider>
   );
 }

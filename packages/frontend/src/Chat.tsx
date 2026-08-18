@@ -12,6 +12,7 @@ import { NormPanel } from './NormPanel.js';
 import { MarkdownView } from './MarkdownView.js';
 import { extractQuotes } from './quotes.js';
 import { Sessions } from './Sessions.js';
+import { useSettings } from './Settings.js';
 
 interface ChatResponse {
   sessionId: string;
@@ -59,11 +60,11 @@ interface StreamPayload {
  * begins. Nine seconds before the first word is unavoidable (two sequential
  * model calls plus retrieval); nine seconds of silence is not.
  */
-const STAGE_LABEL: Record<string, string> = {
-  understanding: 'Разбираю вопрос…',
-  searching: 'Ищу в Налоговом кодексе…',
-  reading: 'Читаю найденные статьи…',
-  writing: 'Формулирую ответ…',
+const STAGE_KEY: Record<string, string> = {
+  understanding: 'stage.understanding',
+  searching: 'stage.searching',
+  reading: 'stage.reading',
+  writing: 'stage.writing',
 };
 
 /**
@@ -78,15 +79,9 @@ const STAGE_LABEL: Record<string, string> = {
  * `full` shows nothing: a badge on every answer would be noise, and the absence
  * of a warning is the signal.
  */
-const COVERAGE_NOTE: Record<string, { className: string; text: string }> = {
-  partial: {
-    className: 'coverage partial',
-    text: 'Найденные статьи покрывают вопрос частично — проверьте, что уточняющий вопрос ниже не меняет вывод.',
-  },
-  none: {
-    className: 'coverage none',
-    text: 'Прямой нормы по этому вопросу в найденных статьях нет. Ниже — только смежные положения.',
-  },
+const COVERAGE_KEY: Record<string, string> = {
+  partial: 'coverage.partial',
+  none: 'coverage.none',
 };
 
 /**
@@ -111,6 +106,7 @@ function autoGrow(el: HTMLTextAreaElement): void {
 }
 
 export function Chat({ corpusSynced }: { corpusSynced: string | null }) {
+  const { t } = useSettings();
   const [sessionId, setSessionId] = useState<string | null>(null);
   const [turns, setTurns] = useState<Turn[]>([]);
   const [input, setInput] = useState('');
@@ -237,7 +233,7 @@ export function Chat({ corpusSynced }: { corpusSynced: string | null }) {
         setError(
           raw.trim()
             ? `HTTP ${res.status}: ${raw.slice(0, 200)}`
-            : `API не отвечает (HTTP ${res.status}). Запустите «npm run dev».`,
+            : `${t('error.noApi')} (HTTP ${res.status})`,
         );
         return;
       }
@@ -309,8 +305,7 @@ export function Chat({ corpusSynced }: { corpusSynced: string | null }) {
             // bug. Name it, so nobody debugs the request shape for an hour.
             setError(
               /credit balance is too low/i.test(payload.detail ?? '')
-                ? 'Закончился баланс Anthropic API — это не ошибка приложения. ' +
-                  'Пополните счёт в Plans & Billing, поиск (режим Search) работает без него.'
+                ? t('error.credit')
                 : [payload.error, payload.detail].filter(Boolean).join(' — '),
             );
           }
@@ -348,9 +343,9 @@ export function Chat({ corpusSynced }: { corpusSynced: string | null }) {
   return (
     <div className="workbench">
       <nav className="rail">
-        <div className="panel-title">Консультации</div>
+        <div className="panel-title">{t('nav.consultations')}</div>
         <button className="new-case" onClick={reset} disabled={turns.length === 0}>
-          + Новая консультация
+          {t('nav.newCase')}
         </button>
         <Sessions currentId={sessionId} onOpen={(id) => void openSession(id)} reloadKey={reloadKey} />
       </nav>
@@ -358,10 +353,7 @@ export function Chat({ corpusSynced }: { corpusSynced: string | null }) {
       <section className="thread">
       {turns.length === 0 ? (
         <div className="intro">
-          <p>
-            Задайте вопрос, затем уточняйте — контекст сохраняется между сообщениями,
-            поэтому можно попросить вывод по совокупности обсуждённого.
-          </p>
+          <p>{t('intro.lead')}</p>
           {/*
             Examples are clickable and deliberately concrete. They do double
             duty: they save typing, and they show the corpus boundary — every
@@ -384,24 +376,22 @@ export function Chat({ corpusSynced }: { corpusSynced: string | null }) {
         </div>
       ) : null}
 
-      {turns.map((t, i) => (
-        <div key={i} className={`turn ${t.role}`}>
-          <div className="turn-role">{t.role === 'user' ? 'Вы' : 'ArmLex'}</div>
-          {t.coverage && COVERAGE_NOTE[t.coverage] ? (
-            <div className={COVERAGE_NOTE[t.coverage]!.className}>
-              {COVERAGE_NOTE[t.coverage]!.text}
-            </div>
+      {turns.map((turn, i) => (
+        <div key={i} className={`turn ${turn.role}`}>
+          <div className="turn-role">{turn.role === 'user' ? t('turn.question') : 'ArmLex'}</div>
+          {turn.coverage && COVERAGE_KEY[turn.coverage] ? (
+            <div className={`coverage ${turn.coverage}`}>{t(COVERAGE_KEY[turn.coverage]!)}</div>
           ) : null}
-          {t.text ? (
+          {turn.text ? (
             <div className="turn-text">
-              <MarkdownView text={t.text} />
-              {t.streaming ? <span className="caret" /> : null}
+              <MarkdownView text={turn.text} />
+              {turn.streaming ? <span className="caret" /> : null}
             </div>
           ) : null}
-          {t.stage && !t.text ? (
+          {turn.stage && !turn.text ? (
             <div className="stage">
               <span className="stage-pulse" />
-              {STAGE_LABEL[t.stage] ?? t.stage}
+              {STAGE_KEY[turn.stage] ? t(STAGE_KEY[turn.stage]!) : turn.stage}
             </div>
           ) : null}
 
@@ -410,10 +400,10 @@ export function Chat({ corpusSynced }: { corpusSynced: string | null }) {
             unit an accountant reuses, so each one is a control that loads that
             provision into the norm panel beside the answer.
           */}
-          {t.role === 'assistant' && (t.fresh?.length ?? 0) + (t.carried?.length ?? 0) > 0 ? (
+          {turn.role === 'assistant' && (turn.fresh?.length ?? 0) + (turn.carried?.length ?? 0) > 0 ? (
             <div className="turn-meta">
               <div className="cites">
-                {(t.fresh ?? []).map((c) => (
+                {(turn.fresh ?? []).map((c) => (
                   <button
                     key={`f${c.articleId}`}
                     className="cite"
@@ -423,7 +413,7 @@ export function Chat({ corpusSynced }: { corpusSynced: string | null }) {
                     <span lang="hy">{c.ref}</span>
                   </button>
                 ))}
-                {(t.carried ?? []).map((c) => (
+                {(turn.carried ?? []).map((c) => (
                   <button
                     key={`c${c.articleId}`}
                     className="cite carried"
@@ -435,8 +425,8 @@ export function Chat({ corpusSynced }: { corpusSynced: string | null }) {
                   </button>
                 ))}
               </div>
-              {t.standaloneQuery && t.standaloneQuery !== turns[i - 1]?.text ? (
-                <div className="rewrite">искали: <em>{t.standaloneQuery}</em></div>
+              {turn.standaloneQuery && turn.standaloneQuery !== turns[i - 1]?.text ? (
+                <div className="rewrite">{t('turn.searchedFor')} <em>{turn.standaloneQuery}</em></div>
               ) : null}
             </div>
           ) : null}
@@ -466,14 +456,10 @@ export function Chat({ corpusSynced }: { corpusSynced: string | null }) {
               void send();
             }
           }}
-          placeholder={
-            turns.length === 0
-              ? 'Опишите ситуацию или задайте вопрос…'
-              : 'Уточняющий вопрос или «сделай вывод по всему обсуждённому»'
-          }
+          placeholder={turns.length === 0 ? t('composer.first') : t('composer.next')}
         />
         <button onClick={() => void send()} disabled={loading || !input.trim()}>
-          {loading ? '…' : 'Отправить'}
+          {loading ? '…' : t('composer.send')}
         </button>
       </div>
       </section>

@@ -5,8 +5,10 @@
  * answer spends real API credit, so an open URL is a bill anyone can run up.
  */
 import { useState } from 'react';
+import { useSettings } from './Settings.js';
 
 export function Login({ onSuccess }: { onSuccess: () => void }) {
+  const { t } = useSettings();
   const [password, setPassword] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
@@ -26,7 +28,7 @@ export function Login({ onSuccess }: { onSuccess: () => void }) {
         onSuccess();
         return;
       }
-      setError(res.status === 401 ? 'Неверный пароль.' : `Ошибка входа (HTTP ${res.status}).`);
+      setError(res.status === 401 ? t('login.wrong') : `HTTP ${res.status}`);
     } catch (err) {
       setError(String(err));
     } finally {
@@ -38,8 +40,7 @@ export function Login({ onSuccess }: { onSuccess: () => void }) {
     <div className="login">
       <h2 className="login-title">ArmLex</h2>
       <p className="login-note">
-        Доступ по общему паролю. Каждый ответ расходует платные API-запросы,
-        поэтому инструмент закрыт.
+        {t('login.note')}
       </p>
       <div className="login-row">
         <input
@@ -50,10 +51,10 @@ export function Login({ onSuccess }: { onSuccess: () => void }) {
           onKeyDown={(e) => {
             if (e.key === 'Enter') void submit();
           }}
-          placeholder="Пароль"
+          placeholder={t('login.password')}
         />
         <button onClick={() => void submit()} disabled={busy || !password}>
-          {busy ? '…' : 'Войти'}
+          {busy ? '…' : t('login.enter')}
         </button>
       </div>
       {error ? <div className="error">{error}</div> : null}

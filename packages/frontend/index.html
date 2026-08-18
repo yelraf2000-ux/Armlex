@@ -3,7 +3,28 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>ArmLex — dev tool</title>
+    <title>ArmLex</title>
+    <script>
+      /*
+       * Stamp the saved theme and language BEFORE the app boots.
+       *
+       * React applies both on mount, which is one paint too late: a dark-mode
+       * user gets a white flash on every load, and the page briefly announces
+       * the wrong language to assistive technology. Reading localStorage here
+       * costs nothing and removes both.
+       *
+       * Wrapped in try/catch because localStorage throws outright when cookies
+       * are blocked, and a theme preference must never stop the app loading.
+       */
+      try {
+        var t = localStorage.getItem('armlex.theme');
+        if (t === 'dark' || t === 'light') document.documentElement.setAttribute('data-theme', t);
+        var l = localStorage.getItem('armlex.lang');
+        if (l === 'hy' || l === 'ru' || l === 'en') document.documentElement.lang = l;
+      } catch (e) {
+        /* no stored preference is available; the defaults are fine */
+      }
+    </script>
   </head>
   <body>
     <div id="root"></div>

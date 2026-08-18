@@ -10,6 +10,7 @@
 import { useEffect, useState } from 'react';
 import type { Chunk } from './types.js';
 import { highlight, parseDates, splitHeader } from './chunkText.js';
+import { useSettings } from './Settings.js';
 
 interface Related {
   articleId: string;
@@ -43,6 +44,7 @@ export function NormPanel({
   quotes: string[];
   corpusSynced: string | null;
 }) {
+  const { t } = useSettings();
   const [related, setRelated] = useState<Related[]>([]);
   const [copied, setCopied] = useState(false);
 
@@ -67,10 +69,9 @@ export function NormPanel({
   if (!chunk) {
     return (
       <aside className="norm">
-        <div className="panel-title">Норма</div>
+        <div className="panel-title">{t('norm.title')}</div>
         <p className="norm-empty">
-          Задайте вопрос — здесь появится статья, на которую опирается ответ,
-          с выделенной цитатой и датой редакции.
+          {t('norm.empty')}
         </p>
       </aside>
     );
@@ -98,11 +99,11 @@ export function NormPanel({
 
   return (
     <aside className="norm">
-      <div className="panel-title">Норма</div>
+      <div className="panel-title">{t('norm.title')}</div>
 
       <div className="norm-head">
         <span className="norm-ref" lang="hy">{chunk.ref}</span>
-        <span className="chip">Действует</span>
+        <span className="chip">{t('norm.inForce')}</span>
         {amended ? (
           // Red is reserved for things needing attention. A provision amended
           // recently is one — the reader may know the old wording, and an
@@ -110,16 +111,16 @@ export function NormPanel({
           // amendment is just a date, and flagging every article in red would
           // train the reader to ignore the colour that matters.
           <span className={isRecent(amended) ? 'chip warn' : 'chip quiet'}>
-            Ред. {amended}
+            {t('norm.revised')} {amended}
           </span>
         ) : null}
       </div>
       <div className="norm-act" lang="hy">{chunk.documentTitle}</div>
 
       <dl className="norm-dates">
-        {adopted ? <div><dt>Принят</dt><dd>{adopted}</dd></div> : null}
-        {amended ? <div><dt>Ред. от</dt><dd>{amended}</dd></div> : null}
-        {corpusSynced ? <div><dt>Сверено</dt><dd>{corpusSynced}</dd></div> : null}
+        {adopted ? <div><dt>{t('norm.adopted')}</dt><dd>{adopted}</dd></div> : null}
+        {amended ? <div><dt>{t('norm.revisedFrom')}</dt><dd>{amended}</dd></div> : null}
+        {corpusSynced ? <div><dt>{t('norm.checked')}</dt><dd>{corpusSynced}</dd></div> : null}
       </dl>
 
       <div className="norm-body" lang="hy">
@@ -128,14 +129,14 @@ export function NormPanel({
 
       <div className="norm-actions">
         <button className="btn" onClick={() => void copyQuote()}>
-          {copied ? 'Скопировано' : marked.length > 0 ? 'Скопировать цитату' : 'Скопировать статью'}
+          {copied ? t('norm.copied') : marked.length > 0 ? t('norm.copyQuote') : t('norm.copyArticle')}
         </button>
         <a className="btn" href={arlisUrl(chunk.arlisId)} target="_blank" rel="noreferrer">ARLIS ↗</a>
       </div>
 
       {related.length > 0 ? (
         <>
-          <div className="panel-title">Ссылается на</div>
+          <div className="panel-title">{t('norm.refersTo')}</div>
           <div className="refs">
             {related.map((r) => (
               <a

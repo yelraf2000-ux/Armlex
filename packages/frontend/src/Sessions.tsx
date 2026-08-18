@@ -7,6 +7,7 @@
  * and the work has to be redone from the first question.
  */
 import { useEffect, useState } from 'react';
+import { useSettings } from './Settings.js';
 
 export interface SessionSummary {
   id: string;
@@ -31,6 +32,7 @@ export function Sessions({
   onOpen: (id: string) => void;
   reloadKey: number;
 }) {
+  const { t } = useSettings();
   const [sessions, setSessions] = useState<SessionSummary[] | null>(null);
 
   useEffect(() => {
@@ -51,7 +53,7 @@ export function Sessions({
 
   if (sessions === null) return <div className="sessions-empty">…</div>;
   if (sessions.length === 0) {
-    return <div className="sessions-empty">Пока нет сохранённых диалогов.</div>;
+    return <div className="sessions-empty">{t('nav.noCases')}</div>;
   }
 
   return (
