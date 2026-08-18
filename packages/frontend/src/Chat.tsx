@@ -8,7 +8,7 @@
  */
 import { useEffect, useRef, useState } from 'react';
 import type { Chunk } from './types.js';
-import { ChunkCard } from './ChunkCard.js';
+import { NormPanel } from './NormPanel.js';
 import { MarkdownView } from './MarkdownView.js';
 import { extractQuotes } from './quotes.js';
 import { Sessions } from './Sessions.js';
@@ -110,14 +110,14 @@ function autoGrow(el: HTMLTextAreaElement): void {
   el.style.height = `${Math.min(el.scrollHeight, 200)}px`;
 }
 
-export function Chat() {
+export function Chat({ corpusSynced }: { corpusSynced: string | null }) {
   const [sessionId, setSessionId] = useState<string | null>(null);
   const [turns, setTurns] = useState<Turn[]>([]);
   const [input, setInput] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [openSources, setOpenSources] = useState<number | null>(null);
-  const [showSessions, setShowSessions] = useState(false);
+  /** Provision pinned into the norm panel; null follows the newest answer. */
+  const [selectedId, setSelectedId] = useState<string | null>(null);
   /** Bumped when a turn completes, so the session list refetches. */
   const [reloadKey, setReloadKey] = useState(0);
   const endRef = useRef<HTMLDivElement>(null);
@@ -145,8 +145,7 @@ export function Chat() {
           text: m.content,
         })),
       );
-      setOpenSources(null);
-      setShowSessions(false);
+      setSelectedId(null);
       setError(null);
     } catch (err) {
       setError(String(err));
@@ -334,27 +333,29 @@ export function Chat() {
     setSessionId(null);
     setTurns([]);
     setError(null);
-    setOpenSources(null);
+    setSelectedId(null);
   }
 
+  // The provision shown in the norm panel: whatever the reader last selected,
+  // otherwise the top-ranked chunk of the newest answer — so the statute is
+  // already on screen without anyone clicking.
+  const lastAnswer = [...turns].reverse().find((t) => t.role === 'assistant');
+  const answerChunks = [...(lastAnswer?.fresh ?? []), ...(lastAnswer?.carried ?? [])];
+  const shownChunk =
+    answerChunks.find((c) => c.articleId === selectedId) ?? answerChunks[0] ?? null;
+  const shownQuotes = extractQuotes(lastAnswer?.text ?? '');
+
   return (
-    <div className="chat">
-      <div className="chat-bar">
-        <span className="session">
-          {sessionId ? `сессия ${sessionId.slice(0, 8)}… · ходов: ${turns.filter((t) => t.role === 'user').length}` : 'новая сессия'}
-        </span>
-        <button onClick={() => setShowSessions((v) => !v)}>
-          {showSessions ? 'Скрыть диалоги' : 'Прошлые диалоги'}
+    <div className="workbench">
+      <nav className="rail">
+        <div className="panel-title">Консультации</div>
+        <button className="new-case" onClick={reset} disabled={turns.length === 0}>
+          + Новая консультация
         </button>
-        <button onClick={reset} disabled={turns.length === 0}>
-          Новый диалог
-        </button>
-      </div>
-
-      {showSessions ? (
         <Sessions currentId={sessionId} onOpen={(id) => void openSession(id)} reloadKey={reloadKey} />
-      ) : null}
+      </nav>
 
+      <section className="thread">
       {turns.length === 0 ? (
         <div className="intro">
           <p>
@@ -404,43 +405,38 @@ export function Chat() {
             </div>
           ) : null}
 
-          {t.role === 'assistant' ? (
+          {/*
+            Citations, not a collapsed "Sources (4)" list. A citation is the
+            unit an accountant reuses, so each one is a control that loads that
+            provision into the norm panel beside the answer.
+          */}
+          {t.role === 'assistant' && (t.fresh?.length ?? 0) + (t.carried?.length ?? 0) > 0 ? (
             <div className="turn-meta">
+              <div className="cites">
+                {(t.fresh ?? []).map((c) => (
+                  <button
+                    key={`f${c.articleId}`}
+                    className="cite"
+                    aria-current={shownChunk?.articleId === c.articleId}
+                    onClick={() => setSelectedId(c.articleId)}
+                  >
+                    <span lang="hy">{c.ref}</span>
+                  </button>
+                ))}
+                {(t.carried ?? []).map((c) => (
+                  <button
+                    key={`c${c.articleId}`}
+                    className="cite carried"
+                    aria-current={shownChunk?.articleId === c.articleId}
+                    onClick={() => setSelectedId(c.articleId)}
+                    title="Перенесено из прошлых сообщений"
+                  >
+                    <span lang="hy">{c.ref}</span>
+                  </button>
+                ))}
+              </div>
               {t.standaloneQuery && t.standaloneQuery !== turns[i - 1]?.text ? (
-                <div className="rewrite">
-                  поиск по: <em>{t.standaloneQuery}</em>
-                </div>
-              ) : null}
-              <button
-                className="sources-toggle"
-                onClick={() => setOpenSources(openSources === i ? null : i)}
-              >
-                {openSources === i ? 'Скрыть источники' : 'Источники'} (
-                {(t.fresh?.length ?? 0) + (t.carried?.length ?? 0)})
-              </button>
-
-              {openSources === i ? (
-                <div className="sources">
-                  {(t.fresh ?? []).length > 0 ? (
-                    <div className="src-group">
-                      <div className="src-label">Найдено по этому вопросу</div>
-                      {(t.fresh ?? []).map((c) => (
-                        <ChunkCard key={`f${c.arlisId}${c.ref}`} chunk={c} quotes={extractQuotes(t.text)} />
-                      ))}
-                    </div>
-                  ) : null}
-                  {(t.carried ?? []).length > 0 ? (
-                    <div className="src-group">
-                      <div className="src-label">Перенесено из прошлых сообщений</div>
-                      {(t.carried ?? []).map((c) => (
-                        <ChunkCard key={`c${c.arlisId}${c.ref}`} chunk={c} quotes={extractQuotes(t.text)} />
-                      ))}
-                    </div>
-                  ) : null}
-                  {(t.fresh?.length ?? 0) + (t.carried?.length ?? 0) === 0 ? (
-                    <div className="empty">Фрагменты не найдены.</div>
-                  ) : null}
-                </div>
+                <div className="rewrite">искали: <em>{t.standaloneQuery}</em></div>
               ) : null}
             </div>
           ) : null}
@@ -480,6 +476,9 @@ export function Chat() {
           {loading ? '…' : 'Отправить'}
         </button>
       </div>
+      </section>
+
+      <NormPanel chunk={shownChunk} quotes={shownQuotes} corpusSynced={corpusSynced} />
     </div>
   );
 }

@@ -1,21 +1,65 @@
-/* Readable, nothing more. */
+/* ---------------------------------------------------------------------------
+   Ledger stationery.
 
+   The palette is taken from the accountant's own material world rather than
+   from a generic product template: pale ledger paper with a green-grey bias,
+   black ink, and red reserved for the single thing red means in a ledger —
+   something that needs attention. Here that is a coverage gap, which is the
+   most important thing on screen when it happens and must not compete with
+   decorative colour.
+
+   Every rule below styles through these tokens, so both themes resolve as a
+   set and nothing is defined only inside a media query.
+   --------------------------------------------------------------------------- */
 :root {
   color-scheme: light dark;
-  --fg: #1a1a1a;
-  --muted: #666;
-  --line: #d8d8d8;
-  --bg: #fff;
-  --card: #fafafa;
+
+  --bg:        #F6F7F3;  /* ledger paper */
+  --card:      #FFFFFF;
+  --sunk:      #EDEFE8;
+  --fg:        #191C19;  /* ink */
+  --muted:     #667065;  /* green-grey, chosen not inherited */
+  --line:      #DCE0D8;  /* hairline rules */
+  --accent:    #1F5C4D;  /* verdigris — institutional, not the default blue */
+  --accent-bg: #E4EDE8;
+  --warn-fg:   #A63A2C;  /* madder — the accountant's red ink */
+  --warn-bg:   #F6E7E4;
+  --mark:      #F2E3AE;  /* highlighted quotation */
+
+  --sans: ui-sans-serif, system-ui, "Segoe UI", Roboto, "Helvetica Neue", sans-serif;
+  /* Sylfaen ships with Windows and is one of very few widely installed serifs
+     with genuine Armenian coverage. Statute should look like statute, and
+     Armenian must never fall back to tofu. */
+  --law:  "Sylfaen", "Noto Serif Armenian", "Noto Sans Armenian", Georgia, serif;
 }
+
 @media (prefers-color-scheme: dark) {
-  :root {
-    --fg: #e6e6e6;
-    --muted: #999;
-    --line: #333;
-    --bg: #141414;
-    --card: #1c1c1c;
+  :root:not([data-theme="light"]) {
+    --bg:        #14171A;
+    --card:      #1B1F21;
+    --sunk:      #222729;
+    --fg:        #E4E7E2;
+    --muted:     #8A9490;
+    --line:      #2C3234;
+    --accent:    #6FBFA5;
+    --accent-bg: #1B3730;
+    --warn-fg:   #E08476;
+    --warn-bg:   #3A2320;
+    --mark:      #5C4E1E;
   }
+}
+:root[data-theme="dark"] {
+  --bg:        #14171A;
+  --card:      #1B1F21;
+  --sunk:      #222729;
+  --fg:        #E4E7E2;
+  --muted:     #8A9490;
+  --line:      #2C3234;
+  --accent:    #6FBFA5;
+  --accent-bg: #1B3730;
+  --warn-fg:   #E08476;
+  --warn-bg:   #3A2320;
+  --mark:      #5C4E1E;
 }
 
 * { box-sizing: border-box; }
@@ -530,3 +574,222 @@ h2 { font-size: 15px; margin: 28px 0 10px; color: var(--muted); font-weight: 600
   color: var(--fg);
 }
 .login-row button:disabled { opacity: 0.5; cursor: default; }
+
+/* ===========================================================================
+   Workbench layout (accountant edition)
+   ===========================================================================
+   Three panes: cases, consultation, statute. The statute stays on screen
+   because an accountant does not read an answer, they verify one — then paste
+   conclusion and citation into a client memo. Behind a toggle, verifying is
+   the expensive step.
+   =========================================================================== */
+
+body { font-family: var(--sans); }
+
+.provenance {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 18px;
+  padding: 9px 20px;
+  border-bottom: 1px solid var(--line);
+  background: var(--card);
+  font-size: 12.5px;
+  color: var(--muted);
+}
+.provenance .brand {
+  font-weight: 680;
+  font-size: 14px;
+  color: var(--fg);
+  letter-spacing: -.01em;
+}
+.provenance .num { font-variant-numeric: tabular-nums; color: var(--fg); }
+.provenance .spacer { flex: 1; }
+.provenance .disclaimer { color: var(--warn-fg); }
+
+.workbench {
+  display: grid;
+  grid-template-columns: 224px minmax(0, 1fr) minmax(0, 430px);
+  align-items: start;
+  min-height: calc(100vh - 40px);
+}
+.rail, .thread, .norm { min-width: 0; }
+
+.rail {
+  border-right: 1px solid var(--line);
+  padding: 16px 12px;
+  position: sticky;
+  top: 0;
+}
+.thread {
+  padding: 22px 26px 26px;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  min-height: calc(100vh - 40px);
+}
+.norm {
+  border-left: 1px solid var(--line);
+  background: var(--card);
+  padding: 18px 20px 28px;
+  position: sticky;
+  top: 0;
+  max-height: 100vh;
+  overflow-y: auto;
+}
+
+.panel-title {
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: .09em;
+  color: var(--muted);
+  font-weight: 620;
+  margin: 0 0 10px;
+}
+.norm .panel-title:not(:first-child) { margin-top: 18px; }
+
+.new-case {
+  width: 100%;
+  text-align: left;
+  font: inherit;
+  font-size: 13px;
+  padding: 7px 9px;
+  margin-bottom: 10px;
+  border: 1px dashed var(--line);
+  border-radius: 5px;
+  background: none;
+  color: var(--muted);
+  cursor: pointer;
+}
+.new-case:hover:not(:disabled) { border-color: var(--accent); color: var(--accent); }
+.new-case:disabled { opacity: .5; cursor: default; }
+
+/* Citations, not a collapsed "Sources (4)". A citation is the unit an
+   accountant reuses, so each is a control that loads the provision alongside. */
+.cites { display: flex; flex-wrap: wrap; gap: 6px; }
+.cite {
+  font: inherit;
+  font-size: 12.5px;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  padding: 2px 9px;
+  border: 1px solid transparent;
+  border-radius: 3px;
+  background: var(--accent-bg);
+  color: var(--accent);
+  cursor: pointer;
+  white-space: nowrap;
+}
+.cite:hover, .cite:focus-visible { border-color: var(--accent); outline: none; }
+.cite[aria-current="true"] { background: var(--accent); color: var(--card); }
+/* Carried from an earlier turn: same provision, different provenance. */
+.cite.carried { background: var(--sunk); color: var(--muted); }
+.cite.carried[aria-current="true"] { background: var(--accent); color: var(--card); }
+
+.turn-meta { display: flex; flex-direction: column; gap: 7px; margin-top: 10px; }
+.rewrite { font-size: 12px; color: var(--muted); }
+
+/* --- norm panel ----------------------------------------------------------- */
+.norm-empty { color: var(--muted); font-size: 13.5px; line-height: 1.6; margin: 0; }
+.norm-head { display: flex; align-items: baseline; gap: 8px; flex-wrap: wrap; }
+.norm-ref { font-family: var(--law); font-size: 19px; font-weight: 700; letter-spacing: -.01em; }
+.norm-act { font-family: var(--law); font-size: 13px; color: var(--muted); margin-top: 3px; }
+
+.chip {
+  font-size: 11px;
+  font-weight: 640;
+  letter-spacing: .04em;
+  text-transform: uppercase;
+  padding: 2px 7px;
+  border-radius: 3px;
+  background: var(--accent-bg);
+  color: var(--accent);
+  white-space: nowrap;
+}
+.chip.warn { background: var(--warn-bg); color: var(--warn-fg); }
+
+.norm-dates {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16px;
+  margin: 12px 0;
+  padding: 9px 0;
+  border-block: 1px solid var(--line);
+  font-size: 12px;
+}
+.norm-dates > div { display: flex; flex-direction: column; gap: 1px; }
+.norm-dates dt { color: var(--muted); font-size: 11px; }
+.norm-dates dd { margin: 0; font-variant-numeric: tabular-nums; font-weight: 600; }
+
+.norm-body {
+  font-family: var(--law);
+  font-size: 14.5px;
+  line-height: 1.68;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+.norm-body mark { background: var(--mark); color: inherit; padding: 0 1px; border-radius: 2px; }
+
+.norm-actions { display: flex; gap: 8px; margin: 14px 0 0; flex-wrap: wrap; }
+.btn {
+  font: inherit;
+  font-size: 12.5px;
+  padding: 6px 11px;
+  border: 1px solid var(--line);
+  border-radius: 4px;
+  background: var(--card);
+  color: var(--fg);
+  cursor: pointer;
+  text-decoration: none;
+}
+.btn:hover { border-color: var(--accent); color: var(--accent); }
+
+.refs { display: flex; flex-wrap: wrap; gap: 6px; }
+.ref {
+  font-family: var(--law);
+  font-size: 12.5px;
+  font-variant-numeric: tabular-nums;
+  padding: 3px 9px;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  color: var(--fg);
+  text-decoration: none;
+}
+.ref:hover { border-color: var(--accent); color: var(--accent); }
+
+/* Coverage keeps the red-ink meaning: only shown when there is a gap. */
+.coverage {
+  display: flex;
+  gap: 9px;
+  align-items: baseline;
+  border: 1px solid var(--line);
+  border-left: 3px solid var(--warn-fg);
+  background: var(--warn-bg);
+  border-radius: 4px;
+  padding: 9px 12px;
+  font-size: 13px;
+}
+
+/* The composer belongs to the thread column, not the window. */
+.thread .composer { position: sticky; bottom: 0; background: var(--bg); }
+
+/* Sessions render inside the rail now: full width, no card chrome. */
+.rail .sessions { gap: 2px; }
+.rail .session-item { border: 0; background: none; padding: 7px 9px; }
+.rail .session-item:hover { background: var(--sunk); }
+.rail .session-item.active { background: var(--accent-bg); }
+.rail .session-item { flex-direction: column; align-items: flex-start; gap: 1px; }
+.rail .session-q { font-weight: 600; max-width: 100%; }
+
+@media (max-width: 1180px) {
+  .workbench { grid-template-columns: minmax(0, 1fr) minmax(0, 380px); }
+  .rail { display: none; }
+}
+@media (max-width: 860px) {
+  .workbench { grid-template-columns: minmax(0, 1fr); }
+  .norm { border-left: 0; border-top: 1px solid var(--line); position: static; max-height: none; }
+  .thread { min-height: 0; padding: 18px 16px; }
+}
+
+/* Informational chip: a fact about the provision, not a call to attention. */
+.chip.quiet { background: var(--sunk); color: var(--muted); }

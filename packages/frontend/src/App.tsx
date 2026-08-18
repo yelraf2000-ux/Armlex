@@ -202,22 +202,25 @@ export function App() {
   }
 
   return (
-    <div className="wrap">
-      <div className="banner">
-        {synced
-          ? `Корпус: ${corpus!.documents} актов, ${corpus!.chunks} фрагментов · сверено с ARLIS ${synced}. `
-          : ''}
-        Не юридическая консультация — проверяйте полный текст статей по ссылкам.
-      </div>
-
-      <h1>ArmLex</h1>
-
+    <>
       {/*
-        Chat first: it is the product, and Search / Ask are the diagnostic
-        modes kept because they are useful when an answer looks wrong — Search
-        shows retrieval with no model in the way.
+        Provenance sits above everything, permanently. A legal tool that does
+        not say how current it is invites the reader to assume it is current,
+        and "when was this checked against the source" is the first question a
+        professional asks of an answer they intend to rely on.
       */}
-      <div className="modes">
+      <header className="provenance">
+        <span className="brand">ArmLex</span>
+        {corpus ? (
+          <>
+            <span>
+              Корпус: <span className="num">{corpus.documents}</span> актов ·{' '}
+              <span className="num">{corpus.chunks}</span> фрагментов
+            </span>
+            {synced ? <span>Сверено с ARLIS <span className="num">{synced}</span></span> : null}
+          </>
+        ) : null}
+
         <div className="segmented" role="tablist">
           {(['chat', 'ask', 'search'] as Mode[]).map((m) => (
             <button
@@ -231,16 +234,16 @@ export function App() {
             </button>
           ))}
         </div>
-        <span className="hint">
-          {mode === 'chat'
-            ? 'Диалог с памятью — уточняйте и просите вывод по совокупности.'
-            : mode === 'ask'
-              ? 'Один вопрос — один ответ, без памяти.'
-              : 'Только найденные фрагменты, без модели.'}
-        </span>
-      </div>
 
-      {mode === 'chat' ? <Chat /> : <OneShot mode={mode} />}
-    </div>
+        <span className="spacer" />
+        <span className="disclaimer">Не юридическая консультация — проверяйте полный текст</span>
+      </header>
+
+      {mode === 'chat' ? (
+        <Chat corpusSynced={synced} />
+      ) : (
+        <div className="wrap"><OneShot mode={mode} /></div>
+      )}
+    </>
   );
 }

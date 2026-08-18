@@ -560,6 +560,40 @@ Verified: gap held at 0 while text grew 1,223→1,644 chars; scrolling up left
 the reader at scrollY 466 undisturbed; returning to the bottom resumed
 following.
 
+**2026-08-17** — **Redesigned for accountants: three-pane workbench.** The UI
+was a chat app, and the audience does not work like chat users. An accountant
+does not *read* an answer, they *verify* one and then paste conclusion plus
+citation into a client memo — so the statute must be on screen beside the
+conclusion, not behind a "Источники (4)" toggle that made verification the
+expensive step.
+
+- **Persistent norm panel** (`NormPanel.tsx`): the cited provision with the
+  quoted fragment marked in place, status, adoption and amendment dates,
+  cross-references, ARLIS link, and a copy button that yields quote + citation
+  + link together — which is what actually goes into correspondence.
+- **Citations replace the sources list.** Each retrieved provision is a chip
+  that loads it into the panel; carried-over chunks are styled distinctly, so
+  provenance stays visible.
+- **Case rail** instead of a hidden session list. Accountants work per client
+  and return to a matter; `сессия 9c603654…` is not a unit anyone thinks in.
+- **Ledger palette**, taken from the audience's own material world: paper with
+  a green-grey bias, ink, hairline rules, verdigris accent, and madder red
+  reserved for the one thing red means in a ledger — attention needed.
+- **Sylfaen for Armenian legal text.** One of very few widely installed serifs
+  with genuine Armenian coverage; statute should look like statute.
+
+One self-inflicted inconsistency caught during verification: the amendment date
+was rendered as a red warning chip on *every* article, which is exactly the
+misuse of colour the palette was chosen to avoid. Red now appears only for
+amendments inside 180 days — a provision changed recently is worth a second
+look; a 2017 amendment is just a date, and flagging every article teaches the
+reader to ignore the colour that matters.
+
+Verified in the browser at 1500×900: panes resolve to 224 / 831 / 430px,
+clicking a citation swaps the panel (`Հոդված 63` → `Հավելված 1, աղյուսակ 6`),
+dates parse from the chunk header, and a live answer rendered `Հոդված 229` with
+`Ред. 03.07.2026` correctly flagged as recent.
+
 ---
 
 *Next entry goes here — append below this line, don't insert above.*
