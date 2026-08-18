@@ -13,6 +13,9 @@ import { applyTheme, initialTheme } from './theme.js';
 import type { Theme } from './theme.js';
 
 interface Settings {
+  /** Whether the consultations rail is shown; remembered across visits. */
+  railOpen: boolean;
+  toggleRail: () => void;
   lang: Lang;
   setLang: (l: Lang) => void;
   theme: Theme;
@@ -20,24 +23,42 @@ interface Settings {
   t: (key: string) => string;
 }
 
+const RAIL_KEY = 'armlex.rail';
+
 const SettingsContext = createContext<Settings | null>(null);
 
 export function SettingsProvider({ children }: { children: ReactNode }) {
   const [lang, setLangState] = useState<Lang>(() => initialLang());
   const [theme, setThemeState] = useState<Theme>(() => initialTheme());
+  const [railOpen, setRailOpen] = useState<boolean>(() => {
+    try {
+      return localStorage.getItem(RAIL_KEY) !== 'closed';
+    } catch {
+      return true;
+    }
+  });
 
   useEffect(() => { storeLang(lang); }, [lang]);
   useEffect(() => { applyTheme(theme); }, [theme]);
+  useEffect(() => {
+    try {
+      localStorage.setItem(RAIL_KEY, railOpen ? 'open' : 'closed');
+    } catch {
+      /* a blocked localStorage must not break the layout */
+    }
+  }, [railOpen]);
 
   const value = useMemo<Settings>(
     () => ({
+      railOpen,
+      toggleRail: () => setRailOpen((v) => !v),
       lang,
       setLang: setLangState,
       theme,
       setTheme: setThemeState,
       t: translator(lang),
     }),
-    [lang, theme],
+    [lang, theme, railOpen],
   );
 
   return <SettingsContext.Provider value={value}>{children}</SettingsContext.Provider>;
@@ -51,7 +72,7 @@ export function useSettings(): Settings {
 
 /** Compact switchers for the provenance bar. */
 export function SettingsControls() {
-  const { lang, setLang, theme, setTheme, t } = useSettings();
+  const { lang, setLang, theme, setTheme, railOpen, toggleRail, t } = useSettings();
 
   const themes: { key: Theme; glyph: string; label: string }[] = [
     { key: 'auto', glyph: '◐', label: t('theme.auto') },
@@ -61,6 +82,15 @@ export function SettingsControls() {
 
   return (
     <div className="settings">
+      <button
+        className="rail-toggle"
+        onClick={toggleRail}
+        aria-pressed={railOpen}
+        title={t('nav.consultations')}
+      >
+        <span aria-hidden="true">☰</span>
+        <span className="sr-only">{t('nav.consultations')}</span>
+      </button>
       <div className="switcher" role="group" aria-label="Language">
         {LANGS.map((l) => (
           <button

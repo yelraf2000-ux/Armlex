@@ -14,17 +14,22 @@
 :root {
   color-scheme: light dark;
 
-  --bg:        #F6F7F3;  /* ledger paper */
+  --bg:        #FFFFFF;  /* plain white */
   --card:      #FFFFFF;
-  --sunk:      #EDEFE8;
-  --fg:        #191C19;  /* ink */
-  --muted:     #667065;  /* green-grey, chosen not inherited */
-  --line:      #DCE0D8;  /* hairline rules */
-  --accent:    #1F5C4D;  /* verdigris — institutional, not the default blue */
-  --accent-bg: #E4EDE8;
-  --warn-fg:   #A63A2C;  /* madder — the accountant's red ink */
-  --warn-bg:   #F6E7E4;
-  --mark:      #F2E3AE;  /* highlighted quotation */
+  --sunk:      #F4F4F5;
+  --fg:        #1A1A1A;
+  --muted:     #6B6B6B;  /* neutral grey: the paper is no longer tinted */
+  --line:      #E3E3E5;
+  --accent:    #C41E3A;  /* cherry */
+  --accent-bg: #FCEAEE;
+  /* Warnings share the accent hue now, so they are distinguished by FORM —
+     filled ground, left stripe, uppercase label — not by colour alone. A
+     deeper wine keeps them from reading as just another link. */
+  --warn-fg:   #8E1B2E;
+  --warn-bg:   #FBE4E8;
+  --mark:      #FDE0E6;  /* pale cherry highlight */
+  --ok-fg:     #166534;  /* semantic: in force. Kept separate from the accent. */
+  --ok-bg:     #DCFCE7;
 
   --sans: ui-sans-serif, system-ui, "Segoe UI", Roboto, "Helvetica Neue", sans-serif;
   /* Sylfaen ships with Windows and is one of very few widely installed serifs
@@ -35,31 +40,35 @@
 
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme="light"]) {
-    --bg:        #14171A;
-    --card:      #1B1F21;
-    --sunk:      #222729;
-    --fg:        #E4E7E2;
-    --muted:     #8A9490;
-    --line:      #2C3234;
-    --accent:    #6FBFA5;
-    --accent-bg: #1B3730;
-    --warn-fg:   #E08476;
-    --warn-bg:   #3A2320;
-    --mark:      #5C4E1E;
+    --bg:        #121316;
+    --card:      #191A1E;
+    --sunk:      #212328;
+    --fg:        #E8E8EA;
+    --muted:     #9A9AA2;
+    --line:      #2E3036;
+    --accent:    #FF6B84;
+    --accent-bg: #3A1620;
+    --warn-fg:   #FF8FA3;
+    --warn-bg:   #3F1722;
+    --mark:      #5E2130;
+    --ok-fg:     #86EFAC;
+    --ok-bg:     #14301F;
   }
 }
 :root[data-theme="dark"] {
-  --bg:        #14171A;
-  --card:      #1B1F21;
-  --sunk:      #222729;
-  --fg:        #E4E7E2;
-  --muted:     #8A9490;
-  --line:      #2C3234;
-  --accent:    #6FBFA5;
-  --accent-bg: #1B3730;
-  --warn-fg:   #E08476;
-  --warn-bg:   #3A2320;
-  --mark:      #5C4E1E;
+  --bg:        #121316;
+  --card:      #191A1E;
+  --sunk:      #212328;
+  --fg:        #E8E8EA;
+  --muted:     #9A9AA2;
+  --line:      #2E3036;
+  --accent:    #FF6B84;
+  --accent-bg: #3A1620;
+  --warn-fg:   #FF8FA3;
+  --warn-bg:   #3F1722;
+  --mark:      #5E2130;
+  --ok-fg:     #86EFAC;
+  --ok-bg:     #14301F;
 }
 
 * { box-sizing: border-box; }
@@ -74,7 +83,8 @@ body {
 .wrap { max-width: 900px; margin: 0 auto; padding: 16px 20px 64px; }
 
 .banner {
-  background: #b3541e;
+  background: var(--warn-bg);
+  color: var(--warn-fg);
   color: #fff;
   padding: 8px 12px;
   border-radius: 4px;
@@ -240,25 +250,12 @@ h2 { font-size: 15px; margin: 28px 0 10px; color: var(--muted); font-weight: 600
    Streaming feedback and coverage
    --------------------------------------------------------------------------- */
 
-:root {
-  --accent: #b3541e;
-  --warn-fg: #92400e;
-  --warn-bg: #fffbeb;
-  --warn-line: #d97706;
-  --alert-fg: #991b1b;
-  --alert-bg: #fef2f2;
-  --alert-line: #dc2626;
-}
-@media (prefers-color-scheme: dark) {
-  :root {
-    --warn-fg: #fbbf24;
-    --warn-bg: #241d12;
-    --warn-line: #b45309;
-    --alert-fg: #fca5a5;
-    --alert-bg: #241414;
-    --alert-line: #b91c1c;
-  }
-}
+/*
+ * NOTE: a duplicate :root block used to live here, redefining --accent to a
+ * brown (#b3541e) and the warn tokens to amber. Sitting after the main palette,
+ * it won the cascade and repainted the whole interface — the redesign's colours
+ * never actually applied in light mode. Tokens are defined once, at the top.
+ */
 
 /*
  * Progress line shown before the first word arrives.
@@ -340,15 +337,15 @@ h2 { font-size: 15px; margin: 28px 0 10px; color: var(--muted); font-weight: 600
 }
 
 .coverage.partial {
-  border-left-color: var(--warn-line);
+  border-left-color: var(--warn-fg);
   background: var(--warn-bg);
   color: var(--warn-fg);
 }
 
 .coverage.none {
-  border-left-color: var(--alert-line);
-  background: var(--alert-bg);
-  color: var(--alert-fg);
+  border-left-color: var(--warn-fg);
+  background: var(--warn-bg);
+  color: var(--warn-fg);
 }
 
 /*
@@ -376,21 +373,15 @@ h2 { font-size: 15px; margin: 28px 0 10px; color: var(--muted); font-weight: 600
    without its surrounding conditions is the commonest way to be confidently
    wrong about a provision. */
 .chunk-body mark {
-  background: #fde68a;
-  color: inherit;
+  background: var(--mark);
+    color: inherit;
   border-radius: 2px;
   padding: 0 1px;
 }
-@media (prefers-color-scheme: dark) {
-  .chunk-body mark { background: #6b5210; color: #f5f0e0; }
-}
 
 .status { padding: 1px 6px; border-radius: 3px; font-size: 11px; }
-.status.ok { background: #dcfce7; color: #166534; }
+.status.ok { background: var(--ok-bg); color: var(--ok-fg); }
 .status.warn { background: var(--warn-bg); color: var(--warn-fg); }
-@media (prefers-color-scheme: dark) {
-  .status.ok { background: #14301f; color: #86efac; }
-}
 
 .asof { font-size: 12px; color: var(--muted); margin-top: 2px; }
 
@@ -829,3 +820,22 @@ body { font-family: var(--sans); }
   clip-path: inset(50%);
   white-space: nowrap;
 }
+
+/* Collapsing the rail hands its width to the conversation, which is what a
+   reader working through a long answer actually wants. */
+.workbench.rail-hidden { grid-template-columns: minmax(0, 1fr) minmax(0, 430px); }
+
+.rail-toggle {
+  font: inherit;
+  font-size: 13px;
+  line-height: 1;
+  padding: 5px 9px;
+  border: 1px solid var(--line);
+  border-radius: 5px;
+  background: var(--card);
+  color: var(--muted);
+  cursor: pointer;
+}
+.rail-toggle:hover { color: var(--fg); }
+.rail-toggle[aria-pressed="true"] { background: var(--accent-bg); color: var(--accent); border-color: var(--accent); }
+.rail-toggle:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }

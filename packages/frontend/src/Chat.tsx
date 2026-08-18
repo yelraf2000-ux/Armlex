@@ -106,7 +106,7 @@ function autoGrow(el: HTMLTextAreaElement): void {
 }
 
 export function Chat({ corpusSynced }: { corpusSynced: string | null }) {
-  const { t } = useSettings();
+  const { t, railOpen } = useSettings();
   const [sessionId, setSessionId] = useState<string | null>(null);
   const [turns, setTurns] = useState<Turn[]>([]);
   const [input, setInput] = useState('');
@@ -341,7 +341,8 @@ export function Chat({ corpusSynced }: { corpusSynced: string | null }) {
   const shownQuotes = extractQuotes(lastAnswer?.text ?? '');
 
   return (
-    <div className="workbench">
+    <div className={railOpen ? 'workbench' : 'workbench rail-hidden'}>
+      {railOpen ? (
       <nav className="rail">
         <div className="panel-title">{t('nav.consultations')}</div>
         <button className="new-case" onClick={reset} disabled={turns.length === 0}>
@@ -349,6 +350,7 @@ export function Chat({ corpusSynced }: { corpusSynced: string | null }) {
         </button>
         <Sessions currentId={sessionId} onOpen={(id) => void openSession(id)} reloadKey={reloadKey} />
       </nav>
+      ) : null}
 
       <section className="thread">
       {turns.length === 0 ? (
