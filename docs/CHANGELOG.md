@@ -669,6 +669,22 @@ articles strongly enough to bury the turnover-tax rule. It needs the system to
 understand that the stated *regime* overrides the *transaction* signal, which
 neither embedding similarity nor the citation graph provides.
 
+**2026-08-18** — **July-2026 Tax Code amendments applied end to end.** The
+crawl had been flagging 7 modified articles (Հոդված 79, 86, 128, 189, 194,
+271, 384) since the 15th; the corpus was serving the pre-amendment text. Ran
+the accept sequence: crawl --apply → ingest → generate (7 cache misses only)
+→ load --replace → buildRefs. Verified after: snapshot-vs-DB drift 0,
+duplicate slice rows 0, 902/902 chunks covered, 749 edges rebuilt, benchmark
+unchanged at 84.0% hit@5.
+
+**A real stale-vector bug surfaced mid-sync.** The vector cache is append-only:
+re-embedding a changed chunk appends a fresh line and leaves the superseded one,
+both sharing an id. The loader assigned slice indexes by position, so each of
+the 7 amended articles ended up with its OLD-text vector attached as an extra
+slice — and since retrieval max-pools slices, the withdrawn wording was still
+attracting queries. The loader now dedupes by id (last line wins); details in
+GOTCHAS.md.
+
 ---
 
 *Next entry goes here — append below this line, don't insert above.*

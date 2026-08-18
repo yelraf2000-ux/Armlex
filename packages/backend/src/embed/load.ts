@@ -39,7 +39,21 @@ async function main(): Promise<void> {
   }
 
   const raw = await readFile(join(VECTOR_DIR, `${spec.name}.jsonl`), 'utf8');
-  const slices = raw.split('\n').filter(Boolean).map((l) => JSON.parse(l) as VectorLine);
+  const parsed = raw.split('\n').filter(Boolean).map((l) => JSON.parse(l) as VectorLine);
+
+  // The cache file is APPEND-ONLY: when a chunk's text changes, generate.ts
+  // appends a fresh vector without removing the superseded line, so both share
+  // one id. Loading both attached the OLD-text vector to the article as an
+  // extra slice — and since retrieval max-pools slices, queries kept matching
+  // wording that no longer exists in the corpus. Observed after applying the
+  // 2026 Tax Code amendments: 7 articles each carried their old and new
+  // vectors side by side. Last line wins, because appends are chronological.
+  const byId = new Map<string, VectorLine>();
+  for (const s of parsed) byId.set(s.id, s);
+  const slices = [...byId.values()];
+  if (slices.length !== parsed.length) {
+    console.log(`deduped ${parsed.length - slices.length} superseded cache line(s)`);
+  }
   console.log(`${spec.name}: ${slices.length} slices on disk`);
 
   // Guard: a dimension mismatch here means the column and the model disagree,

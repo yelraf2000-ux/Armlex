@@ -182,3 +182,17 @@ rewrote every document, cascade-deleting all 1,269 embeddings rather than just
 the Tax Code's. Everything is recoverable from snapshots and the vector cache
 (~2 minutes), but do not rely on `--only` to bound the blast radius: check
 `SELECT count(*) FROM embeddings` after ingesting.
+
+## The append-only vector cache resurrects old text through the loader
+
+`generate.ts` appends a fresh line when a chunk's content changes and never
+removes the superseded one, so both lines share one id. `load.ts` grouped by
+parent and assigned slice indexes by position — which quietly attached the
+OLD-text vector to the article as an extra slice. Retrieval max-pools slices,
+so queries kept matching wording that no longer exists in the corpus. Observed
+after applying the July-2026 Tax Code amendments: all 7 re-embedded articles
+carried old and new vectors side by side, and the stale one was live in search.
+
+The loader now dedupes by id, last line wins (appends are chronological). The
+general rule: any consumer of an append-only file must decide what "current"
+means — position in the file is provenance, not identity.
