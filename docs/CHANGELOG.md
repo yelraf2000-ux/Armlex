@@ -707,6 +707,27 @@ search (measured worse, MRR 0.609→0.445), parent-child chunking (measured
 worse, hit@5 34.8%→17.4%). Cross-document 1512↔1513 linkage remains blocked on
 ingesting N 1513-Ն — a corpus decision, not architecture.
 
+**2026-08-19** — **Two more live head-to-heads against Orin; failures
+classified into a three-class taxonomy** (full write-up in `DECISIONS.md`).
+The 5.11/5.7 form-row question: we honestly declared «none» but missed
+Հոդված 258 and 53, which Orin surfaced — a Class-1 (plane mismatch) loss. The
+bakery/micro question: our answer was strong (branch structure, verified
+quotes of 270(3) and 269(1), out-of-corpus domains named — the recent prompt
+fixes visibly working) but it asked the USER for Հոդված 77's text while the
+270→77 edge and the article itself sit in our own database — the purest
+Class-2 (named-but-unfetched) specimen yet. Orin took 5+ minutes on that
+question, consistent with an unbounded agentic loop.
+
+Also recorded: Orin's claim that 267(5) has been invalidated conflicts with
+the consolidated ARLIS text we hold as of 15.08.2026 — flagged for manual
+verification, since one of the two systems is materially wrong about standing
+law.
+
+Planned order of systemic fixes, each gated on the golden set: cited-slot
+guarantee (Class 2 cheap tier) → regime-aware contextualiser (Class 1) →
+corpus scope decisions (Class 3: Labour Code, turnover-tax form order,
+N 1513-Ն) → bounded case-mode loop (Class 2 general tier).
+
 ---
 
 *Next entry goes here — append below this line, don't insert above.*

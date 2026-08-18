@@ -81,6 +81,26 @@ shipped (`DECISIONS.md`). The next priority is answer quality — item 10.
     instead of showing a raw 502, since an empty balance is not an application
     bug. Budget note: ~$0.09 per chat turn.
 
+## Systemic fixes (three-class taxonomy — see DECISIONS.md)
+
+20. **Class 2, cheap tier: cited-slot guarantee.** Articles cited by the
+    selected top hits get a guaranteed context slot, so the model never again
+    asks the user for a norm sitting in our own database (bakery case:
+    named Հոդված 77, edge 270→77 present, article present, reranker dropped
+    it). Deterministic, no latency cost, measure on the golden set.
+21. **Class 1: regime-aware contextualiser.** Classify the governing regime
+    and boost its chapter at retrieval. Covers the import-deduction and
+    5.11/5.7 misses — both pinned as golden questions before the fix is
+    attempted, so it is scored, not assumed.
+22. **Class 2, general tier: bounded case-mode loop.** Max ~3 extra fetches,
+    hard timeout, degrade to tier-one behaviour. Build only after 20–21 shrink
+    how often it is needed. Orin's stuck 5-minute generations are the
+    cautionary example of the unbounded version.
+23. **Verify Orin's 267(5) invalidation claim on ARLIS.** Our consolidated
+    text still contains it; one of the two systems is wrong about standing
+    law. If they are right, our corpus has a consolidation gap worth
+    understanding; if wrong, it is the strongest differentiation evidence yet.
+
 ## Corpus / evaluation
 
 19. **SRC order N 1513-Ն is not ingested.** Only N 1512-Ն is (arlis 199961).

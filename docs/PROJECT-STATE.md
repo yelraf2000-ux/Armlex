@@ -37,23 +37,29 @@ Full backlog with priority: `OPEN-ITEMS.md`.
 
 Retrieval works. The critical gap that dominated this file for two weeks —
 `retrieve()` bound to FTS, scoring 0.0% — is **closed**. The live path is
-`vector top-50 → rerank-2.5 → top-N`, measured at **87.0% hit@5 / 0.677 MRR**
-on the golden set.
+`vector top-50 → one-hop citation expansion → rerank-2.5 → top-N`, measured at
+**84.6% hit@5 / MRR 0.640** on the 26-question golden set. (Earlier figures of
+87%/91% were real but measured on smaller sets or partial indexes — the golden
+set has since grown by pinning every diagnosed failure, which lowers the
+headline number while making it more honest.)
 
 What's live in the app, all measured rather than assumed:
 
 | Live in the app | Measured |
 |---|---|
-| Vector + cross-encoder retrieval | 87.0% hit@5, 79.0% recall@8, MRR 0.654 (902 chunks) |
+| Vector + rerank + one-hop citation expansion | 84.6% hit@5, MRR 0.640 (26 golden questions) |
 | Query contextualiser (transliteration + Armenian legal terms) | rescued the colloquial-question case |
 | Running `fact_summary` across turns | verified over 3 turns |
 | Verbatim quote validation | 11 tests, exact substring only |
 | Language mirroring (hy→hy, ru→ru) | 0 Cyrillic in Armenian answers |
 | Session chunk carry-over | round-robin, opening turn never evicted |
 
-The next gap is **answer quality, not retrieval**: there is no confidence gate,
-so a question the corpus does not cover produces the same confident-looking
-template as one it covers well. `OPEN-ITEMS.md` has the ordering.
+The current focus: **systemic fixes over case fixes.** Six diagnosed failures
+resolve into three root-cause classes (plane mismatch, named-but-unfetched
+norm, corpus boundary — `DECISIONS.md`), with an ordered fix plan in
+`OPEN-ITEMS.md` items 20–23. Live head-to-heads against Orin show our edge
+(verified column-level quotes, currency) and our gaps (their retrieval found
+norms ours missed on form-row questions; Labour Code out of scope).
 
 ## Scope reality check
 

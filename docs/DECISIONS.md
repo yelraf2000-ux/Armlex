@@ -242,3 +242,52 @@ Two implementation traps worth recording. Gemini 3.x spends part of
 rather than a bad config. And Gemini separates SSE frames with `\r\n\r\n`, not
 `\n\n`: splitting on the latter silently never matches, so the buffer grows
 forever and the answer arrives completely empty with HTTP 200.
+
+## Failures are classified, not collected: the three-class taxonomy
+
+Six diagnosed cases (import deduction, tuition/licensing, payroll withholding,
+5.11/5.7 form rows, bakery/micro, 1512/1513 linkage) resolve into exactly three
+root causes. Recording the taxonomy so future failures get filed under a class
+and fixed at the class level, instead of patched one question at a time.
+
+**Class 1 — plane mismatch.** Users speak in transactions ("importing goods"),
+form rows ("5.11 տող"), or colloquial phrasing; the law is written in regime
+concepts. Embeddings bridge synonyms, not planes. The contextualiser already
+bridges colloquial→legal (the `searchTerms` fix); transaction→regime and
+form-row→norm remain. Systemic fix: regime classification in the
+contextualiser, boosting the governing chapter at retrieval. Not built yet.
+
+**Class 2 — named-but-unfetched norm.** The model names the exact article it
+needs and has no way to fetch it. Purest specimen: the bakery case, where the
+answer asked the USER for Հոդված 77's text while the 270→77 edge existed in
+the citation graph and 77 sat in the corpus (verified) — the reranker simply
+did not seat it in the top 4. Systemic fix, two tiers: (a) deterministic —
+articles cited by selected top hits get a guaranteed context slot; (b) general
+— a BOUNDED agentic retrieval loop (max ~3 extra fetches, hard timeout).
+Orin's 5-minute/stuck generations on hard questions look like an unbounded
+version of (b); the budget is the lesson, not the loop.
+
+**Class 3 — corpus boundary.** Labour Code, statistical reporting, licensing
+law, N 1513-Ն. No algorithm retrieves what is not held. Half-fixed
+systemically: coverage now names out-of-corpus domains instead of silently
+answering the tax half (shipped, observed working in the bakery answer). The
+other half is scope, decided by demand evidence: Labour Code first, then
+form-approving orders — the payroll case was won precisely because form order
+N 300-Ն IS ingested with row-level filling instructions, and the 5.11/5.7 case
+was lost partly because the turnover-tax form order is not.
+
+The golden set is what makes class-level fixes stay fixed: every diagnosed
+case becomes a permanent regression row before its fix is attempted.
+
+## Head-to-head observations against Orin (for the record)
+
+Three live comparisons on real accountant questions. Where they beat us:
+retrieval on the 5.11/5.7 case (they surfaced Հոդված 258 and 53; we returned
+"none" honestly but emptier) and breadth (Labour Code coverage we lack by
+scope). Where we beat them: evidentiary depth — verbatim, machine-verified
+quotes at column level (N 300-Ն, Հավելված 1, կետ 5) against their
+name-and-adoption-date citations. Unverified but notable: their case-2 answer
+asserts 267(5) «ճանաչվել է անվավեր» while our consolidated ARLIS text of
+15.08.2026 still contains it and quote-validates — either they know a court
+decision ARLIS has not consolidated, or that is a live parametric fabrication.
+Check on ARLIS before citing this comparison anywhere.
