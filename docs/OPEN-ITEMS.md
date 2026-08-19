@@ -81,9 +81,21 @@ shipped (`DECISIONS.md`). The next priority is answer quality — item 10.
     instead of showing a raw 502, since an empty balance is not an application
     bug. Budget note: ~$0.09 per chat turn.
 
-## Systemic fixes (three-class taxonomy — see DECISIONS.md)
+## Systemic fixes (three-class taxonomy — priorities REORDERED by real-traffic data, 2026-08-19)
 
-20. **Class 2, cheap tier: cited-slot guarantee.** Articles cited by the
+Measured over 250 authentic questions: labour/payroll drives ~24% of all
+traffic and 40% of hard failures; Class-2 fired once in 250. New order:
+
+19a. **Ingest the Labour Code** (+ statistical-reporting act, high-tech list
+    decision, N 1513-Ն). The single biggest lever in the system — user's
+    scope call, now with demand evidence.
+19b. **Class-1 retrieval fix** (regime-aware contextualiser; Հոդված 258
+    retrieved in only 17/250 despite governing the most common regime).
+19c. **Flash-Lite quote-rule tightening** (11% invalid-quote rate in triage).
+
+
+20. **[DEPRIORITISED by data: 1 firing in 250 real questions] Class 2, cheap
+    tier: cited-slot guarantee.** Articles cited by the
     selected top hits get a guaranteed context slot, so the model never again
     asks the user for a norm sitting in our own database (bakery case:
     named Հոդված 77, edge 270→77 present, article present, reranker dropped

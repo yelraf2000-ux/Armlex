@@ -728,6 +728,39 @@ guarantee (Class 2 cheap tier) → regime-aware contextualiser (Class 1) →
 corpus scope decisions (Class 3: Labour Code, turnover-tax form order,
 N 1513-Ն) → bounded case-mode loop (Class 2 general tier).
 
+**2026-08-19** — **First real-traffic measurement: 250 authentic accountant
+questions harvested from accountant.am (2026 vintage, robots-permitted, widget
+chrome stripped) and triaged through the full pipeline with Flash-Lite.**
+Cost ≈ $3. The distribution nobody had until today:
+
+| verdict | share | top driver |
+|---|---|---|
+| full | **19%** | turnover/micro, ՀԴՄ, VAT — the corpus's home ground |
+| partial | **48%** | labour/payroll 23%, turnover 16% |
+| none | **33%** | **labour/payroll 40%**, bookkeeping-practice 10% |
+
+Three conclusions with numbers attached:
+
+1. **Labour/payroll is the single biggest lever: ~24% of ALL real questions**
+   (61/250) are payroll-driven, and they dominate the failures. The Labour
+   Code ingestion decision now has hard demand evidence behind the forecast
+   (+10–20pp answerable share).
+2. **The fix order was wrong and is corrected by data.** Class-2
+   (named-but-unfetched) fired on 1/250 questions — the cited-slot guarantee
+   drops to the bottom of the queue. Corpus beats retrieval beats plumbing,
+   in that order, by measured frequency.
+3. **Հոդված 258 was retrieved for only 17/250 questions** despite being the
+   rate table for the most common regime in the traffic — consistent with its
+   three known misses. The Class-1 fix keeps its priority, now with a
+   distribution behind it.
+
+Also: invalid quotes 11% (Flash-Lite's act-title-in-guillemets habit, matches
+the earlier A/B), zero parse/header failures across 250 — the pipeline held.
+
+The honest reading of 19%: the golden set (85.2% hit@5) measures questions the
+corpus CAN answer; real traffic includes everything accountants actually face.
+Both numbers are true. The gap between them is the roadmap, now quantified.
+
 ---
 
 *Next entry goes here — append below this line, don't insert above.*
