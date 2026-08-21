@@ -231,8 +231,12 @@ async function main(): Promise<void> {
   // Corpus mode. Slice cap 8000 covers Gemini's 8192 limit; Voyage's 32k
   // limit is looser, but identical slicing keeps the comparison apples-to-apples.
   const chunks = await loadCorpusFromSnapshots();
-  const slices: Slice[] = splitCorpus(chunks, 7000, 8000);
-  const out = join(VECTOR_DIR, `${spec.name}.jsonl`);
+  // SPLIT_POLICY=enum writes to a SEPARATE file (`<model>-enum.jsonl`), so the
+  // scorer sees both policies side by side as two "models" and the A/B is run
+  // in-memory against the golden set before anything touches pgvector.
+  const policy = process.env['SPLIT_POLICY'] === 'enum' ? 'enum' : 'token';
+  const slices: Slice[] = splitCorpus(chunks, 7000, 8000, policy);
+  const out = join(VECTOR_DIR, `${spec.name}${policy === 'enum' ? '-enum' : ''}.jsonl`);
   const done = await loadDone(out);
   const todo = slices.filter((s) => !done.has(`${s.id}|${fingerprint(s.text)}`));
   console.log(`model=${spec.name} slices=${slices.length} done=${done.size} todo=${todo.length}`);

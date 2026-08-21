@@ -38,7 +38,13 @@ async function main(): Promise<void> {
     process.exit(1);
   }
 
-  const raw = await readFile(join(VECTOR_DIR, `${spec.name}.jsonl`), 'utf8');
+  // --file lets a variant cache (e.g. `<model>-enum.jsonl`, a different split
+  // policy over the same model) be loaded under the live model name once the
+  // golden set has picked it — without copying files around to fake the name.
+  const fileIdx = process.argv.indexOf('--file');
+  const fileName = fileIdx >= 0 ? process.argv[fileIdx + 1] : `${spec.name}.jsonl`;
+  const raw = await readFile(join(VECTOR_DIR, fileName!), 'utf8');
+  console.log(`loading ${fileName} as model ${spec.name}`);
   const parsed = raw.split('\n').filter(Boolean).map((l) => JSON.parse(l) as VectorLine);
 
   // The cache file is APPEND-ONLY: when a chunk's text changes, generate.ts

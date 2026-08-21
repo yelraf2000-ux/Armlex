@@ -269,11 +269,171 @@ function renumber(slices: Slice[]): Slice[] {
   });
 }
 
+// ---------------------------------------------------------------------------
+// Enumeration-aware policy: one vector per enumerated item
+// ---------------------------------------------------------------------------
+
+/**
+ * Why a second policy exists.
+ *
+ * The token policy above embeds Հոդված 64 — the VAT exemptions list, 26,000
+ * characters — as 8 vectors of ~3,300 characters each. Every vector is the
+ * average of a dozen unrelated exemptions (medical, education, funerals,
+ * finance), so a question about ONE of them matches the blur weakly. Measured
+ * on real traffic: 64 was never retrieved for an electric-car VAT question it
+ * answers; the rate table in 258 reached retrieval for 17 of 250 questions
+ * despite governing the most common regime. Same mechanism, four articles,
+ * every Class-1 failure we traced.
+ *
+ * The fix is one vector per enumerated item, all resolving to the parent chunk
+ * (scoring already max-pools slices per article, so nothing downstream
+ * changes). This is NOT the sub-article chunking that was measured and
+ * reverted: that made each part a separate retrievable chunk, fragmenting what
+ * generation saw. Here generation still receives the whole article; only the
+ * index gets sharper.
+ */
+
+/** Only enumerations long enough to blur get the treatment. */
+const ENUM_MIN_CHARS = 2500;
+/** Fewer markers than this and it is prose, not a list. */
+const ENUM_MIN_ITEMS = 4;
+/** Items shorter than this merge into a neighbour — a bare "2." is not a slice. */
+const ENUM_MIN_ITEM_CHARS = 120;
+/** Governing lead-in carried into each point, truncated. */
+const LEAD_MAX_CHARS = 220;
+
+/** Part-level marker: "1." / "2.1." at line start. */
+const PART_RE = /^\s*\d+(?:\.\d+)*\.\s/;
+/** Point-level marker: "1)" / "ա." / "ա)" at line start. */
+const POINT_RE = /^\s*(?:\d+\)|[ա-ֆ][.)])\s/u;
+
+export function isEnumeration(body: string): boolean {
+  if (body.length < ENUM_MIN_CHARS) return false;
+  const lines = body.split('\n');
+  const markers = lines.filter((l) => PART_RE.test(l) || POINT_RE.test(l) || /^\|\s*\d+\)/.test(l)).length;
+  return markers >= ENUM_MIN_ITEMS;
+}
+
+interface EnumItem {
+  text: string;
+  /** Lead-in of the governing part, for points. */
+  lead: string | undefined;
+  isTableRow: boolean;
+}
+
+/**
+ * Cut a body into enumerated items.
+ *
+ * A new item starts at every part marker, point marker, or table row;
+ * continuation lines attach to the current item. Points remember the lead-in
+ * of the part they sit under, because «8) թաղման բյուրոների…» says nothing
+ * about VAT until you know it sits under «2. ԱԱՀ-ից ազատվում են…».
+ */
+function enumerationItems(body: string): EnumItem[] {
+  const items: EnumItem[] = [];
+  let current: EnumItem | null = null;
+  let lead: string | undefined;
+
+  const push = (): void => {
+    if (current && current.text.trim()) items.push(current);
+    current = null;
+  };
+
+  for (const line of body.split('\n')) {
+    if (line.trim() === '') continue;
+
+    if (line.startsWith('|')) {
+      push();
+      current = { text: line, lead, isTableRow: true };
+      push();
+      continue;
+    }
+    if (PART_RE.test(line)) {
+      push();
+      lead = line.trim().slice(0, LEAD_MAX_CHARS);
+      current = { text: line, lead: undefined, isTableRow: false };
+      continue;
+    }
+    if (POINT_RE.test(line)) {
+      push();
+      current = { text: line, lead, isTableRow: false };
+      continue;
+    }
+    // Continuation.
+    if (current) current.text += `\n${line}`;
+    else current = { text: line, lead, isTableRow: false };
+  }
+  push();
+  return items;
+}
+
+/** Merge items too short to stand alone into the item that follows them. */
+function mergeTiny(items: EnumItem[]): EnumItem[] {
+  const out: EnumItem[] = [];
+  let carry: EnumItem | null = null;
+  for (const it of items) {
+    if (carry) {
+      it.text = `${carry.text}\n${it.text}`;
+      it.lead ??= carry.lead;
+      carry = null;
+    }
+    if (it.text.length < ENUM_MIN_ITEM_CHARS && !it.isTableRow) {
+      carry = it;
+      continue;
+    }
+    out.push(it);
+  }
+  if (carry) {
+    const last = out[out.length - 1];
+    if (last) last.text += `\n${carry.text}`;
+    else out.push(carry);
+  }
+  return out;
+}
+
+export function splitEnumerated(chunk: CorpusChunk): Slice[] {
+  const { header, body } = splitHeader(chunk.text);
+  if (!isEnumeration(body)) return splitChunk(chunk);
+
+  const units = atomicUnits(body);
+  const tableHeader = tableHeaderOf(units);
+  const items = mergeTiny(enumerationItems(body));
+
+  return items.map((it, i) => {
+    // Header rows of the table are structure, not items; they travel as a
+    // prefix on every data row instead.
+    const isTableHeaderRow = it.isTableRow && tableHeader?.includes(it.text);
+    const parts = [header];
+    if (it.isTableRow && tableHeader && !isTableHeaderRow) parts.push(`${tableHeader}\n`);
+    if (it.lead) parts.push(`${it.lead}\n`);
+    parts.push(it.text);
+    const text = parts.join('');
+    return {
+      id: `${chunk.id}::e${i}`,
+      parentId: chunk.id,
+      arlisId: chunk.arlisId,
+      text,
+      tokens: countTokens(text),
+      sliceIndex: i,
+      sliceCount: items.length,
+    };
+  }).filter((s) => {
+    // Drop slices that are ONLY the table header (structure without content).
+    const { body: b } = splitHeader(s.text);
+    return tableHeader ? b.trim() !== tableHeader.trim() : true;
+  });
+}
+
+export type SplitPolicy = 'token' | 'enum';
+
 export function splitCorpus(
   chunks: CorpusChunk[],
   maxTokens = 7000,
   cap = 8000,
+  policy: SplitPolicy = 'token',
 ): Slice[] {
-  const slices = chunks.flatMap((c) => splitChunk(c, maxTokens));
+  const slices = chunks.flatMap((c) =>
+    policy === 'enum' ? splitEnumerated(c) : splitChunk(c, maxTokens),
+  );
   return enforceTokenCap(renumber(slices), cap);
 }
