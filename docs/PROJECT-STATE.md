@@ -37,17 +37,20 @@ Full backlog with priority: `OPEN-ITEMS.md`.
 
 Retrieval works. The critical gap that dominated this file for two weeks —
 `retrieve()` bound to FTS, scoring 0.0% — is **closed**. The live path is
-`vector top-50 → one-hop citation expansion → rerank-2.5 → top-N`, measured at
-**84.6% hit@5 / MRR 0.640** on the 26-question golden set. (Earlier figures of
-87%/91% were real but measured on smaller sets or partial indexes — the golden
-set has since grown by pinning every diagnosed failure, which lowers the
-headline number while making it more honest.)
+`enumeration-aware vector top-50 → one-hop citation expansion → rerank-2.5
+shown prefix + matched slice → top-N`, measured at **88.9% hit@5 / 92.6% hit@8
+/ MRR 0.681** on the 27-question golden set (2026-08-19). The golden set grows
+by pinning every diagnosed failure, so the headline number has moved both ways
+over time — 91% on a partial index, 84.6% after hard real questions were
+pinned, 88.9% after the Class-1 mechanism (enumeration blur) was fixed at the
+index and the reranker. Compare like with like: `BENCHMARK.md` records which
+set and index each figure was measured on.
 
 What's live in the app, all measured rather than assumed:
 
 | Live in the app | Measured |
 |---|---|
-| Vector + rerank + one-hop citation expansion | 84.6% hit@5, MRR 0.640 (26 golden questions) |
+| Enumeration-aware index → one-hop expansion → slice-aware rerank | **88.9% hit@5, 92.6% hit@8, MRR 0.681** (27 golden questions) |
 | Query contextualiser (transliteration + Armenian legal terms) | rescued the colloquial-question case |
 | Running `fact_summary` across turns | verified over 3 turns |
 | Verbatim quote validation | 11 tests, exact substring only |

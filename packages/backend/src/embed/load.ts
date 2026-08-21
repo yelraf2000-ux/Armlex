@@ -108,6 +108,27 @@ async function main(): Promise<void> {
     let orphaned = 0;
     const orphanExamples: string[] = [];
 
+    // Batched inserts. One INSERT per row was one Neon round trip per row —
+    // measured at ~2.5 rows/s from here, which made a 5,139-vector load a
+    // 35-minute job with retrieval degraded the whole time. A multi-row INSERT
+    // does the same work in a few dozen round trips.
+    const BATCH = 200;
+    type Row = { article_id: string; model: string; vector: string; slice_index: number };
+    let pending: Row[] = [];
+    const flush = async (): Promise<void> => {
+      if (pending.length === 0) return;
+      await sql`
+        INSERT INTO embeddings (article_id, lang_used, model, vector, slice_index)
+        SELECT r.article_id::bigint, 'hy', r.model, r.vector::vector, r.slice_index
+        FROM jsonb_to_recordset(${sql.json(pending as unknown as Parameters<typeof sql.json>[0])})
+          AS r(article_id text, model text, vector text, slice_index int)
+        ON CONFLICT (article_id, model, slice_index)
+        DO UPDATE SET vector = EXCLUDED.vector, created_at = now()
+      `;
+      inserted += pending.length;
+      pending = [];
+    };
+
     for (const [parentId, group] of byParent) {
       const articleId = idByKey.get(parentId);
       if (!articleId) {
@@ -117,17 +138,12 @@ async function main(): Promise<void> {
       }
       // Deterministic order: slice id carries a "::N" suffix when split.
       group.sort((a, b) => a.id.localeCompare(b.id, undefined, { numeric: true }));
-
       for (const [i, s] of group.entries()) {
-        await sql`
-          INSERT INTO embeddings (article_id, lang_used, model, vector, slice_index)
-          VALUES (${articleId}, 'hy', ${spec.name}, ${JSON.stringify(s.vector)}::vector, ${i})
-          ON CONFLICT (article_id, model, slice_index)
-          DO UPDATE SET vector = EXCLUDED.vector, created_at = now()
-        `;
-        inserted++;
+        pending.push({ article_id: articleId, model: spec.name, vector: JSON.stringify(s.vector), slice_index: i });
       }
+      if (pending.length >= BATCH) await flush();
     }
+    await flush();
 
     console.log(`inserted/updated: ${inserted} rows`);
     if (orphaned > 0) {

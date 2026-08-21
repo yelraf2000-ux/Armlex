@@ -291,3 +291,36 @@ asserts 267(5) «ճանաչվել է անվավեր» while our consolidated ARL
 15.08.2026 still contains it and quote-validates — either they know a court
 decision ARLIS has not consolidated, or that is a live parametric fabrication.
 Check on ARLIS before citing this comparison anywhere.
+
+## Enumeration articles are indexed one vector per item — and the reranker must see that item
+
+The articles accountants ask about most are lists: VAT exemptions (Հոդված 64,
+26k characters), rate tables (254, 258), micro-business exclusions (267). Under
+the token split policy each was a handful of vectors averaging ~3,300
+characters of unrelated items, so a question about one item matched a blur.
+This was the single mechanism behind every Class-1 failure collected.
+
+**Adopted: one vector per enumerated item**, every vector resolving to the
+parent chunk. Retrieval gets sharp; generation still receives the whole
+article. Vector-only on the golden set: hit@5 66.7% → 81.5%.
+
+**Why this is not the rejected sub-article chunking.** That experiment (see
+above, 2026-08-15) made each part a separate *retrievable chunk* — fragmenting
+what generation saw and multiplying near-duplicates; it halved hit@5. Here the
+chunk is unchanged and only the index is finer. The distinction is the whole
+decision: split the *vectors*, never the *unit of retrieval*.
+
+**The second half of the decision is the reranker.** Indexing sharper did
+nothing end to end at first (hit@5 flat, MRR down) because the cross-encoder was
+shown each article's first 1,800 characters and could not see the matched item.
+Showing only the matched slice over-corrected — terse table rows lost to rich
+prose openings (6 questions better, 10 worse). Showing prefix *and* matched
+slice beat every prior configuration on every metric (88.9 / 92.6 / 75.9 / 87.0
+/ 0.681). General lesson recorded for next time: a retrieval stage's input
+contract is part of the retrieval design — an upstream improvement the
+downstream stage cannot observe is an improvement that does not ship.
+
+**Default split policy is now `enum`, and the canonical cache file holds enum
+vectors.** This matters for the crawl loop: a regeneration after an amendment
+must rebuild under the adopted policy, not silently revert. Verified: the
+default round-trips against the cache with `todo=0`.

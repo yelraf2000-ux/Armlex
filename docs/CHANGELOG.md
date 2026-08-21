@@ -761,6 +761,52 @@ The honest reading of 19%: the golden set (85.2% hit@5) measures questions the
 corpus CAN answer; real traffic includes everything accountants actually face.
 Both numbers are true. The gap between them is the roadmap, now quantified.
 
+**2026-08-19** — **The Class-1 mechanism found and fixed: enumeration-aware
+indexing, then the reranker taught to read the matched item.** Shipped after
+the largest measured retrieval gain since the reranker.
+
+The diagnosis, from one worked case (a VAT-registered company selling a used
+electric car): the governing rule is in Հոդված 64 — 26,404 characters, the VAT
+exemptions list — indexed as **8 vectors averaging ~3,300 characters of
+unrelated exemptions each**. A question about one exemption matches that blur
+weakly. Same mechanism for 258 (rate table, 3 vectors), 254 (5), 267 (4):
+every Class-1 failure collected — import deduction, 5.11/5.7 carry-forward, IT
+benefits, electric car — targets an enumeration article.
+
+**Fix 1 — one vector per enumerated item** (`embed/split.ts`, policy `enum`).
+Parts, points and table rows become separate vectors, each carrying the
+metadata header, the governing lead-in («2. ԱԱՀ-ից ազատվում են…») and, for
+table rows, the column header — all resolving to the parent chunk, so
+generation still receives the whole article. This is NOT the sub-article
+chunking rejected on 2026-08-15, which made parts separate retrievable chunks.
+1,276 → 5,139 vectors; 214 articles expanded; 64 → 61 vectors, 258 → 23.
+Vector-only A/B on the golden set: **hit@5 66.7% → 81.5%, better on every
+metric.**
+
+**Fix 2 — and the surprise.** End to end, the reranker gave most of it back
+(hit@5 flat at 85.2%, MRR 0.653 → 0.632). Cause: `rerank.ts` showed each
+candidate as its first 1,800 characters — the header plus exemption №1; row 8 of
+a rate table sits 20,000 characters later, invisible. Showing the matched slice
+alone over-corrected (hit@8 92.6% but MRR 0.564 — terse table rows lost to rich
+prose openings; per question 6 better, 10 worse). Showing **prefix + matched
+slice** removed the asymmetry:
+
+| live, 27 questions | hit@5 | hit@8 | recall@5 | recall@8 | MRR |
+|---|---|---|---|---|---|
+| before (token index, prefix rerank) | 85.2% | 88.9% | 72.2% | 80.2% | 0.653 |
+| **after (enum index, prefix+slice rerank)** | **88.9%** | **92.6%** | **75.9%** | **87.0%** | **0.681** |
+
+Per question: 3 improved (one MISS → 1, two 2 → 1 — all enumeration
+articles), 7 slipped by 1–2 ranks, 17 unchanged. The aggregate gain is carried
+by structural wins on exactly the targeted articles; the slips are within noise
+at n=27.
+
+Also in this pass: `load.ts` batched (a 5,139-row load took 1m14s instead of a
+projected ~35 min of one-round-trip-per-row inserts, during which retrieval was
+degraded); a `verify-hnsw` FAIL traced to comparing the database against a
+stale on-disk file, not to the index (34/34 top-1 once the files agreed);
+superseded vector caches archived so the scorer stops brute-forcing them.
+
 ---
 
 *Next entry goes here — append below this line, don't insert above.*

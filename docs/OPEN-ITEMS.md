@@ -89,8 +89,15 @@ traffic and 40% of hard failures; Class-2 fired once in 250. New order:
 19a. **Ingest the Labour Code** (+ statistical-reporting act, high-tech list
     decision, N 1513-Ն). The single biggest lever in the system — user's
     scope call, now with demand evidence.
-19b. **Class-1 retrieval fix** (regime-aware contextualiser; Հոդված 258
-    retrieved in only 17/250 despite governing the most common regime).
+19b. ~~**Class-1 retrieval fix**~~ **DONE 2026-08-19 — by a different route
+    than planned.** The mechanism behind every Class-1 failure was enumeration
+    blur (one vector per ~3,300 chars of unrelated list items), not missing
+    regime awareness. Fixed at the index (one vector per enumerated item) and
+    at the reranker (shown prefix + matched slice). Live golden set: hit@5
+    85.2% → 88.9%, hit@8 88.9% → 92.6%, MRR 0.653 → 0.681. The regime-aware
+    contextualiser stays a *candidate* for the residual misses (the
+    transaction-vs-regime case is still MISS) — re-measure need after the
+    250-question triage is re-run on the new index.
 19c. **Flash-Lite quote-rule tightening** (11% invalid-quote rate in triage).
 
 

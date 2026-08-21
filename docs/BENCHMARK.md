@@ -88,6 +88,46 @@ Reproduce: `npx tsx packages/backend/src/eval/score.ts --live`
 the query-embedding HTTP call is served from cache, so the benchmark stays
 runnable when the embedding provider is rate limited)
 
+### Shipped pipeline, 2026-08-19: enumeration-aware index + slice-aware reranker
+
+27 golden questions, 902 chunks indexed as **5,139 vectors** (one per
+enumerated item for the 214 list-shaped articles). Live pgvector path, pool 50,
+one-hop citation expansion on.
+
+| Retriever | hit@5 | hit@8 | recall@5 | recall@8 | MRR |
+|---|---|---|---|---|---|
+| vector (pgvector) | 81.5% | 81.5% | 74.7% | 79.6% | 0.601 |
+| hybrid RRF (pgvector + FTS) | 81.5% | 85.2% | 69.8% | 81.5% | 0.468 |
+| **vector + expansion + rerank-2.5** ← shipped | **88.9%** | **92.6%** | **75.9%** | **87.0%** | **0.681** |
+
+The same pipeline before this change (token index, prefix-only reranker input)
+measured 85.2 / 88.9 / 72.2 / 80.2 / 0.653 on the same 27 questions.
+
+**Split policy, vector-only A/B** (in-memory brute force, same model, same
+queries — the fair comparison for a split change):
+
+| policy | hit@5 | hit@8 | recall@5 | recall@8 | MRR |
+|---|---|---|---|---|---|
+| token (7,000-token slices) | 66.7% | 77.8% | 56.8% | 68.5% | 0.560 |
+| **enum (one vector per item)** | **81.5%** | **81.5%** | **74.7%** | **79.6%** | **0.601** |
+
+**Reranker input, end to end on the enum index** — the part that was not
+obvious in advance:
+
+| reranker sees | hit@5 | hit@8 | recall@8 | MRR |
+|---|---|---|---|---|
+| article prefix (1,800 chars) | 85.2% | 85.2% | 76.5% | 0.632 |
+| matched slice only | 85.2% | 92.6% | 82.7% | 0.564 |
+| **prefix + matched slice** | **88.9%** | **92.6%** | **87.0%** | **0.681** |
+
+Sharper vectors alone bought nothing end to end, because the reranker could not
+see the matched item in a 26,000-character article's first 1,800 characters.
+Slice-only over-corrected: terse table rows lost to rich prose openings (per
+question: 6 better, 10 worse). Prefix + slice removes the asymmetry.
+
+Reproduce: `RERANK_POOL=50 npx tsx packages/backend/src/eval/score.ts --live`
+(`RERANK_DOC=prefix|slice|both` and `SPLIT_POLICY=token` for the variants).
+
 ### Reranker parameters, chosen by sweep
 
 Pool size — how many vector candidates the cross-encoder sees:

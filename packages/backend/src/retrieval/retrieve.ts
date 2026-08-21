@@ -8,13 +8,14 @@
  * Four implementations live here:
  *   ftsRetriever      — Postgres full-text over tsv_hy. Lexical only, and since
  *                       tsv_hy holds Armenian it scores 0.0% on Russian queries.
- *   vectorRetriever   — pgvector + gemini-embedding-2. 73.9% hit@5, verified to
- *                       reproduce the offline benchmark exactly
- *                       (embed/verify-hnsw.ts).
+ *   vectorRetriever   — pgvector + gemini-embedding-2, one vector per
+ *                       enumerated item (embed/split.ts). 81.5% hit@5, verified
+ *                       to reproduce brute force exactly (embed/verify-hnsw.ts).
  *   hybridRetriever   — RRF fusion of both. Implemented, measured, NOT active:
  *                       worse MRR than vector alone. See the note on `retrieve`.
- *   rerankedRetriever — vector top-50 reordered by a cross-encoder.
- *                       **Currently active.** 87.0% hit@5.
+ *   rerankedRetriever — vector top-50 → one-hop citation expansion → cross-
+ *                       encoder shown prefix + matched slice (rerank.ts).
+ *                       **Currently active.** 88.9% hit@5, MRR 0.681.
  *
  * Numbers come from `npx tsx packages/backend/src/eval/score.ts --live`.
  */
@@ -32,6 +33,13 @@ export interface RetrievedChunk {
   text: string;
   docType: string;
   actNumber: string | null;
+  /**
+   * Which slice of the chunk matched best, when the chunk was found by vector
+   * search. Enumeration articles are indexed one vector per item, so this says
+   * WHICH item matched — and the reranker must judge that item, not the
+   * article's opening paragraph (see rerank.ts).
+   */
+  sliceIndex?: number;
 }
 
 export type Retriever = (query: string, limit: number) => Promise<RetrievedChunk[]>;
@@ -227,15 +235,16 @@ export async function vectorSearch(
       text_hy: string;
       doc_type: string;
       act_number: string | null;
+      slice_index: number | null;
       score: number;
     }[]
   >`
     SELECT id, title_hy, arlis_id, article_number, text_hy, doc_type, act_number,
-           1 - dist AS score
+           slice_index, 1 - dist AS score
     FROM (
       SELECT DISTINCT ON (a.id)
              a.id, d.title_hy, d.arlis_id, a.article_number, a.text_hy,
-             d.doc_type::text AS doc_type, d.act_number,
+             d.doc_type::text AS doc_type, d.act_number, e.slice_index,
              e.vector::halfvec(3072) <=> ${JSON.stringify(qv)}::halfvec(3072) AS dist
       FROM embeddings e
       JOIN articles a ON a.id = e.article_id
@@ -257,6 +266,7 @@ export async function vectorSearch(
     text: r.text_hy,
     docType: r.doc_type,
     actNumber: r.act_number,
+    ...(r.slice_index === null ? {} : { sliceIndex: r.slice_index }),
   }));
 }
 
@@ -420,13 +430,14 @@ export const rerankedRetriever: Retriever = async (query, limit) => {
 /**
  * The active retriever: **vector + cross-encoder rerank.**
  *
- * Measured on the 23-question golden set, full 885-chunk index:
+ * Measured on the 27-question golden set, 902 chunks indexed as 5,139
+ * enumeration-aware vectors (2026-08-19):
  *
- *     retriever              hit@5   recall@5  recall@8   MRR
- *     fts (baseline)          0.0%     0.0%      0.0%    0.000
- *     vector only            73.9%    62.3%     71.7%    0.578
- *     hybrid RRF             78.3%    64.5%     71.7%    0.445
- *     vector + rerank-2.5    87.0%    71.7%     79.0%    0.677   <- shipped
+ *     retriever                         hit@5   recall@5  recall@8   MRR
+ *     fts (baseline)                     0.0%     0.0%      0.0%    0.000
+ *     vector only                       81.5%    74.7%     79.6%    0.601
+ *     hybrid RRF                        81.5%    69.8%     81.5%    0.468
+ *     vector + expansion + rerank-2.5   88.9%    75.9%     87.0%    0.681   <- shipped
  *
  * Better on every metric, which is why it ships — the same evidence rule that
  * kept hybrid RRF switched off.

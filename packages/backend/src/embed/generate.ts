@@ -231,12 +231,16 @@ async function main(): Promise<void> {
   // Corpus mode. Slice cap 8000 covers Gemini's 8192 limit; Voyage's 32k
   // limit is looser, but identical slicing keeps the comparison apples-to-apples.
   const chunks = await loadCorpusFromSnapshots();
-  // SPLIT_POLICY=enum writes to a SEPARATE file (`<model>-enum.jsonl`), so the
-  // scorer sees both policies side by side as two "models" and the A/B is run
-  // in-memory against the golden set before anything touches pgvector.
-  const policy = process.env['SPLIT_POLICY'] === 'enum' ? 'enum' : 'token';
+  // Enumeration-aware splitting is the DEFAULT and writes to the canonical
+  // `<model>.jsonl`: adopted 2026-08-19 after a vector-only A/B on the golden
+  // set (hit@5 66.7% → 81.5%, better on every metric). The superseded token
+  // policy stays available as SPLIT_POLICY=token, written to `<model>-token.jsonl`
+  // so the scorer can still show both side by side. Defaulting the canonical
+  // file to the adopted policy matters for the crawl loop: a regeneration after
+  // an amendment must not silently rebuild the index under the old policy.
+  const policy = process.env['SPLIT_POLICY'] === 'token' ? 'token' : 'enum';
   const slices: Slice[] = splitCorpus(chunks, 7000, 8000, policy);
-  const out = join(VECTOR_DIR, `${spec.name}${policy === 'enum' ? '-enum' : ''}.jsonl`);
+  const out = join(VECTOR_DIR, `${spec.name}${policy === 'token' ? '-token' : ''}.jsonl`);
   const done = await loadDone(out);
   const todo = slices.filter((s) => !done.has(`${s.id}|${fingerprint(s.text)}`));
   console.log(`model=${spec.name} slices=${slices.length} done=${done.size} todo=${todo.length}`);

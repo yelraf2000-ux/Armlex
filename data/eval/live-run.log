@@ -1,0 +1,12 @@
+golden questions: 27
+
+| Retriever | hit@5 | hit@8 | recall@5 | recall@8 | MRR |
+|---|---|---|---|---|---|
+| fts (baseline) | 0.0% | 0.0% | 0.0% | 0.0% | 0.000 |
+| vector (pgvector) | 81.5% | 81.5% | 74.7% | 79.6% | 0.601 |
+| hybrid RRF (pgvector+FTS) | 81.5% | 85.2% | 69.8% | 81.5% | 0.468 |
+| vector + rerank-2.5 | 85.2% | 92.6% | 69.8% | 82.7% | 0.564 |
+| gemini-embedding-2 | 81.5% | 81.5% | 74.7% | 79.6% | 0.601 |
+| voyage-3-large | 29.6% | 40.7% | 24.7% | 32.7% | 0.223 |
+
+wrote C:\Users\Raf\Desktop\ArmLex\data\eval\benchmark_results.md
