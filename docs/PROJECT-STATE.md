@@ -51,6 +51,7 @@ What's live in the app, all measured rather than assumed:
 | Live in the app | Measured |
 |---|---|
 | Enumeration-aware index → one-hop expansion → slice-aware rerank | **88.9% hit@5, 92.6% hit@8, MRR 0.681** (27 golden questions) |
+| Real-traffic coverage (250 authentic accountant questions) | **31% full / 40% partial / 29% none** — was 19 / 48 / 33 before the index fix; the remaining `none` is dominated by labour/payroll, which the corpus does not hold |
 | Query contextualiser (transliteration + Armenian legal terms) | rescued the colloquial-question case |
 | Running `fact_summary` across turns | verified over 3 turns |
 | Verbatim quote validation | 11 tests, exact substring only |

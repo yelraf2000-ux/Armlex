@@ -96,8 +96,18 @@ traffic and 40% of hard failures; Class-2 fired once in 250. New order:
     at the reranker (shown prefix + matched slice). Live golden set: hit@5
     85.2% → 88.9%, hit@8 88.9% → 92.6%, MRR 0.653 → 0.681. The regime-aware
     contextualiser stays a *candidate* for the residual misses (the
-    transaction-vs-regime case is still MISS) — re-measure need after the
-    250-question triage is re-run on the new index.
+    transaction-vs-regime case is still MISS).
+
+    **Re-measured on real traffic (2026-08-19):** full 19% → 31%, none 33% →
+    29%; 57 improved / 24 worsened / 169 unchanged; noise floor 5 of 81 verdict
+    flips on identical retrieval. Four tax-proper regressions have *different*
+    retrieval and are candidates for the golden set once their expected
+    articles are verified against ARLIS:
+    - ՏՏ ոլորտի արտոնություններ — Հոդված 254 dropped out of the top 4
+    - ՀԴՄ ձեռքբերման գումարի նվազեցում — lost 121/73, gained 55/416
+    - ՓԲԸ ուղևորափոխադրումներ — lost 55/19.7/6, gained 380.1/33/381
+    - Հաշվետվություններ ՌԴ-ից ներմուծման դեպքում — Հոդված 98 dropped
+    Do not "fix" these one by one: pin, then look for the shared cause.
 19c. **Flash-Lite quote-rule tightening** (11% invalid-quote rate in triage).
 
 

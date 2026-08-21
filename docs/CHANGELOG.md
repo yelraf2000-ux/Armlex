@@ -807,6 +807,37 @@ degraded); a `verify-hnsw` FAIL traced to comparing the database against a
 stale on-disk file, not to the index (34/34 top-1 once the files agreed);
 superseded vector caches archived so the scorer stops brute-forcing them.
 
+**2026-08-19** — **Real-traffic re-measurement on the new index: 250 authentic
+questions, same Flash-Lite triage as the morning baseline.**
+
+| coverage | morning | now |
+|---|---|---|
+| full | 19% | **31%** |
+| partial | 48% | 40% |
+| none | 33% | **29%** |
+
+57 questions improved, 24 worsened, 169 unchanged. The deterministic signal —
+how often retrieval reaches the enumeration articles the fix targeted —
+confirms the mechanism: Հոդված 254 reached 12 → **28** questions, Հոդված 64
+1 → **8**, Հոդված 258 17 → 22. First live sign, two questions into the run:
+«ՏՏ ոլորտում գործունեությունը կարո՞ղ է օգտվել արտոնությունից» went none →
+partial, the IT-benefits case the whole investigation started from.
+
+**The 24 regressions, classified rather than counted.** 12 labour/payroll and
+3 bookkeeping — out-of-corpus questions where the model's none-vs-partial call
+on adjacent material is judgment, not retrieval. Of the 9 tax-proper, several
+have identical or merely reordered retrieval (car leasing, Wildberries, border
+village) — verdict variance. **Measured noise floor: 5 of 81 verdict flips
+occurred on byte-identical retrieval.** That leaves ~4 genuine retrieval
+regressions worth pinning once their expected articles are verified: IT
+benefits (254 dropped out of the top 4), ՀԴՄ acquisition deduction, passenger
+transport, RF-import reporting.
+
+Honest framing of the metric: Flash-Lite verdicts vary run to run, so the
+coverage shares carry a few points of noise; the reach counts and the golden
+set are the deterministic evidence, and they agree with the direction.
+`eval/triage-diff.ts` added to make this comparison a one-liner.
+
 ---
 
 *Next entry goes here — append below this line, don't insert above.*
