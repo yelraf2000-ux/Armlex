@@ -26,3 +26,4 @@ data/audit/*.md
 # Harvested third-party forum content: internal evaluation only, never republished.
 data/eval/accountant-am.jsonl
 data/eval/triage-results*.jsonl
+data/eval/threshold-scores.json

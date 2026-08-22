@@ -30,6 +30,28 @@ before the user sees it.
 Reranker scores remain on every chunk. If a larger golden set ever shows a
 usable separation, revisit; do not assume one exists.
 
+**Re-measured 2026-08-19 on the enumeration index with the slice-aware
+reranker** (`eval/sweep-threshold.ts`), because both had changed since the
+original finding and the conclusion deserved a fresh test rather than
+inheritance:
+
+    covered (24)  mean top-1 0.668, range 0.523–0.836
+    missed  ( 3)  mean top-1 0.616, range 0.582–0.637
+    11 of 24 covered questions score at or below the best-scoring miss
+
+Best threshold is t = 0.000 — i.e. never gate — matching the always-confident
+baseline exactly. The conclusion survives a better index and a better reranker,
+which is the strongest form of the evidence: this is a property of what a
+cross-encoder measures, not of how well ours was tuned.
+
+**A cutoff before generation is also pointless, but for a different reason.**
+The highest cut that loses no correct article is t = 0.475, and at that value
+it removes 0.11 chunks per question — nothing. Push it to 0.6 and hit@4
+collapses from 85.2% to 51.9%, with 9 of 27 questions left with empty context.
+The scores are compressed into a narrow band (top-1 spans 0.52–0.84; within one
+question the top 8 typically span less than 0.1), so there is no value of t that
+separates useful from useless. Cut by RANK, not by score.
+
 ## No coverage badge on confident answers
 
 `full` renders nothing. A marker on every answer becomes furniture — readers
