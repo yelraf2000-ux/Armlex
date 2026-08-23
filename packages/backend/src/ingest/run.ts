@@ -5,10 +5,27 @@
  * chunks, and writes documents + aliases + chunks. Reports chunk counts, size
  * distribution and parse anomalies.
  *
- * Usage:
- *   npm run ingest -- --dry-run     analyse and report, touch no database
- *   npm run ingest                  write to DATABASE_URL
- *   npm run ingest -- --only 109017
+ * Reports by default; writes only with `--apply`, matching `buildRefs.ts`.
+ *
+ * That default is not a style choice. `npm run ingest` at the repo root is
+ * itself `npm run ingest -w @armlex/backend`, so flags passed as
+ * `npm run ingest -- --flag` are appended to the INNER npm command with no
+ * second `--`. npm then claims any flag it recognises as its own — `--dry-run`
+ * and `--only` are both npm options — and never forwards them to tsx. The
+ * script sees an empty argv. On 2026-08-23 that turned an intended
+ * `--dry-run --only 51` into a full re-ingest of all 21 documents, which
+ * replaced every `articles` row and cascade-deleted all 5,139 embeddings and
+ * the whole `article_refs` graph, taking the live site's vector leg down until
+ * the disk cache was reloaded.
+ *
+ * With writing behind `--apply`, a swallowed flag now means "do nothing".
+ * Bare positionals DO survive the double hop (`npm run audit -- 51` works), so
+ * only option-shaped flags are affected.
+ *
+ * Usage — invoke DIRECTLY so flags survive:
+ *   npx tsx packages/backend/src/ingest/run.ts                    report only
+ *   npx tsx packages/backend/src/ingest/run.ts --doc 109017       report one act
+ *   npx tsx packages/backend/src/ingest/run.ts --apply            write to DATABASE_URL
  *
  * Individual (-Ա) acts are registered as documents with rag_eligible = false
  * and are never chunked, per the milestone-2 decision.
@@ -26,9 +43,17 @@ import {
 } from '@armlex/scraper';
 import type { Chunk, DocumentContext, CorpusEntry } from '@armlex/scraper';
 
-const DRY_RUN = process.argv.includes('--dry-run');
-const onlyIdx = process.argv.indexOf('--only');
-const ONLY = onlyIdx >= 0 ? Number(process.argv[onlyIdx + 1]) : undefined;
+const APPLY = process.argv.includes('--apply');
+
+/**
+ * `--doc`, not `--only`: npm claims `--only` as its own option and eats it
+ * before tsx ever sees it (see the header). `--doc` survives.
+ */
+const docIdx = Math.max(
+  process.argv.indexOf('--doc'),
+  process.argv.indexOf('--only'), // legacy spelling, kept working
+);
+const ONLY = docIdx >= 0 ? Number(process.argv[docIdx + 1]) : undefined;
 
 interface DocReport {
   arlisId: number;
@@ -196,12 +221,17 @@ async function main(): Promise<void> {
     (e) => !e.control && (ONLY === undefined || e.id === ONLY),
   );
 
+  // Name the scope as well as the mode. A swallowed `--doc` shows up here as a
+  // document count that does not match what was asked for — the signal that was
+  // missing when this silently ingested all 21.
+  const scope = ONLY === undefined ? 'ALL documents' : `act ${ONLY}`;
   console.log(
-    `${DRY_RUN ? 'DRY RUN — ' : ''}ingesting ${targets.length} document(s) from snapshots\n`,
+    `${APPLY ? 'APPLY — WRITING to the database' : 'REPORT ONLY — no database connection'}` +
+      ` · ${scope} · ${targets.length} document(s) from snapshots\n`,
   );
 
   const reports: DocReport[] = [];
-  const sql = DRY_RUN ? undefined : postgres(config.databaseUrl, { onnotice: () => {} });
+  const sql = APPLY ? postgres(config.databaseUrl, { onnotice: () => {} }) : undefined;
 
   try {
     for (const entry of targets) {
@@ -246,6 +276,14 @@ async function main(): Promise<void> {
     }
 
     report(reports);
+
+    if (!APPLY) {
+      console.log(
+        '\nREPORT ONLY — nothing written. To write:\n' +
+          '  npx tsx packages/backend/src/ingest/run.ts --apply\n' +
+          'Invoke the file directly; `npm run ingest -- --apply` loses the flag.',
+      );
+    }
   } finally {
     await sql?.end();
   }

@@ -86,9 +86,34 @@ shipped (`DECISIONS.md`). The next priority is answer quality — item 10.
 Measured over 250 authentic questions: labour/payroll drives ~24% of all
 traffic and 40% of hard failures; Class-2 fired once in 250. New order:
 
-19a. **Ingest the Labour Code** (+ statistical-reporting act, high-tech list
-    decision, N 1513-Ն). The single biggest lever in the system — user's
-    scope call, now with demand evidence.
+19a. ~~**Ingest the Labour Code**~~ **DONE 2026-08-23.** arlis 51, 288 articles,
+    no parser work needed. Corpus 21 docs / 1,190 chunks / 5,639 vectors /
+    891 ref edges. **Tax retrieval unchanged** — 88.9 / 92.6 / 87.0 / 0.681
+    before and after, measured same-index same-day; the 638→885 distractor
+    precedent did not repeat (labour law is topically distant, not a
+    near-miss). Wage-delay question now returns `Հոդված 130` at rank 1 plus
+    129 / 198 / 112 in the top 8. See `CHANGELOG.md`.
+
+    **Still open from the same item:** statistical-reporting act, high-tech
+    list decision, SRC order N 1513-Ն (item 19 below) are NOT ingested.
+    Whether generation now *uses* the labour norms rather than hedging is
+    unverified — retrieval is confirmed, answer quality is not.
+
+24. **`score.ts` reports 0.0% when the vector index is empty.** It cannot
+    distinguish "no rows in `embeddings`" from "retriever found nothing", and
+    0.0% is also the genuine FTS number — so a wiped index renders as a
+    plausible result table. Cost real time on 2026-08-23 chasing a phantom
+    reranker regression that was actually the index being deleted mid-run.
+    `retrieve.ts` already has this guard for the API path (`warnVectorUnavailable`
+    — "degrading must never be silent"); the eval harness needs the equivalent
+    for the database path. Fail loudly, don't print a table.
+
+25. **npm swallows option flags on every workspace script.** Root scripts are
+    `npm run X -w @armlex/Y`, so `npm run X -- --flag` appends to the inner npm
+    with no second `--` and npm claims any flag it recognises. `ingest` is fixed
+    (`--apply`-gated, `--doc` not `--only`); `crawl` was already safe;
+    **`reembed.ts` is untraced.** Bare positionals survive. Audit the rest, and
+    prefer direct `npx tsx <path>` invocation in docs.
 19b. ~~**Class-1 retrieval fix**~~ **DONE 2026-08-19 — by a different route
     than planned.** The mechanism behind every Class-1 failure was enumeration
     blur (one vector per ~3,300 chars of unrelated list items), not missing

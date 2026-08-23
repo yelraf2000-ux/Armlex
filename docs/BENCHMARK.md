@@ -5,6 +5,14 @@ for the resulting decision and its rationale; this file is the evidence.
 
 ## Corpus facts
 
+> **Superseded 2026-08-23 for size, not for method.** The corpus is now
+> **21 documents, 1,190 chunks, 5,639 vectors, 891 ref edges** — the Labour Code
+> (arlis 51, 288 articles) was added, crossing the tax-only boundary. Golden-set
+> figures below were measured before that and **still hold**: the same run
+> repeated after the ingest gave identical numbers (88.9 / 92.6 / 87.0 / 0.681),
+> so no result in this file needs re-measuring for the corpus change. The
+> per-document counts in this section are the pre-Labour-Code tax corpus.
+
 - 20 documents, **885 chunks**, 1 alias (228650 → 109017, see `DECISIONS.md`)
 - 2,504,417 characters, **4,223,582 tokens** (cl100k) → **0.59 chars/token**
   — i.e. **~1.7 tokens per Armenian character**, not the 3–5× the original

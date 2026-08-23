@@ -74,6 +74,14 @@ export const TAX_CORPUS: CorpusEntry[] = [
   { id: 180531, label: 'ՀԱՇՎԱՌՈՒՄԻՑ ՀԱՆԵԼՈՒ ԿԱՐԳԸ (ՀՕԳ 380.1, 381)', expect: 'ministerial_order', expectedActNumber: 'N 1061-Ն', note: 'cites Tax Code arts. 380.1 and 381 — cross-ref test' },
   { id: 122913, label: 'ՈՉ ՌԵԶԻԴԵՆՏԻ ՎՃԱՐԱԾ ՀԱՐԿԻ ՏԵՂԵԿԱՆՔԻ ՁԵՎԸ', expect: 'ministerial_order', expectedActNumber: 'N 344-Ն' },
 
+  // --- outside the tax vertical --------------------------------------------
+  // The Labour Code is not a tax act, and `CLAUDE.md` scopes v1 to tax. It is
+  // ingested anyway on demand evidence: labour/payroll drives ~24% of real
+  // traffic and 40% of hard failures (`OPEN-ITEMS.md` 19a), and three sampled
+  // real questions in a row needed articles 112 / 129 / 130 / 192 / 198, which
+  // no amount of retrieval work on a tax-only corpus can reach.
+  { id: 51, label: 'ՀՀ ԱՇԽԱՏԱՆՔԱՅԻՆ ՕՐԵՆՍԳԻՐՔ', expect: 'code', expectedActNumber: 'ՀՕ-124-Ն', note: 'non-tax; see OPEN-ITEMS 19a' },
+
   // --- controls: individual (-Ա) acts, expected rag_eligible = false ---------
   { id: 229061, label: '[CONTROL] ՓՈԽՎԱՐՉԱՊԵՏԻ ՈՐՈՇՈՒՄ — ԲԵՌԻ ՆԵՐՄՈՒԾՈՒՄ', expect: 'gov_decision', expectedActNumber: 'N 486-Ա', control: true },
   { id: 229087, label: '[CONTROL] ՎԱՐՉԱՊԵՏԻ ՈՐՈՇՈՒՄ — ԱՐՁԱԿՈՒՐԴ', expect: 'gov_decision', expectedActNumber: 'N 681-Ա', control: true },

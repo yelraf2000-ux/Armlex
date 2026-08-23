@@ -196,3 +196,44 @@ carried old and new vectors side by side, and the stale one was live in search.
 The loader now dedupes by id, last line wins (appends are chronological). The
 general rule: any consumer of an append-only file must decide what "current"
 means — position in the file is provenance, not identity.
+
+## npm eats option flags on workspace scripts — a "dry run" that wiped production
+
+Root scripts are indirections: `"ingest": "npm run ingest -w @armlex/backend"`.
+So `npm run ingest -- --dry-run --only 51` expands to
+`npm run ingest -w @armlex/backend --dry-run --only 51` — no second `--`. npm
+claims every flag it recognises as its own, and it recognises **both**
+`--dry-run` and `--only`. Neither reaches tsx. The script sees an empty argv.
+
+On 2026-08-23 that turned an intended one-document dry run into a full
+re-ingest of all 21 documents: every `articles` row replaced, and by cascade
+**all 5,139 embeddings and the entire `article_refs` graph deleted**. Render
+shares the Neon database, so the live site lost its vector leg — answering
+Russian and Armenian questions at ~0% — until the disk cache was reloaded.
+
+The tell was available and unread: the report covered 21 documents when one was
+requested. `ingest/run.ts` now prints scope beside mode
+(`REPORT ONLY · ALL documents · 22 document(s)`) so the mismatch is unmissable.
+
+- **Bare positionals DO survive** the double hop — `npm run audit -- 51` works.
+  Only option-shaped flags are eaten. This is why the trap is easy to miss.
+- **Fail safe, don't fail useful.** The real defect was that ingest *wrote by
+  default* and `--dry-run` was the opt-out, so a lost flag escalated to a
+  production rewrite. It is now `--apply`-gated, like `buildRefs.ts` — which
+  survived the same swallowing an hour later without incident.
+- **Prefer `npx tsx <path> --flags` in docs and habit.** Every file docstring
+  that teaches `npm run X -- --flag` is teaching the broken form.
+- `crawl/run.ts` was already `--apply`-gated. `reembed.ts` is untraced.
+
+Recovery cost no API calls, by design: `data/vectors/*.jsonl` is keyed by
+`<arlisId>#<ref>`, not database id, so cached vectors remap onto freshly
+ingested rows. `load.ts --replace` then `buildRefs.ts --apply` restored the
+golden set to 88.9 / 92.6 / 87.0 / 0.681 exactly.
+
+**Corollary, cost ~20 minutes on its own:** a benchmark running while the tables
+were being rewritten reported `vector + rerank-2.5` at 51.9% and read as a
+reranker regression. It was the index vanishing mid-run. `score.ts` cannot tell
+an empty index from a retriever that found nothing, and 0.0% is also the real
+FTS number — so a wiped index renders as a plausible result table
+(`OPEN-ITEMS.md` 24). Never diagnose a retrieval regression without first
+confirming the index is populated.

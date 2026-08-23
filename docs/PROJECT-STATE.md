@@ -31,6 +31,12 @@ true, as of the last update to each.
 | 8 · Frontend workbench | **done** — streaming, markdown, quote-highlighted article cards, related articles, session list, corpus banner |
 | 9 · Update detection | **done** — article-level diff, `crawl_log`, silence monitor; new-document discovery not built |
 
+**Corpus, as of 2026-08-23:** 21 documents · 1,190 chunks · 5,639 vectors
+(100% coverage) · 891 `article_refs` edges. **No longer tax-only** — the Labour
+Code (arlis 51, 288 articles) was ingested on demand evidence, deliberately
+crossing the `CLAUDE.md` v1 scope boundary. Tax retrieval was unaffected:
+88.9 / 92.6 / 87.0 / 0.681 before and after, same index, same day.
+
 Full backlog with priority: `OPEN-ITEMS.md`.
 
 ## The one thing that matters right now
@@ -51,7 +57,7 @@ What's live in the app, all measured rather than assumed:
 | Live in the app | Measured |
 |---|---|
 | Enumeration-aware index → one-hop expansion → slice-aware rerank | **88.9% hit@5, 92.6% hit@8, MRR 0.681** (27 golden questions) |
-| Real-traffic coverage (250 authentic accountant questions) | **31% full / 40% partial / 29% none** — was 19 / 48 / 33 before the index fix; the remaining `none` is dominated by labour/payroll, which the corpus does not hold |
+| Real-traffic coverage (250 authentic accountant questions) | **31% full / 40% partial / 29% none** — was 19 / 48 / 33 before the index fix. ⚠ Measured 2026-08-19, BEFORE the Labour Code landed; the `none` share was dominated by labour/payroll, which the corpus now holds. **Re-run the triage — this number is stale and understates the system.** |
 | Query contextualiser (transliteration + Armenian legal terms) | rescued the colloquial-question case |
 | Running `fact_summary` across turns | verified over 3 turns |
 | Verbatim quote validation | 11 tests, exact substring only |

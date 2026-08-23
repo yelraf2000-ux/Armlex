@@ -838,6 +838,72 @@ coverage shares carry a few points of noise; the reach counts and the golden
 set are the deterministic evidence, and they agree with the direction.
 `eval/triage-diff.ts` added to make this comparison a one-liner.
 
+**2026-08-23** — **Labour Code ingested (arlis 51) — the tax-vertical boundary
+crossed deliberately, on demand evidence.** 288 articles + 8 annexes, act
+ՀՕ-124-Ն, parsed by the existing pipeline with no parser work: p50 1,111 chars,
+p90 2,716, max 6,347 (far healthier than the Tax Code's 33,627), the one table
+intact. Corpus is now **21 documents, 1,190 chunks, 5,639 vectors, 100%
+coverage**; `article_refs` rebuilt at **891 edges** (was 749 — the extra are the
+Labour Code's internal citations).
+
+**Tax retrieval cost: zero.** Same index, same day, before and after:
+
+| | before | after |
+|---|---|---|
+| hit@5 / hit@8 | 88.9% / 92.6% | **88.9% / 92.6%** |
+| recall@5 / recall@8 | 75.9% / 87.0% | **75.9% / 87.0%** |
+| MRR | 0.681 | **0.681** |
+
+Not one metric moved. The 638→885 precedent (91.3% → 73.9%) did **not** repeat:
+those chunks were tax forms and orders competing directly with tax questions,
+while labour law sits far away in embedding space. Distractors cost recall when
+they are near-misses, not when they are distant.
+
+Retrieval on the motivating question (wage delay, from the 250-question real
+set) now returns `Հոդված 130` at **rank 1** (0.809), plus 129, 198 and 112 in
+the top 8 — four of the five articles both the competitor and the accountants
+on accountant.am cited. Rerank scores 0.70–0.81, against 0.45–0.47 typical for
+tax questions. That question previously returned a correct-but-useless refusal.
+Closes `OPEN-ITEMS.md` 19a.
+
+**2026-08-23** — **Live outage, self-inflicted: `npm run ingest -- --dry-run
+--only 51` was neither dry nor scoped.** Root cause is npm, not the script.
+Root `npm run ingest` is itself `npm run ingest -w @armlex/backend`, so flags
+after `--` are appended to the INNER npm command with no second `--`; npm claims
+both `--dry-run` and `--only` as its own options and never forwards them to tsx.
+The script saw an empty argv, so `DRY_RUN` was false and `ONLY` undefined: a
+full re-ingest of all 21 documents, replacing every `articles` row and
+cascade-deleting **all 5,139 embeddings and the whole `article_refs` graph**.
+Render shares the Neon database, so the live site's vector leg was down until
+the disk cache was reloaded. Bare positionals DO survive the double hop
+(`npm run audit -- 51` works) — only option-shaped flags are eaten.
+
+Recovery cost no API calls: `data/vectors/*.jsonl` is keyed by
+`<arlisId>#<ref>`, not database id, so cached vectors remap onto freshly
+ingested rows. `load.ts --replace` → 5,139 restored; `buildRefs.ts --apply` →
+graph rebuilt; golden set back to 88.9 / 92.6 / 87.0 / 0.681 exactly.
+
+**A phantom finding to disregard if it appears in any earlier note:** a
+benchmark running while the tables were being rewritten reported
+`vector + rerank-2.5` at **51.9%** and was briefly read as a reranker
+regression. It was the index disappearing mid-run. The reranker never regressed.
+
+**Fix: `ingest/run.ts` now writes only with `--apply`** (matching
+`buildRefs.ts`), so a swallowed flag means *do nothing* rather than *rewrite
+production*. `--only` → `--doc`, since npm claims `--only`; the old spelling
+still resolves. The header line now names mode **and scope**
+(`REPORT ONLY · ALL documents · 22 document(s)`) — the missing signal, since the
+request was for one act. Regression-tested: the original command is now inert
+and the database is verifiably unchanged after it. `crawl/run.ts` was already
+`--apply`-gated and was never at risk.
+
+**Two gaps this exposed, both still open:** `score.ts` renders an empty vector
+index as a plausible `0.0%` result table — indistinguishable from the genuine
+FTS number, and it cost real time chasing the phantom above; `retrieve.ts` has
+exactly this guard for the API path ("degrading must never be silent") and the
+eval harness has no equivalent for the database path. And every npm script
+taking option flags shares the swallowing trap; `reembed.ts` is untraced.
+
 ---
 
 *Next entry goes here — append below this line, don't insert above.*

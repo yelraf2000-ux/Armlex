@@ -26,7 +26,9 @@
 ## What this is
 A web application that answers tax-law questions for professionals (accountants, tax lawyers, auditors) in Armenia, grounded in official legal texts from arlis.am (ARLIS — the official legal information system of Armenia, where legal acts are officially published). Answers must cite exact laws and articles with links to the source. This is an information/search tool, NOT legal advice — every answer carries that framing.
 
-**v1 scope: Tax vertical only.** Tax Code of Armenia (Հարկային օրենսգիրք) + related government decisions and SRC (КГД / ՊԵԿ) orders. Web only. Single-user auth is enough for now (simple email login or even a shared password gate).
+**v1 scope: Tax vertical — plus the Labour Code since 2026-08-23.** Tax Code of Armenia (Հարկային օրենսգիրք) + related government decisions and SRC (КГД / ՊԵԿ) orders. Web only. Single-user auth is enough for now (simple email login or even a shared password gate).
+
+> ⚠ **The tax-only boundary was crossed deliberately.** Labour/payroll is ~24% of real traffic and 40% of hard failures, and tax-only retrieval cannot reach it at any quality. Measured cost to tax retrieval: zero. See `docs/DECISIONS.md` — it also records why a *distant* domain is cheap to add while near-miss documents are expensive, which bears on any further vertical.
 
 ## Core principles (non-negotiable)
 1. **Grounding:** The LLM answers ONLY from retrieved article texts. If retrieval doesn't cover the question, the system says so explicitly and shows nearest related articles instead of improvising.

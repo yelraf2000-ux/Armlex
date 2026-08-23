@@ -346,3 +346,37 @@ downstream stage cannot observe is an improvement that does not ship.
 vectors.** This matters for the crawl loop: a regeneration after an amendment
 must rebuild under the adopted policy, not silently revert. Verified: the
 default round-trips against the cache with `todo=0`.
+
+## The corpus is no longer tax-only — Labour Code ingested 2026-08-23
+
+`CLAUDE.md` scopes v1 to the tax vertical. That boundary was crossed
+deliberately, on evidence rather than convenience.
+
+**Why.** Real-traffic measurement over 250 authentic accountant questions put
+labour/payroll at ~24% of all traffic and 40% of hard failures. Three sampled
+questions in a row then landed on it: the wage-delay case needed ԱՕ 112 / 129 /
+130 / 192 / 198, and the system refused — correctly, having no such norms. That
+refusal was the designed behaviour and worth nothing to the user. No amount of
+reranking, chunking or prompt work reaches an article that is not in the corpus.
+
+**What it cost.** Nothing measurable. Golden set before and after, same index,
+same day: 88.9 / 92.6 / 87.0 / MRR 0.681, identical to the digit.
+
+**Why that surprised us, and the general rule.** Precedent said it should hurt:
+going 638 → 885 chunks once dropped the same Gemini retriever 91.3% → 73.9%
+purely on added distractors. The difference is *what kind* of document was
+added. Those 247 chunks were tax forms and SRC orders — near-misses that
+enumerate the same vocabulary as tax questions and compete directly. The Labour
+Code is 288 articles of a different domain, far away in embedding space, and
+almost never surfaces for a tax query. **Distractors cost recall when they are
+near-misses, not when they are numerous.** Corpus growth in a *new* domain is
+therefore much cheaper than corpus growth in the existing one — which makes
+further verticals a smaller retrieval risk than this project has assumed.
+
+**What is not yet established.** Retrieval is verified (`Հոդված 130` at rank 1
+on the motivating question, 129 / 198 / 112 also in the top 8, rerank scores
+0.70–0.81 against 0.45–0.47 typical for tax). Whether *generation* uses those
+norms rather than hedging is unmeasured — and hedging-with-the-right-articles
+was the dominant failure in the same three-question sample. The golden set is 27
+tax questions and cannot see labour quality at all; it needs labour questions
+pinned before any of this is scored rather than assumed.
