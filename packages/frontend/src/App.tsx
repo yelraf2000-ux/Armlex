@@ -122,8 +122,8 @@ function OneShot({ mode }: { mode: 'search' | 'ask' }) {
             {answer !== null ? 'Фрагменты, переданные модели' : 'Найденные фрагменты'} (
             {chunks.length})
           </h2>
-          {chunks.map((c) => (
-            <ChunkCard key={`${c.arlisId}#${c.ref}`} chunk={c} />
+          {chunks.map((c, i) => (
+            <ChunkCard key={`${c.arlisId}#${c.ref}`} chunk={c} rank={i} />
           ))}
         </>
       ) : null}
@@ -212,35 +212,48 @@ function Workbench() {
         professional asks of an answer they intend to rely on.
       */}
       <header className="provenance">
-        <RailToggle />
-        <span className="brand">ArmLex</span>
-        {corpus ? (
-          <>
-            <span>
-              <span className="num">{corpus.documents}</span> {t('corpus.acts')} ·{' '}
-              <span className="num">{corpus.chunks}</span> {t('corpus.chunks')}
-            </span>
-            {synced ? <span>{t('corpus.synced')} <span className="num">{synced}</span></span> : null}
-          </>
-        ) : null}
-
-        <div className="segmented" role="tablist">
-          {(['chat', 'ask', 'search'] as Mode[]).map((m) => (
-            <button
-              key={m}
-              role="tab"
-              aria-selected={mode === m}
-              className={mode === m ? 'seg active' : 'seg'}
-              onClick={() => setMode(m)}
-            >
-              {t(`mode.${m}`)}
-            </button>
-          ))}
+        {/*
+          A masthead in the sense a printed commentary has one: title and
+          standing on the first line, the facts that qualify every answer on the
+          second, a double rule beneath. Mode is a running head, not a control
+          panel — it sits with the title because it names what you are reading.
+        */}
+        <div className="masthead-top">
+          <span className="brand">ArmLex</span>
+          <span className="masthead-sub">{t('masthead.sub')}</span>
+          <span className="spacer" />
+          <div className="segmented" role="tablist">
+            {(['chat', 'ask', 'search'] as Mode[]).map((m) => (
+              <button
+                key={m}
+                role="tab"
+                aria-selected={mode === m}
+                className={mode === m ? 'seg active' : 'seg'}
+                onClick={() => setMode(m)}
+              >
+                {t(`mode.${m}`)}
+              </button>
+            ))}
+          </div>
         </div>
 
-        <SettingsControls />
-        <span className="spacer" />
-        <span className="disclaimer">{t('corpus.disclaimer')}</span>
+        <div className="masthead-facts">
+          <RailToggle />
+          {corpus ? (
+            <>
+              <span className="corpus-counts">
+                <span className="num">{corpus.documents}</span> {t('corpus.acts')} ·{' '}
+                <span className="num">{corpus.chunks}</span> {t('corpus.chunks')}
+              </span>
+              {synced ? <span>{t('corpus.synced')} <span className="num">{synced}</span></span> : null}
+            </>
+          ) : null}
+          <span className="spacer" />
+          <SettingsControls />
+          <span className="disclaimer">{t('corpus.disclaimer')}</span>
+        </div>
+
+        <div className="masthead-rule" />
       </header>
 
       {mode === 'chat' ? (

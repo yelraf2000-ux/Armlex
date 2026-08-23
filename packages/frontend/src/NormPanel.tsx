@@ -1,16 +1,27 @@
 /**
- * The cited provision, kept on screen beside the answer.
+ * The apparatus: every provision the answer rests on, at once.
  *
- * The change this makes is the whole point of the workbench: an accountant does
- * not read an answer, they verify one, then paste conclusion and statute into a
- * client memo. Behind a toggle, verification is the expensive step — expand a
- * card, hunt for the quoted line, lose the answer off-screen. Here the norm and
- * the conclusion are visible together, with the quoted fragment already marked.
+ * This replaces the single-provision panel, and the change is the point. An
+ * accountant does not read an answer, they verify one — then paste conclusion
+ * and statute into a client memo. With one slot, verifying an answer that cites
+ * four articles meant four round trips through the same panel, losing your
+ * place each time. Here every cited provision is present, collapsed to the
+ * fragment that was actually quoted, and expands in place.
+ *
+ * Set as a printed apparatus rather than a stack of cards: the figure hangs in
+ * the gutter, entries are separated by rules, and the citation figures in the
+ * transcript address these numbers.
  */
 import { useEffect, useState } from 'react';
 import type { Chunk } from './types.js';
 import { highlight, parseDates, splitHeader } from './chunkText.js';
 import { useSettings } from './Settings.js';
+
+export interface Entry {
+  chunk: Chunk;
+  /** Carried from an earlier turn: read, but not retrieved for this question. */
+  carried: boolean;
+}
 
 interface Related {
   articleId: string;
@@ -35,61 +46,67 @@ function isRecent(ddmmyyyy: string): boolean {
   return (Date.now() - when) / 86_400_000 < RECENT_DAYS;
 }
 
-export function NormPanel({
-  chunk,
-  quotes,
-  corpusSynced,
-}: {
-  chunk: Chunk | null;
-  quotes: string[];
-  corpusSynced: string | null;
-}) {
-  const { t } = useSettings();
+/** Cross-references, fetched only when an entry is actually opened. */
+function useRelated(articleId: string, open: boolean): Related[] {
   const [related, setRelated] = useState<Related[]>([]);
-  const [copied, setCopied] = useState(false);
+  const [fetched, setFetched] = useState(false);
 
   useEffect(() => {
-    setRelated([]);
-    setCopied(false);
-    if (!chunk) return;
+    if (!open || fetched) return;
     let cancelled = false;
     void (async () => {
       try {
-        const res = await fetch(`/api/related?articleId=${encodeURIComponent(chunk.articleId)}`);
+        const res = await fetch(`/api/related?articleId=${encodeURIComponent(articleId)}`);
         if (!res.ok) return;
         const data = (await res.json()) as { related?: Related[] };
-        if (!cancelled) setRelated(data.related ?? []);
+        if (!cancelled) {
+          setRelated(data.related ?? []);
+          setFetched(true);
+        }
       } catch {
-        /* related provisions are an aid, not a requirement */
+        /* cross-references are an aid, not a requirement */
       }
     })();
     return () => { cancelled = true; };
-  }, [chunk]);
+  }, [articleId, open, fetched]);
 
-  if (!chunk) {
-    return (
-      <aside className="norm">
-        <div className="panel-title">{t('norm.title')}</div>
-        <p className="norm-empty">
-          {t('norm.empty')}
-        </p>
-      </aside>
-    );
-  }
+  return related;
+}
+
+function ApparatusEntry({
+  entry,
+  n,
+  quotes,
+  corpusSynced,
+  focused,
+  open,
+  onToggle,
+}: {
+  entry: Entry;
+  n: number;
+  quotes: string[];
+  corpusSynced: string | null;
+  focused: boolean;
+  open: boolean;
+  onToggle: () => void;
+}) {
+  const { t } = useSettings();
+  const [copied, setCopied] = useState(false);
+  const { chunk, carried } = entry;
 
   const { header, body } = splitHeader(chunk.text);
   const { adopted, amended } = parseDates(header);
   const segments = highlight(body, quotes);
   const marked = segments.filter((s) => s.mark).map((s) => s.text);
+  const related = useRelated(chunk.articleId, open);
 
   async function copyQuote(): Promise<void> {
-    // What an accountant actually pastes into a memo: the words of the law
-    // plus the citation that makes them checkable. Either alone is useless in
-    // correspondence.
+    // What an accountant actually pastes into a memo: the words of the law plus
+    // the citation that makes them checkable. Either alone is useless.
     const text = marked.length > 0 ? marked.join('\n\n') : body.slice(0, 1200);
-    const citation = `${chunk!.documentTitle}, ${chunk!.ref}`;
+    const citation = `${chunk.documentTitle}, ${chunk.ref}`;
     try {
-      await navigator.clipboard.writeText(`«${text}»\n\n— ${citation}\n${arlisUrl(chunk!.arlisId)}`);
+      await navigator.clipboard.writeText(`«${text}»\n\n— ${citation}\n${arlisUrl(chunk.arlisId)}`);
       setCopied(true);
       setTimeout(() => setCopied(false), 2000);
     } catch {
@@ -98,61 +115,159 @@ export function NormPanel({
   }
 
   return (
-    <aside className="norm">
-      <div className="panel-title">{t('norm.title')}</div>
-
-      <div className="norm-head">
-        <span className="norm-ref" lang="hy">{chunk.ref}</span>
-        <span className="chip">{t('norm.inForce')}</span>
-        {amended ? (
-          // Red is reserved for things needing attention. A provision amended
-          // recently is one — the reader may know the old wording, and an
-          // answer resting on fresh text deserves a second look. A 2017
-          // amendment is just a date, and flagging every article in red would
-          // train the reader to ignore the colour that matters.
-          <span className={isRecent(amended) ? 'chip warn' : 'chip quiet'}>
-            {t('norm.revised')} {amended}
+    <div className={focused ? 'entry focused' : 'entry'}>
+      <button className="entry-head" onClick={onToggle} aria-expanded={open}>
+        <span className="entry-n">{n}</span>
+        <span className="entry-main">
+          <span className="entry-line">
+            <span className="norm-ref" lang="hy">{chunk.ref}</span>
+            {amended ? (
+              // Red is reserved for things needing attention. A provision amended
+              // recently is one — the reader may know the old wording. A 2017
+              // amendment is just a date, and flagging every article would train
+              // the reader to ignore the colour that matters.
+              <span className={isRecent(amended) ? 'rev recent' : 'rev'}>
+                {t('norm.revised')} {amended}
+              </span>
+            ) : null}
           </span>
-        ) : null}
-      </div>
-      <div className="norm-act" lang="hy">{chunk.documentTitle}</div>
+          <span className="norm-act" lang="hy">{chunk.documentTitle}</span>
+        </span>
+      </button>
 
-      <dl className="norm-dates">
-        {adopted ? <div><dt>{t('norm.adopted')}</dt><dd>{adopted}</dd></div> : null}
-        {amended ? <div><dt>{t('norm.revisedFrom')}</dt><dd>{amended}</dd></div> : null}
-        {corpusSynced ? <div><dt>{t('norm.checked')}</dt><dd>{corpusSynced}</dd></div> : null}
-      </dl>
-
-      <div className="norm-body" lang="hy">
-        {segments.map((s, i) => (s.mark ? <mark key={i}>{s.text}</mark> : <span key={i}>{s.text}</span>))}
-      </div>
-
-      <div className="norm-actions">
-        <button className="btn" onClick={() => void copyQuote()}>
-          {copied ? t('norm.copied') : marked.length > 0 ? t('norm.copyQuote') : t('norm.copyArticle')}
-        </button>
-        <a className="btn" href={arlisUrl(chunk.arlisId)} target="_blank" rel="noreferrer">ARLIS ↗</a>
-      </div>
-
-      {related.length > 0 ? (
-        <>
-          <div className="panel-title">{t('norm.refersTo')}</div>
-          <div className="refs">
-            {related.map((r) => (
-              <a
-                key={r.articleId}
-                className="ref"
-                lang="hy"
-                href={arlisUrl(r.arlisId)}
-                target="_blank"
-                rel="noreferrer"
-              >
-                {r.ref}
-              </a>
-            ))}
-          </div>
-        </>
+      {/* Collapsed, an entry still shows the fragment the answer actually leans
+          on — the quote is the reason it is in the apparatus at all. */}
+      {carried ? (
+        <div className="entry-quote carried">{t('norm.carried')}</div>
+      ) : marked.length > 0 ? (
+        <div className="entry-quote" lang="hy">«{marked[0]}»</div>
       ) : null}
+
+      {open ? (
+        <div className="entry-body">
+          <dl className="norm-dates">
+            {adopted ? <div><dt>{t('norm.adopted')}</dt><dd>{adopted}</dd></div> : null}
+            {amended ? <div><dt>{t('norm.revisedFrom')}</dt><dd>{amended}</dd></div> : null}
+            {corpusSynced ? <div><dt>{t('norm.checked')}</dt><dd>{corpusSynced}</dd></div> : null}
+          </dl>
+
+          <div className="norm-body" lang="hy">
+            {segments.map((s, i) => (s.mark ? <mark key={i}>{s.text}</mark> : <span key={i}>{s.text}</span>))}
+          </div>
+
+          <div className="norm-actions">
+            <button className="btn" onClick={() => void copyQuote()}>
+              {copied ? t('norm.copied') : marked.length > 0 ? t('norm.copyQuote') : t('norm.copyArticle')}
+            </button>
+            <a className="btn" href={arlisUrl(chunk.arlisId)} target="_blank" rel="noreferrer">
+              {t('norm.openArlis')}
+            </a>
+          </div>
+
+          {related.length > 0 ? (
+            <>
+              <div className="panel-title">{t('norm.refersTo')}</div>
+              <div className="refs">
+                {related.map((r) => (
+                  <a
+                    key={r.articleId}
+                    className="ref"
+                    lang="hy"
+                    href={arlisUrl(r.arlisId)}
+                    target="_blank"
+                    rel="noreferrer"
+                  >
+                    {r.ref}
+                  </a>
+                ))}
+              </div>
+            </>
+          ) : null}
+        </div>
+      ) : null}
+    </div>
+  );
+}
+
+export function NormPanel({
+  entries,
+  quotes,
+  corpusSynced,
+  selectedId,
+  onSelect,
+}: {
+  entries: Entry[];
+  quotes: string[];
+  corpusSynced: string | null;
+  /** Which entry the reader last addressed from the transcript. */
+  selectedId: string | null;
+  onSelect: (articleId: string) => void;
+}) {
+  const { t } = useSettings();
+  const [open, setOpen] = useState<Record<string, boolean>>({});
+
+  // Selecting a citation in the transcript opens its entry. Everything already
+  // open stays open — the whole point is not losing your place.
+  useEffect(() => {
+    if (selectedId) setOpen((o) => ({ ...o, [selectedId]: true }));
+  }, [selectedId]);
+
+  if (entries.length === 0) {
+    return (
+      <aside className="norm">
+        <div className="app-head">
+          <span className="app-title">{t('norm.title')}</span>
+        </div>
+        <div className="app-rule" />
+        <p className="norm-empty">{t('norm.empty')}</p>
+
+        {/*
+          With no answer yet this column would be dead space, so it states the
+          corpus boundary instead. A professional needs to know what the edition
+          does NOT cover before the first question, not after a bad answer.
+        */}
+        <div className="outside">
+          <div className="panel-title">{t('contents.outside')}</div>
+          <p>{t('contents.outsideNote')}</p>
+        </div>
+      </aside>
+    );
+  }
+
+  // The first entry opens by default: the statute should be on screen without
+  // anyone having to click.
+  const first = entries[0]!.chunk.articleId;
+  const isOpen = (id: string): boolean => open[id] ?? (id === first && selectedId === null);
+
+  return (
+    <aside className="norm">
+      <div className="app-head">
+        <span className="app-title">{t('norm.title')}</span>
+        <span className="app-count">{entries.length}</span>
+      </div>
+      <div className="app-rule" />
+
+      {entries.map((entry, i) => (
+        <ApparatusEntry
+          key={entry.chunk.articleId}
+          entry={entry}
+          n={i + 1}
+          quotes={quotes}
+          corpusSynced={corpusSynced}
+          focused={selectedId === entry.chunk.articleId}
+          open={isOpen(entry.chunk.articleId)}
+          onToggle={() => {
+            const id = entry.chunk.articleId;
+            const next = !isOpen(id);
+            setOpen((o) => ({ ...o, [id]: next }));
+            // Only report a selection when OPENING. Reporting it on collapse
+            // changed `selectedId`, which re-ran the effect above and forced the
+            // entry straight back open — so the first entry could never be
+            // closed at all.
+            if (next) onSelect(id);
+          }}
+        />
+      ))}
     </aside>
   );
 }

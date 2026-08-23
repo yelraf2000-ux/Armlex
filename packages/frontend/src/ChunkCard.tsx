@@ -1,5 +1,11 @@
 /**
- * One cited article, as a workbench card (milestone 8).
+ * One retrieved fragment, as an entry in a ranked list.
+ *
+ * Search mode is a different job from Dialogue, so it gets a different shape:
+ * no opinion, one wide ranked list. Rank and rerank score hang in the gutter
+ * the way running heads do, and the score is PRINTED rather than hidden —
+ * including when it is weak, in which case it prints in the accent. Hiding a
+ * weak result is the dishonest option: a weak result should look weak.
  *
  * Three things a reader of a legal answer needs and a bare snippet does not
  * give them:
@@ -14,6 +20,8 @@
  */
 import { useState } from 'react';
 import type { Chunk } from './types.js';
+import { headerField, highlight, parseDates, splitHeader } from './chunkText.js';
+import { useSettings } from './Settings.js';
 
 interface Related {
   articleId: string;
@@ -26,61 +34,31 @@ function arlisUrl(arlisId: number): string {
   return `https://www.arlis.am/hy/acts/${arlisId}/latest`;
 }
 
-/** Chunks carry a metadata header terminated by '---'; split it for display. */
-function splitHeader(text: string): { header: string; body: string } {
-  const i = text.indexOf('\n---\n');
-  if (i === -1) return { header: '', body: text };
-  return { header: text.slice(0, i), body: text.slice(i + 5) };
-}
-
-/** Pull one `[Field] value` out of the metadata header. */
-function headerField(header: string, field: string): string | null {
-  const m = new RegExp(`\\[${field}\\]\\s*([^\\n\\[]*)`).exec(header);
-  return m?.[1]?.trim() || null;
-}
+/** Figures for the ranked list — this is an edition, so it numbers in roman. */
+const ROMAN = ['I', 'II', 'III', 'IV', 'V', 'VI', 'VII', 'VIII', 'IX', 'X'];
 
 /**
- * Split `body` around each occurrence of a quote, so it can be marked in place.
- *
- * Matching is plain `indexOf` on the exact quoted string. The quotes reaching
- * this point have already been verified as verbatim substrings of this text
- * server-side, so anything that fails to match here is a quote from a DIFFERENT
- * chunk — correctly left unhighlighted rather than approximately matched.
+ * Below this the reranker is not confident. Printed in the accent rather than
+ * suppressed, so the reader can see where the list stops being useful.
  */
-function highlight(body: string, quotes: string[]): { text: string; mark: boolean }[] {
-  const wanted = quotes.filter((q) => q.length > 20 && body.includes(q));
-  if (wanted.length === 0) return [{ text: body, mark: false }];
+const WEAK_SCORE = 0.5;
 
-  const parts: { text: string; mark: boolean }[] = [];
-  let rest = body;
-
-  for (;;) {
-    // Take whichever quote appears earliest in what remains, so overlapping
-    // ranges cannot reorder the text.
-    let bestAt = -1;
-    let best = '';
-    for (const q of wanted) {
-      const at = rest.indexOf(q);
-      if (at !== -1 && (bestAt === -1 || at < bestAt)) { bestAt = at; best = q; }
-    }
-    if (bestAt === -1) break;
-
-    if (bestAt > 0) parts.push({ text: rest.slice(0, bestAt), mark: false });
-    parts.push({ text: best, mark: true });
-    rest = rest.slice(bestAt + best.length);
-  }
-
-  if (rest) parts.push({ text: rest, mark: false });
-  return parts;
-}
-
-export function ChunkCard({ chunk, quotes = [] }: { chunk: Chunk; quotes?: string[] }) {
+export function ChunkCard({
+  chunk,
+  quotes = [],
+  rank,
+}: {
+  chunk: Chunk;
+  quotes?: string[];
+  rank?: number;
+}) {
+  const { t } = useSettings();
   const [open, setOpen] = useState(false);
   const [related, setRelated] = useState<Related[] | null>(null);
   const { header, body } = splitHeader(chunk.text);
 
   const status = headerField(header, 'Status');
-  const dates = headerField(header, 'Dates');
+  const { adopted, amended } = parseDates(header);
 
   async function toggle(): Promise<void> {
     const next = !open;
@@ -99,44 +77,55 @@ export function ChunkCard({ chunk, quotes = [] }: { chunk: Chunk; quotes?: strin
   }
 
   const segments = open ? highlight(body, quotes) : [];
+  const weak = typeof chunk.score === 'number' && chunk.score < WEAK_SCORE;
 
   return (
     <div className="card">
       <div className="card-head">
-        <div>
-          <div className="ref">{chunk.ref}</div>
-          <div className="doc" lang="hy">{chunk.documentTitle}</div>
-        </div>
-        <div className="meta">
+        {rank !== undefined ? <span className="rank">{ROMAN[rank] ?? rank + 1}</span> : null}
+        <span className="ref" lang="hy">{chunk.ref}</span>
+        <span className="doc" lang="hy">{chunk.documentTitle}</span>
+        <span className="meta">
+          {typeof chunk.score === 'number' ? (
+            <span className={weak ? 'score low' : 'score'}>{chunk.score.toFixed(3)}</span>
+          ) : null}
+          {chunk.actNumber ? <span className="act" lang="hy">{chunk.actNumber}</span> : null}
           {status ? (
-            <span className={status === 'in_force' ? 'status ok' : 'status warn'}>
-              {status === 'in_force' ? 'действует' : status}
+            <span className={status === 'in_force' ? 'status' : 'status warn'}>
+              {status === 'in_force' ? t('norm.inForce') : status}
             </span>
           ) : null}
-          {chunk.actNumber ? <span className="act">{chunk.actNumber}</span> : null}
-        </div>
+        </span>
       </div>
 
-      {dates ? <div className="asof">актуально на: {dates}</div> : null}
+      {adopted || amended ? (
+        <div className="asof">
+          {adopted ? `${t('norm.adopted')} ${adopted}` : null}
+          {adopted && amended ? ' · ' : null}
+          {amended ? `${t('norm.revisedFrom')} ${amended}` : null}
+        </div>
+      ) : null}
 
       <div className="card-actions">
-        <button onClick={() => void toggle()}>
-          {open ? 'Свернуть' : 'Показать статью'}
+        <button className="btn" onClick={() => void toggle()}>
+          {open ? t('card.collapse') : t('card.expand')}
         </button>
-        <a href={arlisUrl(chunk.arlisId)} target="_blank" rel="noreferrer">ARLIS ↗</a>
+        <a className="btn" href={arlisUrl(chunk.arlisId)} target="_blank" rel="noreferrer">
+          {t('norm.openArlis')}
+        </a>
       </div>
 
       {open ? (
         <>
-          <pre className="chunk-body" lang="hy">
+          <div className="chunk-body" lang="hy">
             {segments.map((s, i) =>
               s.mark ? <mark key={i}>{s.text}</mark> : <span key={i}>{s.text}</span>,
             )}
-          </pre>
+          </div>
 
           {related && related.length > 0 ? (
             <div className="related">
-              <div className="related-title">Ссылается на:</div>
+              <span className="related-title">{t('norm.refersTo')}</span>
               {related.map((r) => (
                 <a
                   key={r.articleId}
@@ -146,7 +135,7 @@ export function ChunkCard({ chunk, quotes = [] }: { chunk: Chunk; quotes?: strin
                   rel="noreferrer"
                   lang="hy"
                 >
-                  {r.ref} ↗
+                  {r.ref}
                 </a>
               ))}
             </div>

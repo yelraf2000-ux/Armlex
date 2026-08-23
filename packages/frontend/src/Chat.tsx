@@ -9,6 +9,7 @@
 import { useEffect, useRef, useState } from 'react';
 import type { Chunk } from './types.js';
 import { NormPanel } from './NormPanel.js';
+import type { Entry } from './NormPanel.js';
 import { MarkdownView } from './MarkdownView.js';
 import { extractQuotes } from './quotes.js';
 import { Sessions } from './Sessions.js';
@@ -95,9 +96,13 @@ const COVERAGE_KEY: Record<string, string> = {
 const EXAMPLES = [
   'Какая ставка НДС в Армении?',
   'ես բուդկա եմ ուզում բացել',
-  'Какой оборот считается пределом для микропредпринимательства?',
   'es uzum em pokr xanut bacel',
+  'Какой оборот считается пределом для микропредпринимательства?',
+  'Отпускные при увольнении в середине месяца',
 ];
+
+/** Figures for the example list — this is an edition, so it numbers in roman. */
+const ROMAN = ['I', 'II', 'III', 'IV', 'V', 'VI', 'VII', 'VIII'];
 
 /** Grow the composer to fit its content, up to a ceiling. */
 function autoGrow(el: HTMLTextAreaElement): void {
@@ -183,6 +188,10 @@ export function Chat({ corpusSynced }: { corpusSynced: string | null }) {
   }, []);
 
   useEffect(() => {
+    // Nothing to follow before the first question — and following anyway lands
+    // the reader at the bottom of the register, below the empty state that
+    // explains what the edition covers.
+    if (turns.length === 0) return;
     // Scroll the page, not the anchor: the composer is sticky, so scrolling an
     // anchor "into view" stops short by the composer's height every time.
     if (stickRef.current) window.scrollTo({ top: document.body.scrollHeight });
@@ -331,38 +340,56 @@ export function Chat({ corpusSynced }: { corpusSynced: string | null }) {
     setSelectedId(null);
   }
 
-  // The provision shown in the norm panel: whatever the reader last selected,
-  // otherwise the top-ranked chunk of the newest answer — so the statute is
-  // already on screen without anyone clicking.
-  const lastAnswer = [...turns].reverse().find((t) => t.role === 'assistant');
-  const answerChunks = [...(lastAnswer?.fresh ?? []), ...(lastAnswer?.carried ?? [])];
-  const shownChunk =
-    answerChunks.find((c) => c.articleId === selectedId) ?? answerChunks[0] ?? null;
-  const shownQuotes = extractQuotes(lastAnswer?.text ?? '');
+  // Which turn's apparatus is on screen.
+  //
+  // Normally the newest answer, so the statute is already there without anyone
+  // clicking. But a citation in an OLDER turn addresses that turn's sources, so
+  // selecting one has to bring its own apparatus with it — otherwise the figure
+  // points at nothing.
+  const assistantTurns = turns.filter((t) => t.role === 'assistant');
+  const sourcesOf = (t: Turn | undefined): Entry[] => [
+    ...(t?.fresh ?? []).map((chunk) => ({ chunk, carried: false })),
+    ...(t?.carried ?? []).map((chunk) => ({ chunk, carried: true })),
+  ];
+  const owningTurn =
+    (selectedId
+      ? [...assistantTurns].reverse().find((t) => sourcesOf(t).some((e) => e.chunk.articleId === selectedId))
+      : undefined) ?? assistantTurns[assistantTurns.length - 1];
+
+  const entries = sourcesOf(owningTurn);
+  const shownQuotes = extractQuotes(owningTurn?.text ?? '');
 
   return (
     <div className={railOpen ? 'workbench' : 'workbench rail-hidden'}>
       {railOpen ? (
       <nav className="rail">
         <div className="panel-title">{t('nav.consultations')}</div>
+        <div className="register-rule" />
+        <Sessions currentId={sessionId} onOpen={(id) => void openSession(id)} reloadKey={reloadKey} />
         <button className="new-case" onClick={reset} disabled={turns.length === 0}>
           {t('nav.newCase')}
         </button>
-        <Sessions currentId={sessionId} onOpen={(id) => void openSession(id)} reloadKey={reloadKey} />
       </nav>
       ) : null}
 
       <section className="thread">
       {turns.length === 0 ? (
-        <div className="intro">
+        <div className="intro measure">
+          <h1 className="intro-title">{t('intro.title')}</h1>
           <p>{t('intro.lead')}</p>
+          <p className="intro-note">{t('intro.caution')}</p>
+
           {/*
             Examples are clickable and deliberately concrete. They do double
-            duty: they save typing, and they show the corpus boundary — every
-            one is a tax question, because that is all this corpus contains.
+            duty: they save typing, and they show what the corpus reaches —
+            one clean Russian question, one colloquial Armenian, one
+            transliterated, one threshold question, and one labour question,
+            since the corpus stopped being tax-only.
           */}
+          <div className="panel-title">{t('intro.start')}</div>
+          <div className="examples-rule" />
           <div className="examples">
-            {EXAMPLES.map((q) => (
+            {EXAMPLES.map((q, i) => (
               <button
                 key={q}
                 className="example"
@@ -371,22 +398,27 @@ export function Chat({ corpusSynced }: { corpusSynced: string | null }) {
                   inputRef.current?.focus();
                 }}
               >
-                {q}
+                <span className="example-n">{ROMAN[i]}</span>
+                <span className="example-q">{q}</span>
               </button>
             ))}
           </div>
         </div>
       ) : null}
 
-      {turns.map((turn, i) => (
-        <div key={i} className={`turn ${turn.role}`}>
+      {turns.map((turn, i) => {
+        const sources = sourcesOf(turn);
+        return (
+        <div key={i} className={`turn ${turn.role} measure`}>
           <div className="turn-role">{turn.role === 'user' ? t('turn.question') : 'ArmLex'}</div>
           {turn.coverage && COVERAGE_KEY[turn.coverage] ? (
-            <div className={`coverage ${turn.coverage}`}>{t(COVERAGE_KEY[turn.coverage]!)}</div>
+            <div className={`coverage ${turn.coverage}`}>
+              <div className="coverage-body">{t(COVERAGE_KEY[turn.coverage]!)}</div>
+            </div>
           ) : null}
           {turn.text ? (
             <div className="turn-text">
-              <MarkdownView text={turn.text} />
+              {turn.role === 'user' ? turn.text : <MarkdownView text={turn.text} />}
               {turn.streaming ? <span className="caret" /> : null}
             </div>
           ) : null}
@@ -398,32 +430,24 @@ export function Chat({ corpusSynced }: { corpusSynced: string | null }) {
           ) : null}
 
           {/*
-            Citations, not a collapsed "Sources (4)" list. A citation is the
-            unit an accountant reuses, so each one is a control that loads that
-            provision into the norm panel beside the answer.
+            Citations as superior figures addressing the apparatus beside the
+            answer. The figure a reader clicks is the number the entry carries,
+            so "3" in the text and "3" in the sources are the same provision.
           */}
-          {turn.role === 'assistant' && (turn.fresh?.length ?? 0) + (turn.carried?.length ?? 0) > 0 ? (
+          {turn.role === 'assistant' && sources.length > 0 ? (
             <div className="turn-meta">
               <div className="cites">
-                {(turn.fresh ?? []).map((c) => (
+                <span className="cites-label">{t('cites.label')}</span>
+                {sources.map((e, n) => (
                   <button
-                    key={`f${c.articleId}`}
-                    className="cite"
-                    aria-current={shownChunk?.articleId === c.articleId}
-                    onClick={() => setSelectedId(c.articleId)}
+                    key={e.chunk.articleId}
+                    className={e.carried ? 'cite carried' : 'cite'}
+                    aria-current={selectedId === e.chunk.articleId}
+                    onClick={() => setSelectedId(e.chunk.articleId)}
+                    title={e.carried ? t('norm.carried') : e.chunk.documentTitle}
                   >
-                    <span lang="hy">{c.ref}</span>
-                  </button>
-                ))}
-                {(turn.carried ?? []).map((c) => (
-                  <button
-                    key={`c${c.articleId}`}
-                    className="cite carried"
-                    aria-current={shownChunk?.articleId === c.articleId}
-                    onClick={() => setSelectedId(c.articleId)}
-                    title="Перенесено из прошлых сообщений"
-                  >
-                    <span lang="hy">{c.ref}</span>
+                    <span className="cite-n">{n + 1}</span>
+                    <span lang="hy">{e.chunk.ref}</span>
                   </button>
                 ))}
               </div>
@@ -433,14 +457,15 @@ export function Chat({ corpusSynced }: { corpusSynced: string | null }) {
             </div>
           ) : null}
         </div>
-      ))}
+        );
+      })}
 
-      {error ? <div className="error">{error}</div> : null}
+      {error ? <div className="error measure">{error}</div> : null}
 
       {/* Anchor the auto-scroll to the end of the transcript. */}
       <div ref={endRef} />
 
-      <div className="composer">
+      <div className="composer measure">
         <textarea
           ref={inputRef}
           value={input}
@@ -466,7 +491,13 @@ export function Chat({ corpusSynced }: { corpusSynced: string | null }) {
       </div>
       </section>
 
-      <NormPanel chunk={shownChunk} quotes={shownQuotes} corpusSynced={corpusSynced} />
+      <NormPanel
+        entries={entries}
+        quotes={shownQuotes}
+        corpusSynced={corpusSynced}
+        selectedId={selectedId}
+        onSelect={setSelectedId}
+      />
     </div>
   );
 }

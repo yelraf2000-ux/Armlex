@@ -74,10 +74,13 @@ export function useSettings(): Settings {
 export function SettingsControls() {
   const { lang, setLang, theme, setTheme, t } = useSettings();
 
-  const themes: { key: Theme; glyph: string; label: string }[] = [
-    { key: 'auto', glyph: '◐', label: t('theme.auto') },
-    { key: 'light', glyph: '☀', label: t('theme.light') },
-    { key: 'dark', glyph: '☾', label: t('theme.dark') },
+  // Words, not dingbats. ◐ ☀ ☾ are typographic strays here — every other
+  // control in the edition is a word with a rule under it, and the glyphs
+  // rendered differently on every platform anyway.
+  const themes: { key: Theme; label: string }[] = [
+    { key: 'auto', label: t('theme.auto') },
+    { key: 'light', label: t('theme.light') },
+    { key: 'dark', label: t('theme.dark') },
   ];
 
   return (
@@ -100,11 +103,9 @@ export function SettingsControls() {
             key={th.key}
             className={theme === th.key ? 'sw active' : 'sw'}
             aria-pressed={theme === th.key}
-            title={th.label}
             onClick={() => setTheme(th.key)}
           >
-            <span aria-hidden="true">{th.glyph}</span>
-            <span className="sr-only">{th.label}</span>
+            {th.label}
           </button>
         ))}
       </div>
@@ -117,22 +118,15 @@ export function SettingsControls() {
  * far left of the bar.
  *
  * Placed between the mode tabs and the language switcher it read as a fourth
- * mode and went unnoticed; a navigation toggle belongs before the brand, where
- * every other application puts one. The icon also states which way it acts —
- * ☰ to open, ✕ to close — because a pressed-state colour alone does not say
- * what the button will do next.
+ * mode and went unnoticed; a navigation toggle belongs on the provenance line,
+ * before everything else. It names the thing it opens rather than showing a
+ * glyph, and `aria-expanded` plus the rule under it carry the state.
  */
 export function RailToggle() {
   const { railOpen, toggleRail, t } = useSettings();
   return (
-    <button
-      className="rail-toggle"
-      onClick={toggleRail}
-      aria-expanded={railOpen}
-      title={t('nav.consultations')}
-    >
-      <span aria-hidden="true">{railOpen ? '✕' : '☰'}</span>
-      <span className="sr-only">{t('nav.consultations')}</span>
+    <button className="rail-toggle" onClick={toggleRail} aria-expanded={railOpen}>
+      {t('nav.consultations')}
     </button>
   );
 }

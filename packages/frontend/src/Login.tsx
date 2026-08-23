@@ -37,13 +37,21 @@ export function Login({ onSuccess }: { onSuccess: () => void }) {
   }
 
   return (
+    // A title page rather than a login form: the first thing anyone sees of the
+    // edition should say what it is and how current it is.
     <div className="login">
-      <h2 className="login-title">ArmLex</h2>
-      <p className="login-note">
-        {t('login.note')}
-      </p>
+      <div className="login-head">
+        <h1 className="login-title">ArmLex</h1>
+        <div className="login-sub">{t('masthead.sub')}</div>
+        <div className="masthead-rule" />
+      </div>
+
+      <p className="login-note">{t('login.note')}</p>
+
       <div className="login-row">
+        <label htmlFor="armlex-password">{t('login.password')}</label>
         <input
+          id="armlex-password"
           type="password"
           value={password}
           autoFocus
@@ -51,13 +59,14 @@ export function Login({ onSuccess }: { onSuccess: () => void }) {
           onKeyDown={(e) => {
             if (e.key === 'Enter') void submit();
           }}
-          placeholder={t('login.password')}
         />
+        {error ? <div className="error">{error}</div> : null}
         <button onClick={() => void submit()} disabled={busy || !password}>
           {busy ? '…' : t('login.enter')}
         </button>
       </div>
-      {error ? <div className="error">{error}</div> : null}
+
+      <div className="login-disclaimer">{t('corpus.disclaimer')}</div>
     </div>
   );
 }

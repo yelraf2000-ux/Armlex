@@ -52,13 +52,12 @@ const hy: Dict = {
     'Գտնված հոդվածներում այս հարցին ուղղակի պատասխանող նորմ չկա։ Ստորև՝ միայն հարակից դրույթներ։',
 
   'intro.lead':
-    'Տվեք հարց, ապա ճշտեք — համատեքստը պահպանվում է հաղորդագրությունների միջև, ուստի կարող եք խնդրել եզրակացություն ամբողջ քննարկվածի վերաբերյալ։',
+    'Համատեքստը պահպանվում է հաղորդագրությունների միջև, ուստի կարող եք իրավիճակը նկարագրել մաս առ մաս, ապա խնդրել եզրակացություն ամբողջ քննարկվածի վերաբերյալ։',
 
   'composer.first': 'Նկարագրեք իրավիճակը կամ տվեք հարց…',
   'composer.next': 'Ճշտող հարց կամ «եզրակացրու ամբողջ քննարկվածից»',
   'composer.send': 'Ուղարկել',
 
-  'norm.title': 'Նորմ',
   'norm.empty':
     'Տվեք հարց — այստեղ կհայտնվի այն հոդվածը, որի վրա հենվում է պատասխանը՝ ընդգծված մեջբերումով և խմբագրության ամսաթվով։',
   'norm.inForce': 'Գործում է',
@@ -84,6 +83,19 @@ const hy: Dict = {
   'error.credit':
     'Anthropic API-ի հաշվեկշիռը սպառվել է — սա ծրագրի սխալ չէ։ Համալրեք հաշիվը Plans & Billing բաժնում; որոնումն աշխատում է առանց դրա։',
   'error.noApi': 'API-ն չի պատասխանում',
+  'norm.title': 'Աղբյուրներ',
+  'norm.carried': 'Փոխանցված է նախորդ հաղորդագրություններից — կարդացվել է, բայց այս պատասխանում չի մեջբերվել։',
+  'norm.openArlis': 'Բացել ARLIS-ում',
+  'intro.title': 'Տվեք հարց, ապա ճշտեք։',
+  'intro.caution': 'Յուրաքանչյուր պատասխան հենվում է միայն գտնված հոդվածների տեքստի վրա։ Եթե նորմը կորպուսում չկա, հրատարակությունը կասի դա ուղիղ, այլ ոչ թե կընտրի նմանատիպը։',
+  'intro.start': 'Որտեղից են սկսում',
+  'contents.title': 'Հրատարակության կազմը',
+  'contents.outside': 'Կորպուսից դուրս',
+  'contents.outsideNote': 'Դատական պրակտիկա, քաղաքացիական իրավունք, նամակների տեսքով պարզաբանումներ։ Այս ոլորտների հարցը կստանա ազնիվ մերժում, այլ ոչ թե մոտավոր պատասխան։',
+  'cites.label': 'Կարդացված հոդվածներ',
+  'masthead.sub': 'ՀՀ հարկային և աշխատանքային օրենսդրության տեղեկատու',
+  'card.expand': 'Ցույց տալ հոդվածը',
+  'card.collapse': 'Ծալել',
 };
 
 const ru: Dict = {
@@ -117,13 +129,12 @@ const ru: Dict = {
     'Прямой нормы по этому вопросу в найденных статьях нет. Ниже — только смежные положения.',
 
   'intro.lead':
-    'Задайте вопрос, затем уточняйте — контекст сохраняется между сообщениями, поэтому можно попросить вывод по совокупности обсуждённого.',
+    'Контекст сохраняется между сообщениями, поэтому можно описать ситуацию по частям, а затем попросить вывод по совокупности обсуждённого.',
 
   'composer.first': 'Опишите ситуацию или задайте вопрос…',
   'composer.next': 'Уточняющий вопрос или «сделай вывод по всему обсуждённому»',
   'composer.send': 'Отправить',
 
-  'norm.title': 'Норма',
   'norm.empty':
     'Задайте вопрос — здесь появится статья, на которую опирается ответ, с выделенной цитатой и датой редакции.',
   'norm.inForce': 'Действует',
@@ -149,6 +160,19 @@ const ru: Dict = {
   'error.credit':
     'Закончился баланс Anthropic API — это не ошибка приложения. Пополните счёт в Plans & Billing, поиск работает без него.',
   'error.noApi': 'API не отвечает',
+  'norm.title': 'Источники',
+  'norm.carried': 'Перенесено из прошлых сообщений — прочитано, но в этом ответе не процитировано.',
+  'norm.openArlis': 'Открыть в ARLIS',
+  'intro.title': 'Задайте вопрос, затем уточняйте.',
+  'intro.caution': 'Каждый ответ опирается только на текст найденных статей. Если нормы в корпусе нет, издание скажет об этом прямо, а не подберёт похожую.',
+  'intro.start': 'С чего начинают',
+  'contents.title': 'Состав издания',
+  'contents.outside': 'Вне корпуса',
+  'contents.outsideNote': 'Судебная практика, гражданское право, разъяснения в форме писем. Вопрос из этих областей получит честный отказ, а не приблизительный ответ.',
+  'cites.label': 'Прочитанные статьи',
+  'masthead.sub': 'справочник по налоговому и трудовому законодательству Республики Армения',
+  'card.expand': 'Показать статью',
+  'card.collapse': 'Свернуть',
 };
 
 const en: Dict = {
@@ -182,13 +206,12 @@ const en: Dict = {
     'No provision answering this was found. Below are related provisions only.',
 
   'intro.lead':
-    'Ask a question, then refine it — context carries between messages, so you can ask for a conclusion across the whole discussion.',
+    'Context carries between messages, so you can describe the situation in pieces and then ask for a conclusion across the whole discussion.',
 
   'composer.first': 'Describe the situation or ask a question…',
   'composer.next': 'A follow-up, or “summarise everything discussed”',
   'composer.send': 'Send',
 
-  'norm.title': 'Provision',
   'norm.empty':
     'Ask a question — the article the answer rests on appears here, with the quoted passage marked and the revision date shown.',
   'norm.inForce': 'In force',
@@ -214,6 +237,19 @@ const en: Dict = {
   'error.credit':
     'The Anthropic API balance is exhausted — this is not an application fault. Top up in Plans & Billing; search works without it.',
   'error.noApi': 'The API is not responding',
+  'norm.title': 'Sources',
+  'norm.carried': 'Carried from earlier messages — read, but not quoted in this answer.',
+  'norm.openArlis': 'Open in ARLIS',
+  'intro.title': 'Ask a question, then refine it.',
+  'intro.caution': 'Every answer rests only on the text of the articles found. If the corpus holds no such provision, the edition says so plainly rather than offering something similar.',
+  'intro.start': 'Where readers start',
+  'contents.title': 'What this edition holds',
+  'contents.outside': 'Outside the corpus',
+  'contents.outsideNote': 'Court practice, civil law, clarifications issued as letters. A question from those areas gets an honest refusal, not an approximate answer.',
+  'cites.label': 'Articles read',
+  'masthead.sub': 'a reference to the tax and labour law of the Republic of Armenia',
+  'card.expand': 'Show the article',
+  'card.collapse': 'Collapse',
 };
 
 const DICTS: Record<Lang, Dict> = { hy, ru, en };

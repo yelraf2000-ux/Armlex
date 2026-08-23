@@ -4,6 +4,19 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>ArmLex</title>
+    <!--
+      Prata sets display, Lora sets body, Noto Serif Armenian sets statute.
+      Preconnect because the first paint depends on them: this design is
+      typographic, and a fallback-metric flash is the whole page moving.
+      Sylfaen stays in the CSS stack behind Noto — it ships with Windows and
+      covers Armenian, so a blocked font request still never renders tofu.
+    -->
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      rel="stylesheet"
+      href="https://fonts.googleapis.com/css2?family=Prata&family=Lora:ital,wght@0,400;0,500;0,600;1,400;1,600&family=Noto+Serif+Armenian:wght@400;600;700&display=swap"
+    />
     <script>
       /*
        * Stamp the saved theme and language BEFORE the app boots.
