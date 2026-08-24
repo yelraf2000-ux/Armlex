@@ -299,3 +299,51 @@ It does not.
 The open question is now how WIDE the variance is — how often the delivered set
 loses a required article across repeated rewrites of the same question. That
 needs N draws per question, not one.
+
+## "The fragments don't contain part 5" — when the model is telling the truth
+
+A user evaluation graded an answer 5/10 and diagnosed *"severe chunking gap,
+267(5) lost during embedding, the vector DB is incomplete"*. Every part of that
+was wrong, and the truth was more useful.
+
+`Հոդված 267` is in the corpus at full length, part 5 included. What was broken
+was the text ASSEMBLED for generation — twice over, both introduced the same
+day by part-level extraction (`generationDocument`):
+
+**1. The first slice of every enumeration repeated its own lead-in.**
+`mergeTiny` folds a bare part line into the point that follows, so that item's
+text already opens with the lead — and assembly prepended it again:
+
+    «5. …չեն կարող համարվել` 5. …չեն կարող համարվել` 1) բանկերը…»
+
+Corrupt-looking, and in the embedded text too, so the vectors carry it as well.
+Fixed in `split.ts`; a re-embed is needed for the index to benefit.
+
+**2. The ±1 slice window was blind to the article's own cross-references.**
+Part 3 grants the status "բացառությամբ սույն հոդվածի 5-րդ մասով սահմանված
+դեպքերի" — and part 5 sits twelve slices away in a 22-slice article. Matching
+the threshold slice delivered parts 2–4. **The model was right**: part 5 was not
+in its fragments, it said so, and it refused to answer. The honesty mechanism
+worked; the context assembly did not.
+
+`generationDocument` now follows references to other parts of the same article —
+one-hop expansion applied INSIDE an article rather than across them, bounded to
+parts the delivered text actually names. Result on that question: `COVERAGE`
+partial → **full**, a definitive "yes", and it volunteers the distinction the
+evaluation said was missing (reselling purchased furniture is «առևտրական
+գործունեություն» and excluded under 267(5)).
+
+**The rule this is the fourth instance of:** when the system says a provision is
+missing, check the delivered text before checking the corpus. Every time so far
+the article was present — at vector rank 2, 3, 7, 8, 11, or in this case
+present in the chunk and cut out of the window. `CLAUDE.md` opens with this
+warning for a reason.
+
+**And a caution about external evaluations:** they are valuable on output
+quality — the broken quote placeholders and the unhelpful clarifying questions
+were both fair hits. They are unreliable on internal diagnosis, because the
+evaluator cannot see the corpus, the ranks, or the delivered context. This one
+also invented a provision (`ԱՕ 129 մաս 1.1`, which does not exist — 129 has two
+parts and never mentions 112) and named the wrong answer for another question
+(line 9.1 is «այլ գործունեությունից», not «այլ ակտիվների օտարումից»). Take the
+symptom, verify the cause.

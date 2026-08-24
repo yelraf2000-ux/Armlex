@@ -282,10 +282,65 @@ export function generationDocument(chunk: RetrievedChunk): string {
   const header = marker === -1 ? '' : chunk.text.slice(0, marker + 5);
   const lead = evidenceOf(chunk.text).slice(0, 900);
 
-  const window = [i - 1, i, i + 1]
+  // Neighbouring slices each repeat the enumeration's governing lead-in (see
+  // split.ts: every slice carries "header, the governing lead-in, the item"),
+  // so a naive join repeats it once per slice. Observed on Հոդված 267:
+  //   «5. …չեն կարող համարվել` 5. …չեն կարող համարվել` 1) բանկերը…»
+  // Text that reads as corrupt, and the model responded by declaring part 5
+  // ABSENT while looking straight at it.
+  const pieces = [i - 1, i, i + 1]
     .filter((j) => j >= 0 && j < slices.length)
-    .map((j) => evidenceOf(slices[j]!))
-    .join('\n');
+    .map((j) => evidenceOf(slices[j]!));
 
-  return `${header}${lead}\n…\n${window}`.slice(0, GEN_CHARS);
+  const deduped = pieces.map((t, k) => {
+    if (k === 0) return t;
+    const prev = pieces[k - 1]!;
+    let common = 0;
+    while (common < t.length && common < prev.length && t[common] === prev[common]) common++;
+    // Only strip a substantial shared prefix; a few coincidental characters are
+    // not a repeated lead-in.
+    return common > 40 ? t.slice(common).replace(/^[\s`]+/, '') : t;
+  });
+
+  // Follow references to OTHER PARTS OF THE SAME ARTICLE.
+  //
+  // A ±1 slice window is blind to the article's own cross-references, and legal
+  // drafting leans on them constantly. Հոդված 267 part 3 grants micro-business
+  // status "բացառությամբ սույն հոդվածի 5-րդ մասով սահմանված դեպքերի" — the
+  // exclusions live in part 5, twelve slices away. Matching the threshold slice
+  // delivered parts 2-4, so the model correctly reported that part 5 was absent
+  // and could not answer. The pointer was right there in the delivered text.
+  //
+  // This is one-hop citation expansion (`expandOneHop`) applied inside an
+  // article instead of across them. Bounded: only parts named in the text
+  // already selected, and still capped by GEN_CHARS.
+  const body = `${lead}\n${deduped.join('\n')}`;
+  const referenced = new Set(
+    [...body.matchAll(/սույն հոդվածի\s+(\d+)(?:-(?:ին|րդ))?\s+մաս/gu)].map((m) => m[1]!),
+  );
+  const already = new Set([i - 1, i, i + 1]);
+  const followed: string[] = [];
+  for (const partNo of referenced) {
+    for (let j = 0; j < slices.length; j++) {
+      if (already.has(j)) continue;
+      const ev = evidenceOf(slices[j]!).trimStart();
+      if (!ev.startsWith(`${partNo}.`)) continue;
+      followed.push(ev);
+      already.add(j);
+      if (followed.length >= 4) break; // bound the tail
+    }
+    if (followed.length >= 4) break;
+  }
+
+  // An explicit marker rather than a bare ellipsis. The prompt tells the model
+  // to answer only from the fragments and to say so when a provision is absent,
+  // so a lone "…" invites exactly the wrong inference when what was omitted is
+  // other parts of the SAME article, still identified in the header above.
+  const tail = followed.length
+    ? `\n[…referenced parts of the same article…]\n${followed.join('\n')}`
+    : '';
+  return `${header}${lead}\n[…same article continues; intervening parts omitted…]\n${deduped.join('\n')}${tail}`.slice(
+    0,
+    GEN_CHARS,
+  );
 }

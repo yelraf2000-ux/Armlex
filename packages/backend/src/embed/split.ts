@@ -405,7 +405,18 @@ export function splitEnumerated(chunk: CorpusChunk): Slice[] {
     const isTableHeaderRow = it.isTableRow && tableHeader?.includes(it.text);
     const parts = [header];
     if (it.isTableRow && tableHeader && !isTableHeaderRow) parts.push(`${tableHeader}\n`);
-    if (it.lead) parts.push(`${it.lead}\n`);
+    // Do not re-attach a lead-in the item already opens with. `mergeTiny` folds
+    // a bare part line into the point that follows it, so that merged item's
+    // text ALREADY starts with the lead — prepending it again produced
+    //   «5. …չեն կարող համարվել` 5. …չեն կարող համարվել` 1) բանկերը…»
+    // on Հոդված 267. Corrupt-looking text with real consequences: the model was
+    // shown part 5 and answered that part 5 was absent from its fragments.
+    // Affects the first slice of every enumeration, so it is also in the
+    // embedded text — a re-embed is needed for the index to benefit.
+    const opensWithLead =
+      it.lead !== undefined &&
+      it.text.trimStart().startsWith(it.lead.trim().slice(0, Math.min(60, it.lead.trim().length)));
+    if (it.lead && !opensWithLead) parts.push(`${it.lead}\n`);
     parts.push(it.text);
     const text = parts.join('');
     return {
