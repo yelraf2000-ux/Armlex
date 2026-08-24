@@ -194,6 +194,20 @@ async function loadDoneIds(path: string): Promise<Set<string>> {
  * source here. Keep the two in step.
  */
 async function loadQuestions(): Promise<string[]> {
+  // Also embed the CONTEXTUALISER REWRITES, not just the raw questions. The app
+  // retrieves on the rewrite, so scoring the shipped path needs its vector too;
+  // 24 of 46 golden questions are rewritten into something different.
+  const extra: string[] = [];
+  try {
+    const raw = await readFile(join(EVAL_DIR, 'contextualised.jsonl'), 'utf8');
+    for (const l of raw.split('\n').filter(Boolean)) {
+      const v = JSON.parse(l) as { rewritten?: string };
+      if (v.rewritten) extra.push(v.rewritten);
+    }
+  } catch {
+    /* no rewrite cache yet — raw questions only */
+  }
+
   const text = await readFile(join(EVAL_DIR, 'golden_verified.csv'), 'utf8');
   const questions = new Set<string>();
   // question is the first quoted field of each line
@@ -201,6 +215,7 @@ async function loadQuestions(): Promise<string[]> {
     const m = /^"((?:[^"]|"")*)"/.exec(line);
     if (m?.[1]) questions.add(m[1].replace(/""/g, '"'));
   }
+  for (const e of extra) questions.add(e);
   return [...questions];
 }
 

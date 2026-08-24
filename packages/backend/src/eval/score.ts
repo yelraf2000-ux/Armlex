@@ -289,6 +289,38 @@ async function preflight(golden: GoldenQuestion[]): Promise<void> {
 async function main(): Promise<void> {
   let golden = await loadGolden();
 
+  // --ctx retrieves on the CONTEXTUALISER REWRITE instead of the raw question,
+  // which is what chat.ts actually sends. Without this the benchmark scores an
+  // input production never uses: 24 of 46 questions are rewritten, and at least
+  // one answer is delivered for the raw phrasing and absent for the rewrite.
+  // Rewrites are pre-computed by eval/contextualise.ts so a run stays
+  // deterministic and needs no LLM call per question.
+  const useCtx = process.argv.includes('--ctx');
+  if (useCtx) {
+    const map = new Map<string, string>();
+    try {
+      const raw = await readFile(join(EVAL_DIR, 'contextualised.jsonl'), 'utf8');
+      for (const l of raw.split('\n').filter(Boolean)) {
+        const v = JSON.parse(l) as { raw: string; rewritten: string };
+        map.set(v.raw, v.rewritten);
+      }
+    } catch {
+      console.error(
+        'ABORT: --ctx needs data/eval/contextualised.jsonl.\n' +
+          'Run: npx tsx packages/backend/src/eval/contextualise.ts',
+      );
+      process.exit(1);
+    }
+    const missing = golden.filter((g) => !map.has(g.question)).length;
+    if (missing) {
+      console.error(`ABORT: ${missing} golden question(s) have no cached rewrite. Re-run contextualise.ts.`);
+      process.exit(1);
+    }
+    // Swap the question text used for RETRIEVAL; expected answers are unchanged.
+    golden = golden.map((g) => ({ ...g, question: map.get(g.question)! }));
+    console.log(`--ctx: retrieving on contextualiser rewrites (${golden.length} questions)`);
+  }
+
   /** The chunks generation would actually be handed, at a given cut. */
   let deliver: ((q: string, limit: number) => Promise<string[]>) | null = null;
 
