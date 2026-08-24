@@ -296,3 +296,30 @@ traffic and 40% of hard failures; Class-2 fired once in 250. New order:
     vector-only beats reranked on hit@5 (89.1 vs 87.0) and recall@5 (83.0 vs
     80.4), losing only MRR. The guaranteed-slots fix for this is written and
     env-gated (`GUARANTEED_VECTOR_SLOTS`); it needs a set that can measure it.
+
+34. **The turnover-tax line question — now fully specified, still failing.**
+    «Which line for a fixed-asset sale?» needs exactly TWO chunks, and the
+    answer is **row 20, filled directly** — there is no 9.x sub-line, because
+    asset disposal gets no expense-deduction section (article 260 excludes item
+    9 of the 258 table).
+
+    | piece | what it gives | status |
+    |---|---|---|
+    | `137687#Հավելված 1, աղյուսակ 3` | row 20 = «Այլ ակտիվների … օտարումից», 10% | **rank 11, not delivered** |
+    | `137687#Հավելված 1, կետ 63` | «12-րդ, 13-րդ, 15-րդ, **18-20-րդ** կետերում` [Գ] = [Ա] x [Բ]» | **delivered, NOT USED** |
+
+    Both are now pinned as required answers for golden question 36, so a fix is
+    measurable rather than anecdotal.
+
+    **Two distinct defects, and only one is retrieval.** `աղյուսակ 3` never
+    reaches generation (`OPEN-ITEMS` 26). But `կետ 63` DID — it appears in the
+    read list — and the model used its first clause (the 5.10/6.10/7.10/8.8/9.10
+    mapping) and stopped before the clause that answers the question. That is a
+    reading failure inside a delivered chunk, a class not previously recorded.
+
+    **This contradicts the obvious prescription.** An external review of the same
+    answer recommended raising Top-K to 20 and adding BM25. More retrieval would
+    not have helped: half the answer was already in context. Every guessed line
+    number so far has also been wrong — `8.8`, `9.1` and the review's `9.2`.
+    Section 9 is «այլ գործունեությունից» (other ACTIVITIES), as points 9.1, 9.3
+    and 9.6-9.11 all state.
