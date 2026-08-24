@@ -113,6 +113,57 @@ export function rerankDocument(chunk: RetrievedChunk): string {
   return `${prefix}\n…\n${evidence}`.slice(0, DOC_CHARS * 2);
 }
 
+
+/**
+ * How close a candidate must be to the last included one to survive the cut.
+ *
+ * Cross-encoder scores on this corpus are compressed — the threshold sweep
+ * (2026-08-19) found covered questions mean top-1 0.668 against missed 0.616,
+ * and 11 of 24 covered questions scoring at or below the best miss. That
+ * killed an ABSOLUTE cutoff: no value of t separates good from bad.
+ *
+ * This uses the same compression as a signal rather than fighting it. When the
+ * next candidate is within DELTA of the last included one, the reranker is not
+ * actually distinguishing them, and cutting between them is a coin flip.
+ * Measured coin flips, all governing articles lost at the boundary:
+ *
+ *   Հոդված 288  rank 4  0.465  vs 0.469  (registration dates)
+ *   Հոդված 198  rank 5  0.758  vs 0.762  (wage delay)
+ *   Հոդված 254  rank 6  0.547  vs 0.582  (IT services, cost a full->none)
+ *
+ * MAX_EXTRA bounds the cost: Armenian runs ~1.7 tokens/char and a turn is
+ * already ~40k input tokens, so an unbounded tail is a real bill, not a
+ * rounding error.
+ */
+// Read per call, not at import: the scorer A/Bs both settings in one process.
+/**
+ * OFF by default (delta 0). Measured on the 33-question golden set at a cut of
+ * 4: it recovered ONE question for +42% tokens, and the tighter settings sized
+ * to the observed 0.004 ties recovered nothing at all. The real fix was to make
+ * chunks small enough to send more of them (`generationDocument` + FRESH_LIMIT
+ * 8), which bought +24 points of complete-context delivery for +10% cost.
+ *
+ * Kept, not deleted: it has not been re-measured at a cut of 8, where the
+ * marginal chunk is cheaper. Set RERANK_TIE_DELTA to re-test.
+ */
+const tieDelta = (): number => Number(process.env['RERANK_TIE_DELTA'] ?? 0);
+const tieMaxExtra = (): number => Number(process.env['RERANK_TIE_MAX_EXTRA'] ?? 3);
+
+/** Top N, plus any immediately-following candidate the reranker cannot separate from Nth. */
+export function takeWithTies<T extends { score: number }>(ordered: T[], topN: number): T[] {
+  const delta = tieDelta();
+  const maxExtra = tieMaxExtra();
+  if (ordered.length <= topN || delta <= 0) return ordered.slice(0, topN);
+  const floor = (ordered[topN - 1]?.score ?? 0) - delta;
+  const out = ordered.slice(0, topN);
+  for (let i = topN; i < ordered.length && out.length < topN + maxExtra; i++) {
+    const c = ordered[i];
+    if (!c || c.score < floor) break;
+    out.push(c);
+  }
+  return out;
+}
+
 export async function rerankChunks(
   query: string,
   chunks: RetrievedChunk[],
@@ -129,7 +180,10 @@ export async function rerankChunks(
         query,
         documents: chunks.map(rerankDocument),
         model: MODEL,
-        top_k: Math.min(topN, chunks.length),
+        // Ask for the extras too, or takeWithTies has nothing to extend from:
+        // the API returns exactly top_k documents, so requesting topN means
+        // ranks topN+1.. never come back and the tie rule silently no-ops.
+        top_k: Math.min(topN + tieMaxExtra(), chunks.length),
       }),
     });
 
@@ -142,18 +196,77 @@ export async function rerankChunks(
       data: { index: number; relevance_score: number }[];
     };
 
-    return json.data
+    const ordered = json.data
       .sort((a, b) => b.relevance_score - a.relevance_score)
       .map((d) => {
         const c = chunks[d.index];
         return c ? { ...c, score: d.relevance_score } : undefined;
       })
-      .filter((c): c is RetrievedChunk => Boolean(c))
-      .slice(0, topN);
+      .filter((c): c is RetrievedChunk => Boolean(c));
+
+    return takeWithTies(ordered, topN);
   } catch (err) {
     // Reranking improves ordering; it is not required for correctness. A
     // provider outage must degrade to vector order, never fail the query.
     console.error(`[rerank] ${String(err).slice(0, 100)} — falling back to vector order`);
     return chunks.slice(0, topN);
   }
+}
+
+/**
+ * What GENERATION reads for a chunk — as opposed to what the reranker judges.
+ *
+ * The reranker already reads the matched part rather than the article's opening
+ * (see `rerankDocument`); generation still received the whole article, up to
+ * 33,627 characters of which one paragraph mattered. Armenian runs ~1.7 tokens
+ * per character, so that text is where nearly all the per-question cost lives —
+ * and the cost is what forced `FRESH_LIMIT` down to 4, which is what dropped
+ * `Հոդված 288`, `Հոդված 254` and `Հոդված 112` before the model could read them.
+ *
+ * `DECISIONS.md` named this shape in August and nobody built it: article-level
+ * embeddings for retrieval, part-level extraction for generation — one chunk
+ * size does not have to serve both. Search is untouched here; only the reading
+ * narrows. That is the distinction the reverted sub-article experiment missed.
+ *
+ * Three rules keep it safe:
+ *   - Articles at or under GEN_CHARS pass through WHOLE. Most do — the Labour
+ *     Code's median chunk is 1,111 characters. Only giants are ever cut.
+ *   - The article's opening lead always travels with the matched part, because
+ *     legal text refers backwards ("the persons specified in part 1 shall…")
+ *     and a part alone can be unreadable. That reference-loss is exactly what
+ *     halved retrieval when sub-article chunking was tried on the search side.
+ *   - Neighbouring parts come too, so a rule split across adjacent items is not
+ *     severed mid-sentence.
+ *
+ * Measured on the 33-question golden set: 8 reduced chunks are 22% CHEAPER than
+ * 4 whole articles (15,015 vs 19,247 chars), so the wider cut pays for itself.
+ * Watch the invalid-quote rate (10% baseline in triage): if it rises, the model
+ * is being shown too little and inventing the rest.
+ */
+const GEN_CHARS = Number(process.env['GEN_DOC_CHARS'] ?? 6000);
+
+/** Strip the repeated metadata header a slice carries, keeping its body. */
+function evidenceOf(slice: string): string {
+  const m = slice.indexOf('\n---\n');
+  return m === -1 ? slice : slice.slice(m + 5);
+}
+
+export function generationDocument(chunk: RetrievedChunk): string {
+  if (chunk.text.length <= GEN_CHARS) return chunk.text;
+  if (chunk.sliceIndex === undefined) return chunk.text.slice(0, GEN_CHARS);
+
+  const slices = sliceTexts(chunk);
+  const i = chunk.sliceIndex;
+  if (slices.length <= 1 || !slices[i]) return chunk.text.slice(0, GEN_CHARS);
+
+  const marker = chunk.text.indexOf('\n---\n');
+  const header = marker === -1 ? '' : chunk.text.slice(0, marker + 5);
+  const lead = evidenceOf(chunk.text).slice(0, 900);
+
+  const window = [i - 1, i, i + 1]
+    .filter((j) => j >= 0 && j < slices.length)
+    .map((j) => evidenceOf(slices[j]!))
+    .join('\n');
+
+  return `${header}${lead}\n…\n${window}`.slice(0, GEN_CHARS);
 }

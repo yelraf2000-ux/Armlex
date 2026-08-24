@@ -180,8 +180,21 @@ async function loadDoneIds(path: string): Promise<Set<string>> {
   }
 }
 
+/**
+ * Query texts to embed = the questions the scorer actually scores.
+ *
+ * This read `golden_proposed.csv` — the v1 proposer output, superseded in
+ * August — so questions added to the golden set afterwards silently got no
+ * query vector. `score.ts` then returned [] for them and they scored 0 on
+ * every live retriever, which reads as a retrieval failure rather than a
+ * missing cache entry. Found 2026-08-23 when five Armenian labour questions
+ * were added and reported todo: 0.
+ *
+ * `golden_verified.csv` is the set `score.ts` loads, so it is the only correct
+ * source here. Keep the two in step.
+ */
 async function loadQuestions(): Promise<string[]> {
-  const text = await readFile(join(EVAL_DIR, 'golden_proposed.csv'), 'utf8');
+  const text = await readFile(join(EVAL_DIR, 'golden_verified.csv'), 'utf8');
   const questions = new Set<string>();
   // question is the first quoted field of each line
   for (const line of text.split('\n').slice(1)) {

@@ -183,3 +183,47 @@ traffic and 40% of hard failures; Class-2 fired once in 250. New order:
     Nothing is committed to git (`.env` is gitignored, `.env.example` verified
     clean) so there's no urgency, but rotate before the repo is shared with
     anyone else.
+
+26. **The reranker buries TABLE rows under prose — top retrieval problem.**
+    "Which line of the turnover-tax calculation?" → the answer is
+    `137687#Հավելված 1, աղյուսակ 3` row 20. Vector search ranks it **2**;
+    rerank-2.5 ranks it **11**, outside anything generation reads. Ten prose
+    instruction points about trading activity outrank the table that holds the
+    line numbers. Same asymmetry `BENCHMARK.md` recorded for slice-only
+    reranking ("terse table rows lost to rich prose openings"), but far worse on
+    form documents, which are almost entirely terse rows. Golden question 36
+    pins it. Two candidate fixes, NEITHER measured:
+    (a) a row-level document for the reranker, mirroring the enumeration fix;
+    (b) fuse FTS *under* the reranker — «տող» against a table of line labels is
+    where lexical search should win, and FTS is no longer 0% now that the golden
+    set has Armenian questions (0.0% → 5.4%).
+
+27. **`proposeV2` cannot propose form documents.** It matches a TITLE index;
+    form chunks are titled `Հավելված 1, աղյուսակ 3`, which encodes nothing about
+    content. It offered only Tax Code articles for a question answered entirely
+    inside N 299-Ն. Form-shaped golden answers need hand-pinning until the
+    proposer indexes content. Q36's gold answer is hand-pinned and marked as
+    such in `golden_verified.csv`.
+
+28. **`proposeV2` + `verify` silently DROP golden questions.** `verify` rewrites
+    `golden_verified.csv` from scratch, so any question whose previously
+    verified article does not survive a new proposal pass vanishes. On
+    2026-08-24 this removed four questions — all of them pinned hard cases
+    (import-deduction, trading-expense deduction, language-course licence, IT
+    benefits) — and the headline score rose 4 points as a result. Recovered by
+    merging against a backup. Either make the rewrite additive, or make the
+    merge a scripted step; never run the proposer without a backup.
+
+29. **Per-question detail is overwritten every run.** `benchmark_results.md`
+    keeps only the latest, and only for the best retriever, so attributing a
+    regression to a specific wave is guesswork after the fact. Wave 2 lost one
+    question and it could not be identified. Write per-run detail to a
+    timestamped file, or at minimum keep the previous run.
+
+30. **Corpus items still missing** (from the accountant document list):
+    EAEU Customs Code · EAEU import declarations and indirect taxes ·
+    maternity/disability benefit APPLICATION procedure · current fuel and
+    lubricant norms (N 1666-Ն supersedes the 2005 N 1001-Ն).
+    **IFRS is blocked, not pending** — not on ARLIS, IFRS Foundation copyright,
+    adopted by Armenian law only by reference. A licensing decision, not an
+    engineering one.

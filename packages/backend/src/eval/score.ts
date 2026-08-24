@@ -24,6 +24,7 @@ import {
 
   closeRetrieval,
 } from '../retrieval/retrieve.js';
+import { db } from '../db/pool.js';
 import { rerankChunks } from '../retrieval/rerank.js';
 
 const EVAL_DIR = join(process.cwd(), 'data', 'eval');
@@ -232,8 +233,64 @@ async function coveredParents(model: string): Promise<Set<string>> {
   }
 }
 
+/**
+ * Refuse to score `--live` against an index that cannot answer.
+ *
+ * 0.0% is a legitimate result here — it is FTS's real score on Russian
+ * questions, recorded in BENCHMARK.md. So an empty `embeddings` table produces
+ * a table that looks like a finding rather than a failure, and every live row
+ * reads 0.0% with no error anywhere.
+ *
+ * That is not hypothetical. On 2026-08-23 an accidental re-ingest cascade-
+ * deleted all 5,139 vectors mid-benchmark; the run reported
+ * `vector + rerank-2.5` at 51.9% and was read as a reranker regression. It was
+ * the index disappearing underneath. `retrieve.ts` already refuses to degrade
+ * silently on the API path (`warnVectorUnavailable` — "degrading to FTS-only
+ * must never be silent"); this is the same rule for the database path.
+ *
+ * Exit non-zero and say what is missing. Never print a plausible table.
+ */
+async function preflight(golden: GoldenQuestion[]): Promise<void> {
+  const [row] = await db()<{ n: number; chunks: number }[]>`
+    SELECT count(*)::int AS n, count(DISTINCT article_id)::int AS chunks
+    FROM embeddings WHERE model = 'gemini-embedding-2'
+  `;
+  const vectors = row?.n ?? 0;
+  if (vectors === 0) {
+    console.error(
+      '\nABORT: the `embeddings` table holds no rows for gemini-embedding-2.\n' +
+        'Every --live retriever would score 0.0%, which is indistinguishable from\n' +
+        "FTS's genuine 0.0% — so the result table would look like a finding.\n\n" +
+        'Restore the index before scoring:\n' +
+        '  npx tsx packages/backend/src/embed/load.ts gemini-embedding-2 --replace\n',
+    );
+    await closeRetrieval();
+    process.exit(1);
+  }
+
+  // A partially loaded index is the subtler version of the same trap: it scores
+  // low for a reason that has nothing to do with the retriever under test.
+  const [cov] = await db()<{ total: number }[]>`
+    SELECT count(*)::int AS total FROM articles a
+    JOIN documents d ON d.id = a.document_id
+    WHERE d.rag_eligible AND d.status = 'in_force' AND a.status = 'in_force'
+  `;
+  const total = cov?.total ?? 0;
+  const chunks = row?.chunks ?? 0;
+  console.log(
+    `index: ${vectors} vectors over ${chunks}/${total} retrievable chunks` +
+      `${chunks < total ? `  ⚠ ${total - chunks} NOT embedded` : ''}`,
+  );
+
+  const missing = golden.filter((g) => !g.question.trim()).length;
+  if (missing) console.log(`⚠ ${missing} golden question(s) have empty text`);
+}
+
 async function main(): Promise<void> {
   let golden = await loadGolden();
+
+  /** The chunks generation would actually be handed, at a given cut. */
+  let deliver: ((q: string, limit: number) => Promise<string[]>) | null = null;
 
   const files = await readdir(VECTOR_DIR).catch(() => [] as string[]);
   const models = files
@@ -281,18 +338,16 @@ async function main(): Promise<void> {
   // limited. The DB, index, SQL and fusion are all exercised for real; only
   // the query-embedding HTTP call is substituted.
   if (process.argv.includes('--live')) {
+    await preflight(golden);
+
     const cached = new Map<string, number[]>();
-    try {
-      const raw = await readFile(
-        join(VECTOR_DIR, 'gemini-embedding-2.queries.jsonl'),
-        'utf8',
-      );
-      for (const line of raw.split('\n').filter(Boolean)) {
-        const v = JSON.parse(line) as VectorLine;
-        cached.set(v.id, v.vector);
-      }
-    } catch {
-      /* no cache — the live paths below simply return nothing */
+    const raw = await readFile(
+      join(VECTOR_DIR, 'gemini-embedding-2.queries.jsonl'),
+      'utf8',
+    );
+    for (const line of raw.split('\n').filter(Boolean)) {
+      const v = JSON.parse(line) as VectorLine;
+      cached.set(v.id, v.vector);
     }
 
     const vectorRank: RankFn = async (q) => {
@@ -333,6 +388,14 @@ async function main(): Promise<void> {
       return (await rerankChunks(q, expanded, TOP_K)).map((h) => `${h.arlisId}#${h.ref}`);
     };
 
+    deliver = async (q, limit) => {
+      const qv = cached.get(q);
+      if (!qv) return [];
+      const pool = await vectorSearch(qv, Number(process.env['RERANK_POOL'] ?? 30));
+      const expanded = process.env['EXPAND_ONE_HOP'] !== '0' ? await expandOneHop(pool) : pool;
+      return (await rerankChunks(q, expanded, limit)).map((h) => `${h.arlisId}#${h.ref}`);
+    };
+
     runs.push(await score('vector (pgvector)', restrict(vectorRank), golden));
     runs.push(await score('hybrid RRF (pgvector+FTS)', restrict(hybridRank), golden));
     runs.push(await score('vector + rerank-2.5', restrict(rerankRank), golden));
@@ -344,6 +407,37 @@ async function main(): Promise<void> {
     runs.push(await score(m, restrict(rank), golden));
   }
 
+  // --- what generation actually receives -----------------------------------
+  //
+  // hit@5 / hit@8 CANNOT see the tie-aware cut: extending the delivered set
+  // does not change any rank, so every rank-based metric is identical with it
+  // on or off. The thing it changes is how many chunks reach the model, and
+  // whether the governing article is among them. That is what chat.ts cuts at
+  // FRESH_LIMIT and what three diagnosed failures were lost to.
+  if (process.argv.includes('--live') && deliver) {
+    const FRESH_LIMIT = 4; // must track answer/chat.ts
+    const measure = async (label: string, delta: string): Promise<void> => {
+      process.env['RERANK_TIE_DELTA'] = delta;
+      let hits = 0;
+      let sizes = 0;
+      for (const g of golden) {
+        const got = await deliver(g.question, FRESH_LIMIT);
+        sizes += got.length;
+        const keys = new Set(got.map(toArticleKey));
+        if ([...g.expected].some((e) => keys.has(e))) hits++;
+      }
+      const n = golden.length;
+      console.log(
+        `| ${label} | ${pct(hits / n)} | ${(sizes / n).toFixed(2)} |`,
+      );
+    };
+    console.log('\n## What generation receives (cut at FRESH_LIMIT = 4)\n');
+    console.log('| cut | gold article delivered | mean chunks sent |');
+    console.log('|---|---|---|');
+    await measure('hard top-4 (shipped today)', '0');
+    await measure('tie-aware (delta 0.04)', '0.04');
+    delete process.env['RERANK_TIE_DELTA'];
+  }
   const header = '| Retriever | hit@5 | hit@8 | recall@5 | recall@8 | MRR |';
   const sep = '|---|---|---|---|---|---|';
   const lines = runs.map(

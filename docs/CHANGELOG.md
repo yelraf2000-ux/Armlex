@@ -907,18 +907,3 @@ taking option flags shares the swallowing trap; `reembed.ts` is untraced.
 ---
 
 *Next entry goes here — append below this line, don't insert above.*
-
-**2026-08-23** — Frontend redesigned: «Издание», a printed-commentary identity
-(Prata + Lora on cream, Noto Serif Armenian for statute, deeper accent
-`#A8142B`). Designed first as a 13-artboard canvas — current build recreated
-from source, three layout directions, three visual identities — then
-implemented. The structural change: the single-provision norm panel became an
-**apparatus** showing every cited provision at once, each collapsed to its
-quoted fragment; citations became numbered figures addressing those entries.
-Four defects fixed along the way: the apparatus toggle could not close the
-first entry (selection re-opened it), the empty state auto-scrolled past
-itself, the rail toggle stayed visible below 1200px where the rail cannot
-render, and `ChunkCard` printed raw header dates and no rerank score. Search
-mode now prints the score and marks sub-0.5 results in the accent rather than
-hiding a weak list. **Not verified end-to-end:** the Dialogue apparatus with a
-live generated answer — that costs an API call and was not run.

@@ -17,6 +17,7 @@ import { generate } from './llm.js';
 import { db } from '../db/pool.js';
 import { retrieve } from '../retrieval/retrieve.js';
 import type { RetrievedChunk } from '../retrieval/retrieve.js';
+import { generationDocument } from '../retrieval/rerank.js';
 import { contextualize } from './contextualize.js';
 import { QuoteStreamGate } from './streamGate.js';
 import { CoverageParser } from './coverage.js';
@@ -28,8 +29,20 @@ import type { Turn } from './contextualize.js';
 /**
  * Chunk budget. Armenian runs ~1.7 tokens per character, so a handful of
  * articles is already tens of thousands of tokens — this cannot be generous.
+ *
+ * Was 4, set when every chunk was a WHOLE article and four already cost ~33k
+ * input tokens. That cut is what lost `Հոդված 288` (rank 4), `Հոդված 254`
+ * (rank 6) and `Հոդված 112` (rank 7) — the last one live, on the flagship
+ * labour question, where a correct answer arrived only after the user rephrased
+ * until 112 happened to clear the cut. Nothing was missing from the corpus or
+ * the ranking; the article was simply never read.
+ *
+ * Chunks now arrive reduced (`generationDocument`), so 8 of them measure 22%
+ * CHEAPER than the old 4 (15,015 vs 19,247 chars over the 33-question golden
+ * set). Widen the cut rather than tune a threshold — a tie-aware cut was built
+ * and measured first, and bought one question for +42% tokens.
  */
-const FRESH_LIMIT = 4;
+const FRESH_LIMIT = Number(process.env['FRESH_LIMIT'] ?? 8);
 const CARRIED_LIMIT = 5;
 
 
@@ -263,7 +276,7 @@ async function loadCarried(
 
 function renderChunks(fresh: RetrievedChunk[], carried: RetrievedChunk[]): string {
   const render = (c: RetrievedChunk, tag: string): string =>
-    `<fragment source="${tag}" act="${c.arlisId}" provision="${c.ref}">\n${c.text}\n</fragment>`;
+    `<fragment source="${tag}" act="${c.arlisId}" provision="${c.ref}">\n${generationDocument(c)}\n</fragment>`;
 
   const parts = [
     ...fresh.map((c) => render(c, 'retrieved for the current question')),
@@ -383,7 +396,10 @@ export async function chat(
   // Prompt-cache layout now lives in the LLM seam (`llm.ts`), which is also
   // where provider differences are absorbed. This file no longer knows which
   // vendor answers.
-  const chunkTexts = [...fresh, ...carried].map((c) => c.text);
+  // MUST be the same text renderChunks put in the prompt. Validating quotes
+  // against the full article while showing a reduced one would let a quote the
+  // model never saw pass verification — precisely the failure this guards.
+  const chunkTexts = [...fresh, ...carried].map((c) => generationDocument(c));
   const gate = new QuoteStreamGate(chunkTexts, answerLanguage(message));
   // Order matters: the coverage header is stripped BEFORE the quote gate sees
   // the text, so the gate never mistakes it for prose or a quotation.

@@ -18,10 +18,18 @@
 > | `docs/BENCHMARK.md` | Anything about retrieval quality or embeddings |
 > | `docs/CHANGELOG.md` | Asking "what happened, and when" |
 >
-> **The single most important current fact:** retrieval in the running app is
-> still FTS-only and scores **0.0%** on the Russian-language golden set.
-> Embeddings are benchmarked and cached to disk but NOT loaded into pgvector.
-> Do not assume any milestone below is wired up just because it is specified.
+> **Superseded 2026-08-24.** The FTS-only 0.0% warning that stood here
+> described the app in mid-August and is no longer true. Retrieval is vector +
+> one-hop expansion + rerank-2.5, measured at **83.8% hit@5 / 86.5% hit@8 /
+> MRR 0.704** on a 37-question golden set over a 33-document, 1,737-chunk
+> corpus that now includes the Labour Code and the accountant document set.
+>
+> **The current gap is downstream of retrieval, not in it.** The reranker
+> buries terse TABLE rows under prose: the turnover-tax line-number table sits
+> at vector rank 2 and rerank rank 11, outside anything generation reads. Four
+> failures in one day looked like corpus gaps and were articles present but
+> never read. Still do not assume a milestone below is wired up because it is
+> specified — but check the RANK before concluding anything is missing.
 
 ## What this is
 A web application that answers tax-law questions for professionals (accountants, tax lawyers, auditors) in Armenia, grounded in official legal texts from arlis.am (ARLIS — the official legal information system of Armenia, where legal acts are officially published). Answers must cite exact laws and articles with links to the source. This is an information/search tool, NOT legal advice — every answer carries that framing.
@@ -182,3 +190,27 @@ ANTHROPIC_API_KEY, OPENAI_API_KEY (embeddings), COHERE_API_KEY (rerank), DATABAS
 - Translation staleness: Russian/English versions may lag Armenian amendments — always compare amendment dates before trusting a translation.
 - Tables in tax law: a mangled rate table = confidently wrong numbers = worst possible failure. Test table extraction explicitly.
 - Armenian tokenization is expensive (3–5x) — prefer Russian text in LLM context when fresh, but Armenian quotes are mandatory in output.
+
+## Working mode
+
+> I trust your judgment — work without checking in. Don't ask for
+> approval, and don't stop to report progress and wait. When a step
+> finishes, go straight to the next one: implement, test, re-score,
+> diagnose, iterate. Commit at each working checkpoint so I can
+> review the history afterward.
+>
+> Only stop if something is irreversible, or if you genuinely can't
+> tell what I want. Otherwise pick the most reasonable option, note
+> the assumption in one line, and continue.
+
+In practice, for this project, that means:
+
+- **Measure before and after every retrieval change.** `score.ts --live` on the
+  golden set is the arbiter; a change that cannot be shown to help does not
+  ship. This rule has already killed one plausible fix (the tie-aware cut).
+- **Never `--apply` an ingest across the whole corpus.** Use `--doc <id>` per
+  document. A full re-ingest replaces every `articles` row and cascade-deletes
+  the embeddings and the citation graph (see `GOTCHAS.md`).
+- **Do not trust "the corpus doesn't have it".** Four separate failures in one
+  day looked like corpus gaps and were articles present but never read.
+  Check the rank before concluding anything is missing.
