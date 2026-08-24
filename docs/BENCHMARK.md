@@ -280,3 +280,32 @@ between runs. Two ways forward, both bigger than a parameter change:
    than ranks.
 
 Until one of those is done, further retrieval tuning is unfalsifiable.
+
+### Fixed: `temperature: 0` on the contextualiser removes the flipping (2026-08-24)
+
+Same 3-draw measurement, same configuration, only the contextualiser changed:
+
+| outcome | before | after |
+|---|---|---|
+| delivered on **every** draw | 38 (82.6%) | **40 (87.0%)** |
+| **flipping** | 3 (6.5%) | **0 (0.0%)** |
+| never delivered | 5 (10.9%) | 6 (13.0%) |
+| (rewrite text varied across draws) | 32 | 10 |
+
+**Flipping is eliminated.** The three unstable questions resolved
+deterministically — two into "always", one into "never". The "never" count
+rising by one is not a regression: that question already failed two draws in
+three, and now fails visibly instead of intermittently, which makes it
+diagnosable.
+
+Note `temperature: 0` is not an absolute determinism guarantee — 10 questions
+still receive a different rewrite between draws (down from 32). It no longer
+matters: delivery is consistent regardless, so the residual wobble is below the
+threshold that changes an outcome.
+
+**What this unlocks.** Repeated runs of the same configuration now agree, so the
+~3-question noise floor collapses toward zero and a 1–2 question effect becomes
+measurable. The experiments abandoned as unfalsifiable — guaranteed vector slots
+most of all (`OPEN-ITEMS` 33) — can now be decided. Re-measure them before
+trusting any earlier verdict: both the +4.4 single-draw and the −2.2 three-draw
+figures for that change were taken against a moving target.

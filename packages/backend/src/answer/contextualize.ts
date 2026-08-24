@@ -179,6 +179,22 @@ export async function contextualize(
     const res = await client.messages.create({
       model: MODEL,
       max_tokens: 1024,
+      // Deterministic by default (Haiku 4.5 still accepts sampling params).
+      //
+      // Measured 2026-08-24: this call was the ONLY non-deterministic stage in
+      // retrieval — vector search and rerank-2.5 both return identical results
+      // for identical input, this did not. And it varied in WHETHER it rewrote
+      // at all, not how: one run returned all 46 golden questions untouched,
+      // another rewrote 24 of them, a direct probe gave 2 distinct outputs in 3
+      // calls. Everything downstream inherits that, which is why the same
+      // question could deliver its answer on one draw and not the next (6.5% of
+      // golden questions flipped between draws) and why 1-2 question retrieval
+      // experiments became unfalsifiable.
+      //
+      // There is no upside to sampling here. This is an extraction step with a
+      // JSON schema, not a generative one — variety in a query rewrite is pure
+      // noise injected upstream of every measurement and every answer.
+      temperature: 0,
       // This prompt is identical on every turn of every session, and it sits on
       // the critical path to first token — the user waits for it before
       // retrieval can even start. Caching it removes its prefill from that wait.
