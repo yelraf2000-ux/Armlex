@@ -52,13 +52,25 @@ code changes need a push + Render rebuild.
 
 ## DO THIS NEXT, in order
 
-**1. `temperature: 0` on GENERATION (`answer/llm.ts`).** The contextualiser was
-fixed this way on 2026-08-24 (flipping 6.5% → 0%). The generator was NOT, and it
-is now the visible failure: the same question on the same commit produced an
-honest *"I can't determine which line"* on one run and a **confidently wrong**
-line number on the next (it guessed section 8 — that is catering outside
-Yerevan, not asset disposal). For a grounded legal tool, a fabricated line
-number is the worst possible output and sampling buys nothing here.
+**1. ~~`temperature: 0` on generation~~ — DONE DIFFERENTLY, 2026-08-24.**
+Sonnet 5 **rejects sampling parameters** (`400: temperature is deprecated for
+this model`), so the generator cannot be made deterministic the way the
+contextualiser was. Do not retry this.
+
+The analogy was wrong anyway. The generator was not drifting randomly — it
+REASONED to a false number: seeing `5.10, 6.10, 7.10, 8.8, 9.10` in a
+cross-reference, it inferred section 8 was asset disposal and stated line 17/8.8
+as fact (section 8 is catering outside Yerevan). Fixed by prompt rule 3a — never
+state a number that does not appear in a fragment attached to that meaning.
+Measured over 3 runs: it now cites those numbers as evidence that sections
+exist, and explicitly declines to name the line.
+
+Tier 1 is COMPLETE: rule 3a (no invented numbers), `[…]` redaction instead of a
+sentence spliced mid-clause, and rule 7a (ask only for facts the user has, never
+for norms the system lacks). Generation is behaviourally stable, NOT
+deterministic — a weaker guarantee. If a fabricated number ever reappears, build
+a mechanical validator that checks cited line numbers against the delivered
+text, mirroring `validateQuotes.ts`. Do not reach for a sampling parameter.
 
 **2. Retest the micro-business question** once `/api/version` shows `eb1739d` or
 later. `eb1739d` fixes same-article cross-reference following and was verified
