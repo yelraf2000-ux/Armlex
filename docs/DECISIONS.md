@@ -380,3 +380,61 @@ norms rather than hedging is unmeasured — and hedging-with-the-right-articles
 was the dominant failure in the same three-question sample. The golden set is 27
 tax questions and cannot see labour quality at all; it needs labour questions
 pinned before any of this is scored rather than assumed.
+
+## FTS fused under the reranker — measured, NOT shipped (2026-08-24)
+
+RRF was rejected in August because FTS scored 0.0% and rank fusion still
+credited its top-ranked misses. This is the arrangement `OPEN-ITEMS` 7 named as
+the sequel: FTS only ADDS candidates to the rerank pool at score 0, and the
+cross-encoder decides — nothing is fused by rank. Two things had changed in its
+favour: FTS is no longer zero on the golden set (0.0% → 15.2% once Armenian
+table-lookup questions entered it), and the corpus now holds form documents
+whose answers are terse rows full of literal query terms.
+
+**On the 37-question set it looked like a clear win** — hit@5 83.8% → 87.0%,
+recall@8 83.8% → 88.0% at pool 20. **On the 46-question set the gain vanished:**
+
+| FTS_POOL | hit@5 | hit@8 | recall@5 | recall@8 | MRR |
+|---|---|---|---|---|---|
+| 0 | 87.0% | 89.1% | 80.4% | 87.0% | **0.740** |
+| 20 | 87.0% | 89.1% | **82.6%** | 87.0% | 0.718 |
+| 40 | 87.0% | 89.1% | 80.4% | 87.0% | 0.740 |
+
+Pool 40 is identical to baseline; pool 20 trades MRR for recall@5. Kept behind
+`FTS_POOL`, default 0. **The lesson is about the instrument, not the feature:**
+the apparent win came from a set too small and too narrow to trust, and nine
+added questions dissolved it. Measure changes on a set that contains the failure
+mode you are aiming at *and* the successes you might break.
+
+It also cannot help the case that motivated it. The turnover-tax line table was
+already at vector rank 2 — never missing from the pool. Fusion adds candidates;
+this was an ordering problem. A retrieval technique can only fix the failure it
+addresses, and "the right chunk is present but ranked 11th" is not a recall
+failure.
+
+## The tie-aware cut, rejected then adopted (2026-08-24)
+
+Keeping candidates the reranker cannot separate from the last included one was
+built, measured, REJECTED, and then adopted a day later at `RERANK_TIE_DELTA`
+0.02. Both decisions were right on their evidence.
+
+**Rejected** at a cut of 4 with whole-article chunks: one question of 33 for
++42% tokens, and deltas sized to the observed 0.004 ties recovered nothing.
+**Adopted** after `generationDocument` made chunks ~4x smaller and FRESH_LIMIT
+moved to 8, which made the marginal chunk cheap. Re-measured on 46 questions:
+recall of required articles 87.0% → 89.1%, questions receiving EVERY required
+article 84.8% → 87.0%, and the turnover-tax line table — previously undeliverable
+at any setting — arrives. Cost 8.00 → 10.20 chunks.
+
+**The generalisable part:** the same change can be wrong and then right, because
+its cost depends on a different part of the system. A rejected experiment is
+worth keeping behind a flag with its measurement written down, so re-testing is
+a one-line change rather than a rediscovery.
+
+**And when the ranker cannot separate candidates, stop asking it to.** The table
+scores 0.672 at rank 11 against 0.688 at rank 8. rerank-2.5 is not obviously
+wrong to prefer the prose — it literally says "line 5.1 is filled with…", which
+answers "which line", just for the wrong income type. Showing it more text made
+things worse: single-slice chunks at double budget cost recall@8 87.0 → 85.9 and
+MRR 0.740 → 0.720, and was reverted. `DOC_CHARS` 1800 remains the measured
+optimum. Widening the cut beats sharpening the judge.

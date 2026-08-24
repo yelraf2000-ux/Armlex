@@ -135,18 +135,37 @@ export function rerankDocument(chunk: RetrievedChunk): string {
  * already ~40k input tokens, so an unbounded tail is a real bill, not a
  * rounding error.
  */
-// Read per call, not at import: the scorer A/Bs both settings in one process.
 /**
- * OFF by default (delta 0). Measured on the 33-question golden set at a cut of
- * 4: it recovered ONE question for +42% tokens, and the tighter settings sized
- * to the observed 0.004 ties recovered nothing at all. The real fix was to make
- * chunks small enough to send more of them (`generationDocument` + FRESH_LIMIT
- * 8), which bought +24 points of complete-context delivery for +10% cost.
+ * ON at 0.02 since 2026-08-24 — after being REJECTED once and re-measured,
+ * which is the part worth keeping.
  *
- * Kept, not deleted: it has not been re-measured at a cut of 8, where the
- * marginal chunk is cheaper. Set RERANK_TIE_DELTA to re-test.
+ * First measurement, cut of 4 with whole-article chunks: recovered ONE question
+ * of 33 for +42% tokens; deltas sized to the observed 0.004 ties recovered
+ * nothing. Correctly rejected. Two things then changed — `generationDocument`
+ * made chunks ~4x smaller, and FRESH_LIMIT moved 4 -> 8 — so the marginal chunk
+ * now costs a fraction of what it did.
+ *
+ * Re-measured on 46 questions at a cut of 8, delivered-set recall:
+ *
+ *   delta   recall   ALL required   mean chunks   turnover-tax line table
+ *   0       87.0%    84.8%          8.00          not delivered
+ *   0.01    87.0%    84.8%          9.37          not delivered
+ *   0.02    89.1%    87.0%          10.20         DELIVERED
+ *   0.03    89.1%    87.0%          10.50         DELIVERED
+ *
+ * 0.02 is the efficient point; 0.03 sends more for nothing. The +27% token cost
+ * buys the whole "which line of the form do I fill in" class — 8 of 250 real
+ * questions, previously unanswerable at any setting.
+ *
+ * Why a cut rather than better ranking: the table sits at rank 11 scoring 0.672
+ * against 0.688 at rank 8. The cross-encoder cannot separate them, and is not
+ * obviously wrong not to — the prose it prefers literally says "line 5.1 is
+ * filled with...", which IS responsive to "which line", just for the wrong
+ * income type. Showing it more text made things worse (single-slice chunks at
+ * double budget: recall@8 87.0 -> 85.9, MRR 0.740 -> 0.720; reverted). When the
+ * reranker cannot separate candidates, stop asking it to.
  */
-const tieDelta = (): number => Number(process.env['RERANK_TIE_DELTA'] ?? 0);
+const tieDelta = (): number => Number(process.env['RERANK_TIE_DELTA'] ?? 0.02);
 const tieMaxExtra = (): number => Number(process.env['RERANK_TIE_MAX_EXTRA'] ?? 3);
 
 /** Top N, plus any immediately-following candidate the reranker cannot separate from Nth. */
