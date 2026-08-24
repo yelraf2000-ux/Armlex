@@ -79,10 +79,36 @@ a definitive yes. It has not yet been confirmed on the deployed path.
 
     Կահույքի արտադրությամբ զբաղվող ԱՁ-ն կարո՞ղ է աշխատել միկրոձեռնարկատիրության համակարգով:
 
-**3. The quote-removal bug** (`OPEN-ITEMS`, parked by the user). The validator
-correctly strips an unverifiable quote and leaves a hole mid-sentence:
-`«…հանդիսանում է ոչ թե առևտրական, այլ [մեջբերումը չհաստատվեց և հանվեց]…»`.
-Small, and it is visibly damaging answers being shown to people right now.
+**3. ~~The quote-removal bug~~ — DONE 2026-08-24.** Redacts as `[…]` instead of
+a sentence spliced mid-clause. The UI already carries the explanation once as a
+footer; the safety guarantee is unchanged.
+
+**3b. ~~Cross-article references (tier 3)~~ — DONE 2026-08-24.** Articles the
+DELIVERED text cites now get a slot the reranker cannot take away
+(`CITED_SLOTS=3`, same document only, ordered by who cited them).
+`Հոդված 129` defines severance by reference to 113(1)(3,7), 109(1)(9) and 124;
+those now arrive, and the wage-delay answer went from hedging to a definitive
+"no severance regardless of seniority". Golden set unchanged — this alters the
+DELIVERED set, not the ranking, so rank metrics cannot see it.
+
+**TIERS 1 AND 3 ARE COMPLETE. Tier 2 (delivery) is the whole remaining
+retrieval backlog:** 6 questions never receive every required article, and
+`աղյուսակ 3` sits at rerank rank 11 (`OPEN-ITEMS` 26, 34).
+
+**But retrieval is no longer the limiting factor for shipping.** What stands
+between this and paying users is product work, not RAG work:
+
+- **Expert verification.** Three answers have been graded, by the owner. A tax
+  tool needs a practising accountant reviewing 30-50 answers before it is sold.
+  No retrieval metric substitutes for this.
+- **Auth and cost control.** One shared password, no accounts, no rate limits,
+  ~$0.12 per question. Anyone with the password can run up the bill.
+- **Long conversations crash** (`OPEN-ITEMS` 12) — no compaction, hits the
+  context limit, surfaces as an unhandled 502.
+- **Freshness is half-built.** Update detection compares stored text against
+  ARLIS, but NEW-document discovery was never built. Silently serving superseded
+  law is the worst failure mode a legal tool has.
+- **Latency:** 8s to first text, 40-50s to complete.
 
 **4. Re-embed** to clear duplicated enumeration lead-ins out of the vectors.
 `split.ts` was fixed on 2026-08-24 but the fix only reaches the index on a
