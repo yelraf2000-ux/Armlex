@@ -184,7 +184,31 @@ traffic and 40% of hard failures; Class-2 fired once in 250. New order:
     clean) so there's no urgency, but rotate before the repo is shared with
     anyone else.
 
-26. **The reranker buries TABLE rows under prose — top retrieval problem.**
+26. **CORRECTED 2026-08-24 — it is not "tables lose to prose".** The first
+    diagnosis was wrong and is kept here because the correction is the useful
+    part. Nine table-lookup questions were added (39-47), each targeting a
+    DISTINCT table chunk — depreciation periods, income-tax rate by year, road
+    tax by vehicle mass, waste rates by hazard class, social-payment brackets,
+    per-diem minimums, court duty, stamp-duty brackets, ԱՏԳ ԱԱ codes. **All
+    nine retrieve at ranks 1-4.** The reranker handles tables fine.
+
+    What actually fails on Q36 is INTRA-DOCUMENT discrimination. Its vector
+    pool of 50 was 100% N 299-Ն: eighty-odd chunks from one document, all about
+    turnover-tax calculation, all plausible. The reranker cannot separate "the
+    table listing which line each income type goes on" from "the instruction
+    for filling line 5.1" when both are the same document on the same topic.
+    The other nine questions never face that — their answer table is topically
+    distinctive against a diverse corpus, so it wins easily.
+
+    That reframes the fix. Not table-aware reranking; something that
+    discriminates WITHIN a document once the document is obviously right —
+    lexical matching on the literal terms of the query («այլ ակտիվների»,
+    «տող»), or a per-document diversity cap in the pool so eighty chunks of one
+    act cannot crowd out everything else. FTS fusion addresses the first and is
+    being measured now; note FTS rose 5.4% -> 15.2% when these table questions
+    entered the set, which is lexical search doing exactly what it is good at.
+
+    ~~**The reranker buries TABLE rows under prose — top retrieval problem.**~~
     "Which line of the turnover-tax calculation?" → the answer is
     `137687#Հավելված 1, աղյուսակ 3` row 20. Vector search ranks it **2**;
     rerank-2.5 ranks it **11**, outside anything generation reads. Ten prose

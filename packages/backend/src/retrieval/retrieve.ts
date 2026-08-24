@@ -420,10 +420,40 @@ export async function expandOneHop(candidates: RetrievedChunk[]): Promise<Retrie
  * together to judge actual relevance. That second judgment is what separates
  * an article that GOVERNS a topic from a form that merely MENTIONS it.
  */
+/**
+ * Lexical candidates folded into the rerank pool.
+ *
+ * RRF was measured and rejected in August: FTS scored 0.0% on a Russian-only
+ * golden set, and fusing by rank still credited its top-ranked misses. Two
+ * things changed. The golden set now contains Armenian questions, and FTS is no
+ * longer zero on them (0.0% -> 5.4%). And the corpus now holds FORM documents,
+ * where the answer is a terse table row — «տող», «այլ ակտիվների» — which is
+ * exactly what lexical search matches and embeddings blur.
+ *
+ * The difference from RRF: nothing is fused by rank. FTS only ADDS candidates
+ * to the pool, and the cross-encoder decides. That is the arrangement
+ * `OPEN-ITEMS` 7 named as the obvious next experiment — RRF failed because it
+ * had no way to discard lexical noise, and the reranker does.
+ *
+ * Off by default until measured on the golden set.
+ */
+const FTS_POOL = Number(process.env['FTS_POOL'] ?? 0);
+
 export const rerankedRetriever: Retriever = async (query, limit) => {
   const candidates = await vectorRetriever(query, RERANK_POOL);
   if (candidates.length === 0) return [];
-  const expanded = EXPAND_ENABLED ? await expandOneHop(candidates) : candidates;
+
+  let pool = candidates;
+  if (FTS_POOL > 0) {
+    const lexical = await ftsRetriever(query, FTS_POOL);
+    const have = new Set(pool.map((c) => c.articleId));
+    // Lexical hits carry no comparable score, so they enter with 0 and earn
+    // their place from the reranker or not at all — same contract as one-hop
+    // expansion.
+    pool = [...pool, ...lexical.filter((c) => !have.has(c.articleId)).map((c) => ({ ...c, score: 0 }))];
+  }
+
+  const expanded = EXPAND_ENABLED ? await expandOneHop(pool) : pool;
   return rerankChunks(query, expanded, limit);
 };
 

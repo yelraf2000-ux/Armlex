@@ -383,7 +383,16 @@ async function main(): Promise<void> {
     const rerankRank: RankFn = async (q) => {
       const qv = cached.get(q);
       if (!qv) return [];
-      const pool = await vectorSearch(qv, Number(process.env['RERANK_POOL'] ?? 30));
+      let pool = await vectorSearch(qv, Number(process.env['RERANK_POOL'] ?? 30));
+      // Mirrors rerankedRetriever's optional lexical leg so FTS_POOL is
+      // measurable here at all; without this the benchmark would report no
+      // change for a shipped-path change.
+      const ftsPool = Number(process.env['FTS_POOL'] ?? 0);
+      if (ftsPool > 0) {
+        const lexical = await ftsRetriever(q, ftsPool);
+        const have = new Set(pool.map((c) => c.articleId));
+        pool = [...pool, ...lexical.filter((c) => !have.has(c.articleId)).map((c) => ({ ...c, score: 0 }))];
+      }
       const expanded = process.env['EXPAND_ONE_HOP'] !== '0' ? await expandOneHop(pool) : pool;
       return (await rerankChunks(q, expanded, TOP_K)).map((h) => `${h.arlisId}#${h.ref}`);
     };
@@ -391,7 +400,13 @@ async function main(): Promise<void> {
     deliver = async (q, limit) => {
       const qv = cached.get(q);
       if (!qv) return [];
-      const pool = await vectorSearch(qv, Number(process.env['RERANK_POOL'] ?? 30));
+      let pool = await vectorSearch(qv, Number(process.env['RERANK_POOL'] ?? 30));
+      const ftsPool = Number(process.env['FTS_POOL'] ?? 0);
+      if (ftsPool > 0) {
+        const lexical = await ftsRetriever(q, ftsPool);
+        const have = new Set(pool.map((c) => c.articleId));
+        pool = [...pool, ...lexical.filter((c) => !have.has(c.articleId)).map((c) => ({ ...c, score: 0 }))];
+      }
       const expanded = process.env['EXPAND_ONE_HOP'] !== '0' ? await expandOneHop(pool) : pool;
       return (await rerankChunks(q, expanded, limit)).map((h) => `${h.arlisId}#${h.ref}`);
     };
