@@ -907,3 +907,40 @@ taking option flags shares the swallowing trap; `reembed.ts` is untraced.
 ---
 
 *Next entry goes here — append below this line, don't insert above.*
+
+**2026-08-24** — **Real-traffic re-measurement after tiers 1 and 3: the largest
+single-day move the project has recorded.** 250 authentic accountant questions,
+same Flash-Lite triage as every prior baseline.
+
+| coverage | 2026-08-19 | 2026-08-23 | **now** |
+|---|---|---|---|
+| full | 31% | 29% | **47%** |
+| partial | 40% | 47% | 38% |
+| none | 29% | 24% | **14%** |
+
+**Improved 80, worsened 25, unchanged 145** — a 3:1 ratio against a measured
+noise floor of ~6% on verdict flips, so the direction is real even if the
+decimals are not.
+
+**`names unretrieved article` fell to 1 of 250 (0%)** — the Class-2 smell, the
+model naming a provision it needed but did not have. It was the motivating case
+for the cited-slot guarantee and is now essentially eliminated.
+
+What produced it, in the order shipped: corpus 20 → 33 documents; part-level
+extraction with `FRESH_LIMIT` 4 → 8; the tie-aware cut; guaranteed vector slots;
+same-article cross-reference following; `temperature: 0` on the contextualiser;
+rule 3a (no invented numbers); `[…]` redaction; rule 7a (ask only for user
+facts); and the cited-slot guarantee.
+
+**Unchanged: the invalid-quote rate, 11% → 11%.** Nothing shipped today touched
+how the model quotes, and it shows. These are FLASH-LITE's quotes — the triage
+generates with `gemini-3.5-flash-lite`, not the Sonnet the app runs — so this
+figure is simultaneously the real-traffic scorecard AND the cheap-model arm of
+the generation-model comparison. Flash-Lite reaching 47% full on real questions
+makes the model-swap case stronger than it looked; its quote fidelity remains
+the open question, and invalid quotes are stripped by the validator rather than
+shown, so the cost is thinner answers, not false ones.
+
+**25 questions worsened** and are not yet triaged; some are verdict noise (the
+floor is 5 of 81 flips on byte-identical retrieval), some are likely real. Worth
+classifying before the next retrieval change, not after.
