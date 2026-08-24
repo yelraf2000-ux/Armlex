@@ -439,6 +439,39 @@ export async function expandOneHop(candidates: RetrievedChunk[]): Promise<Retrie
  */
 const FTS_POOL = Number(process.env['FTS_POOL'] ?? 0);
 
+/**
+ * Vector hits that survive the reranker's judgement regardless.
+ *
+ * The cross-encoder sharpens the TOP hit and costs recall — measured on the
+ * 46-question set, vector-only beats reranked on hit@5 (89.1% vs 87.0%) and
+ * recall@5 (83.0% vs 80.4%) and loses only on MRR (0.638 vs 0.740). Inspecting
+ * the questions where generation never receives every required article, four of
+ * six had their gold article in the VECTOR TOP 8 and the reranker demoted it
+ * below the cut:
+ *
+ *   Հոդված 150 @vector 2   dividends to a resident
+ *   Հոդված 117 @vector 3   dismissal after childcare leave
+ *   Հոդված 5   @vector 7   employer social payments
+ *   Հոդված 130 @vector 8   profit-tax rate
+ *
+ * So the strongest few vector hits are appended if reranking dropped them. This
+ * is not distrust of the reranker — its ordering still leads — it is refusing to
+ * let a second-stage judgement DISCARD what the first stage was most confident
+ * about. Same contract as one-hop expansion and the tie-aware cut: extra
+ * candidates ride along, they never displace.
+ *
+ * Measured on delivered-set recall (46 questions, FRESH_LIMIT 8):
+ *
+ *   slots   recall   ALL required   mean chunks
+ *   0       89.1%    87.0%          10.20
+ *   2       91.3%    89.1%          10.63
+ *   3       93.5%    91.3%          11.00   <- default
+ *   4       93.5%    91.3%          11.41
+ *
+ * Monotonic to 3 then flat, for +0.8 chunks. 4 buys nothing and sends more.
+ */
+const GUARANTEED_VECTOR_SLOTS = Number(process.env['GUARANTEED_VECTOR_SLOTS'] ?? 3);
+
 export const rerankedRetriever: Retriever = async (query, limit) => {
   const candidates = await vectorRetriever(query, RERANK_POOL);
   if (candidates.length === 0) return [];
@@ -454,7 +487,18 @@ export const rerankedRetriever: Retriever = async (query, limit) => {
   }
 
   const expanded = EXPAND_ENABLED ? await expandOneHop(pool) : pool;
-  return rerankChunks(query, expanded, limit);
+  const reranked = await rerankChunks(query, expanded, limit);
+
+  if (GUARANTEED_VECTOR_SLOTS > 0) {
+    const have = new Set(reranked.map((c) => c.articleId));
+    for (const c of candidates.slice(0, GUARANTEED_VECTOR_SLOTS)) {
+      if (!have.has(c.articleId)) {
+        reranked.push(c);
+        have.add(c.articleId);
+      }
+    }
+  }
+  return reranked;
 };
 
 /**
