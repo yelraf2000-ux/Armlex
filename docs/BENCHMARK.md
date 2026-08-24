@@ -309,3 +309,46 @@ measurable. The experiments abandoned as unfalsifiable — guaranteed vector slo
 most of all (`OPEN-ITEMS` 33) — can now be decided. Re-measure them before
 trusting any earlier verdict: both the +4.4 single-draw and the −2.2 three-draw
 figures for that change were taken against a moving target.
+
+### Guaranteed vector slots: shipped at 3, and what it does NOT do (2026-08-24)
+
+Re-decided on the deterministic pipeline, paired (same rewrite, same pool, only
+the config varies — the earlier unpaired comparison could not do this):
+
+| slots | recall of required | ALL required | mean chunks |
+|---|---|---|---|
+| **0** | 89.1% | 87.0% | 10.13 |
+| 2 | 91.3% | 89.1% | 10.54 |
+| **3 ← shipped** | **93.5%** | **91.3%** | 10.93 |
+| 4 | 93.5% | 91.3% | 11.41 |
+
+3 is the efficient point; 4 buys nothing. **+4.4 points of recall for +8%
+tokens.**
+
+**The 3-draw reliability check disagrees, and the disagreement is the useful
+part:**
+
+| | slots 0 | slots 3 |
+|---|---|---|
+| all required, every draw | 40 (87.0%) | 40 (87.0%) |
+| flipping | 0 | 1 |
+| never delivered | 6 | 5 |
+
+**It does not increase the number of questions reliably and FULLY answered.**
+One question moved from "never" to "1 draw in 3", which is not a fix.
+
+Both are true because they measure different things. `ALL required` is
+all-or-nothing per question; `recall of required` counts articles. Guaranteed
+slots delivers MORE of the needed articles per question without crossing the
+all-or-nothing line on more questions. For a grounded tool that is worth having
+— an answer resting on 3 of 4 governing articles beats one resting on 2 of 4,
+and the all-or-nothing metric is blind to that difference.
+
+**Why it works at all:** the reranker demotes articles the vector leg ranked
+highly. Of six questions never receiving everything, four had the gold article
+in the vector top-8 — `Հոդված 150` @2, `117` @3, `5` @7, `130` @8 — and the
+cross-encoder pushed them out. This bypasses that for the top 3 only, so the
+reranker still orders everything else.
+
+**Do not read the +4.4 as questions fixed.** It is grounding quality, not
+coverage. The 5 never-delivered questions remain the real backlog.

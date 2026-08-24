@@ -252,7 +252,12 @@ traffic and 40% of hard failures; Class-2 fired once in 250. New order:
     adopted by Armenian law only by reference. A licensing decision, not an
     engineering one.
 
-31. **The contextualiser flips regime between runs — the real instability.**
+31. ~~**The contextualiser flips regime between runs.**~~ **FIXED 2026-08-24**
+    with `temperature: 0`. Flipping 6.5% -> 0%, reliable set 82.6% -> 87.0%.
+    Residual: 10-11 questions still see a different rewrite between draws, but
+    it no longer changes delivery. Original diagnosis kept below.
+
+31b. **The contextualiser flips regime between runs — the real instability.**
     Measured on identical input: vector search deterministic, rerank-2.5
     deterministic (1 distinct top-8 in 3 calls), contextualiser NOT. And it does
     not vary in *how* it rewrites so much as *whether* it rewrites at all: one
@@ -267,7 +272,13 @@ traffic and 40% of hard failures; Class-2 fired once in 250. New order:
     which is the common case in a first turn and would remove the variance
     rather than reduce it.
 
-32. **The 46-question golden set can no longer resolve the changes being made.**
+32. **PARTLY LIFTED 2026-08-24.** With the contextualiser deterministic, repeated
+    runs agree and paired A/B is possible, which was enough to re-decide
+    guaranteed vector slots. Still true that a 1-2 question effect is 2-4 points
+    on n=46, so the 250-question triage remains the better arbiter for anything
+    marginal. Original entry below.
+
+32b. **The 46-question golden set can no longer resolve the changes being made.**
     One question is 2.2 points; the noise floor is ~3 questions; the last two
     experiments moved 1–2. Guaranteed vector slots measured +4.4 single-draw and
     −2.2 on three draws — unproven, defaulted OFF. Further retrieval tuning is
@@ -275,8 +286,11 @@ traffic and 40% of hard failures; Class-2 fired once in 250. New order:
     evaluate the contextualiser separately) or the arbiter moves to the
     250-question triage, where 2 questions is 0.8%. See `BENCHMARK.md`.
 
-33. **The reranker demotes gold articles the vector leg ranked highly** — real,
-    verified per question, currently unfixed. Of six questions never receiving
+33. **The reranker demotes gold articles the vector leg ranked highly** —
+    MITIGATED 2026-08-24 by `GUARANTEED_VECTOR_SLOTS=3` (recall of required
+    articles 89.1% -> 93.5%, +8% tokens). NOT closed: the number of questions
+    reliably receiving EVERY required article did not move (40/46 either way).
+    The mitigation improves grounding depth, not coverage. Original entry: Of six questions never receiving
     all required articles, four had the gold article in the vector top-8:
     `Հոդված 150` @2, `117` @3, `5` @7, `130` @8. The aggregate agrees —
     vector-only beats reranked on hit@5 (89.1 vs 87.0) and recall@5 (83.0 vs
