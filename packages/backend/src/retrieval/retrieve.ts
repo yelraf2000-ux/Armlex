@@ -498,8 +498,101 @@ export const rerankedRetriever: Retriever = async (query, limit) => {
       }
     }
   }
-  return reranked;
+
+  return CITED_SLOTS > 0 ? guaranteeCitedArticles(reranked) : reranked;
 };
+
+/**
+ * Articles the DELIVERED text names get a slot the reranker cannot take away.
+ *
+ * Legal drafting defines by reference. `Հոդված 129` states severance rates and
+ * then scopes them to "113-րդ հոդվածի 1-ին մասի 1-ին, 2-րդ և 4-րդ կետերով …
+ * 109-րդ հոդվածի 1-ին մասի 9-րդ կետով և 124-րդ հոդվածով" — so 129 alone cannot
+ * answer whether severance is due, and the model correctly hedges. Observed
+ * repeatedly on the wage-delay question.
+ *
+ * `expandOneHop` already walks `article_refs`, but it runs BEFORE the reranker
+ * and the cross-encoder then drops the cited article as topically weaker than
+ * the citing one — which it usually is, right up until you need to check it.
+ * This runs AFTER, on the text actually being delivered, so a named article
+ * cannot be ranked out of the answer that depends on it.
+ *
+ * Deliberately narrow: same document only (cross-ACT references name the act in
+ * prose, not a parseable form), and capped, because an article like 53 is cited
+ * by half the Code.
+ */
+const CITED_SLOTS = Number(process.env['CITED_SLOTS'] ?? 3);
+
+/** «113-րդ հոդված», «124-րդ հոդվածով», «Հոդված 267» — the citing forms in use. */
+const ARTICLE_REF = /(\d+(?:\.\d+)?)-(?:րդ|ին)\s+հոդված/gu;
+
+async function guaranteeCitedArticles(chunks: RetrievedChunk[]): Promise<RetrievedChunk[]> {
+  if (chunks.length === 0) return chunks;
+
+  const present = new Set(chunks.map((c) => `${c.arlisId}#${c.ref}`));
+  const wanted = new Map<number, Set<string>>();
+
+  for (const c of chunks) {
+    for (const m of c.text.matchAll(ARTICLE_REF)) {
+      const ref = `Հոդված ${m[1]}`;
+      if (present.has(`${c.arlisId}#${ref}`)) continue;
+      const forDoc = wanted.get(c.arlisId) ?? new Set<string>();
+      forDoc.add(ref);
+      wanted.set(c.arlisId, forDoc);
+    }
+  }
+  if (wanted.size === 0) return chunks;
+
+  // Fetched as two ANY filters rather than a tuple IN — postgres.js cannot
+  // build `(a, b) IN ((...),(...))` and fails with a syntax error. The
+  // cross-product is filtered back to exact pairs in JS below; the candidate
+  // set is a handful of articles, so the overfetch is free.
+  const pairs = [...wanted].flatMap(([arlisId, refs]) => [...refs].map((ref) => ({ arlisId, ref })));
+  const wantPair = new Set(pairs.map((p) => `${p.arlisId}#${p.ref}`));
+  const rows = await db()<
+    { id: string; title_hy: string; arlis_id: number; article_number: string; text_hy: string;
+      doc_type: string; act_number: string | null }[]
+  >`
+    SELECT a.id, d.title_hy, d.arlis_id, a.article_number, a.text_hy,
+           d.doc_type::text AS doc_type, d.act_number
+    FROM articles a
+    JOIN documents d ON d.id = a.document_id
+    WHERE d.arlis_id = ANY(${[...new Set(pairs.map((p) => p.arlisId))]}::int[])
+      AND a.article_number = ANY(${[...new Set(pairs.map((p) => p.ref))]}::text[])
+      AND d.rag_eligible AND d.status = 'in_force' AND a.status = 'in_force'
+  `;
+
+  // Rank the fetched articles by WHO cited them, not by whatever order Postgres
+  // returned. `pairs` is built by walking the delivered chunks in rank order, so
+  // a reference made by the top-ranked chunk sorts ahead of one made by the
+  // eighth. Without this, `Հոդված 129` asking for 113 lost its slot to 105 and
+  // 110 — articles cited in passing by lower-ranked chunks.
+  const priority = new Map(pairs.map((p, idx) => [`${p.arlisId}#${p.ref}`, idx]));
+
+  return [
+    ...chunks,
+    ...rows
+      .filter((r) => wantPair.has(`${r.arlis_id}#${r.article_number}`))
+      .sort(
+        (x, y) =>
+          (priority.get(`${x.arlis_id}#${x.article_number}`) ?? Infinity) -
+          (priority.get(`${y.arlis_id}#${y.article_number}`) ?? Infinity),
+      )
+      .slice(0, CITED_SLOTS)
+      .map((r) => ({
+      articleId: String(r.id),
+      documentTitle: r.title_hy,
+      arlisId: r.arlis_id,
+      ref: r.article_number,
+      // Cited articles are not ranked candidates; they are here because the
+      // delivered text depends on them.
+      score: 0,
+      text: r.text_hy,
+        docType: r.doc_type,
+        actNumber: r.act_number,
+      })),
+  ];
+}
 
 /**
  * The active retriever: **vector + cross-encoder rerank.**
