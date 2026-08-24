@@ -237,3 +237,35 @@ an empty index from a retriever that found nothing, and 0.0% is also the real
 FTS number — so a wiped index renders as a plausible result table
 (`OPEN-ITEMS.md` 24). Never diagnose a retrieval regression without first
 confirming the index is populated.
+
+## The benchmark scores a query the app never sends
+
+`score.ts` embeds the golden question verbatim. `chat.ts` runs it through the
+contextualiser first and retrieves on the REWRITE. Every golden-set number is
+therefore measured on a different input than production uses. `OPEN-ITEMS` 8
+noted this; 2026-08-24 showed what it costs.
+
+The turnover-tax line question, with the tie-aware cut enabled:
+
+    raw phrasing        table at rank 11  → DELIVERED
+    contextualised      table ABSENT from the top 11
+
+The rewrite is cosmetically identical — it moves a parenthetical four words
+left:
+
+    raw   …հիմնական միջոցները և արագամաշ առարկաները (կապի սարքավորումներ և մալուխներ)։
+    rew   …հիմնական միջոցները (կապի սարքավորումներ և մալուխներ) և արագամաշ առարկաները։
+
+Same words, same meaning, different retrieval. Two consequences:
+
+- **Retrieval is unstable to paraphrase wherever a chunk sits near the cut.**
+  The table hovers at rank 11; any reordering pushes it out. Nothing is wrong
+  with the reranker — the candidates are genuinely inseparable (0.672 vs 0.688),
+  so their order is close to arbitrary and small input changes reshuffle it.
+- **A fix can pass the benchmark and fail in the app.** The tie-aware cut is a
+  real improvement, verified on 46 questions, and it does not deliver this
+  answer to a real user, because the user's question is rewritten first.
+
+Do not treat a golden-set win as shipped until the contextualised path is
+checked. The cheap fix for the instrument: cache the contextualised rewrite per
+golden question the way query vectors are cached, and score both arms.
