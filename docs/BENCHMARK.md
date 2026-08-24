@@ -197,3 +197,44 @@ question, `id` = `parentId` = the question text verbatim.
 
 Resumable: `generate.ts` reads already-written ids from the output file and
 skips them, so an interrupted run costs only time, never re-spend.
+
+## Delivery variance — how much of the headline is noise (2026-08-24)
+
+Every figure in this file is a SINGLE DRAW: one contextualiser rewrite, one
+retrieval, one score. That hides whether "87.0%" means 87% of questions
+reliably work or a larger set that each work most of the time — which imply
+opposite next steps. Measured with 3 independent draws per question, 46
+questions, delivery judged as "generation receives EVERY required article" at
+FRESH_LIMIT 8:
+
+| outcome | questions | share |
+|---|---|---|
+| delivered on **every** draw | 38 | **82.6%** |
+| delivered on **some** draws — flipping | 3 | 6.5% |
+| **never** delivered | 5 | 10.9% |
+| (rewrite text varied across draws) | 32 | 70% |
+
+**The rewriter is noisy and it almost never matters.** 70% of questions get a
+materially different rewrite on each draw; only 3 change outcome. Retrieval
+absorbs paraphrase.
+
+**Read the headline as 82.6% reliable + a 6.5% variance band.** Practical
+consequence for this benchmark: on 46 questions, one question is 2.2 points, so
+**a change smaller than ~3 questions cannot be distinguished from noise.** That
+retroactively justifies rejecting the tie-aware cut at its first measurement
+(one question of 33) and adopting it at its second (a whole question class plus
++2.2 recall) — and it means single-question wins reported anywhere in this file
+should be treated as unproven.
+
+The flippers, with their delivery rate:
+
+    2/3  Какие обязательства по НДС возникают при экспорте услуг
+    1/3  Я на налоге с оборота, импортирую товар из-за границы
+    2/3  Շրջանառության հարկով ... հաշվարկի ո՞ր տողը (turnover-tax line table)
+
+The turnover-tax line question — the one wave 2 was ingested for — works about
+two draws in three. Yesterday's "absent from the top 11" was the unlucky third,
+not a permanent failure.
+
+**The actionable backlog is the 5 never-delivered**, not the 3 flippers: those
+fail deterministically and no amount of stability work reaches them.
