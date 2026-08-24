@@ -269,3 +269,33 @@ Same words, same meaning, different retrieval. Two consequences:
 Do not treat a golden-set win as shipped until the contextualised path is
 checked. The cheap fix for the instrument: cache the contextualised rewrite per
 golden question the way query vectors are cached, and score both arms.
+
+### Corrected the next day: it is variance, not systematic degradation
+
+Scoring the contextualised arm (`score.ts --live --ctx`, 46 questions) gives
+numbers IDENTICAL to the raw arm to three decimals — 87.0 / 89.1 / 80.4 / 87.0 /
+MRR 0.740. That is not a broken flag: sampling eight questions whose rewrite
+differs, **seven produce a different top-8**. Retrieval genuinely changes and
+the gold articles stay where they were. The contextualiser reshuffles the
+irrelevant tail.
+
+So the alarming single case above was a **variance** result, not a systematic
+one, and two things about it were wrong:
+
+- **The contextualiser is NOT deterministic.** The earlier "3/3 identical" was
+  measured on a question that needed no rewriting at all — a question the
+  rewriter passes through unchanged will of course be stable. On the
+  turnover-tax line question the live call moved a parenthetical; the cached
+  call left the question alone. Same input, different output.
+- **A one-sample cache cannot see variance.** `contextualised.jsonl` holds one
+  draw per question. It makes the benchmark reproducible, which is what it was
+  for, but it measures one roll of the dice rather than the distribution.
+
+What survives from the original entry: where a chunk sits near the cut, its
+delivery is decided by noise, and a paraphrase can flip it. What does not
+survive: the claim that the contextualiser costs retrieval quality in aggregate.
+It does not.
+
+The open question is now how WIDE the variance is — how often the delivered set
+loses a required article across repeated rewrites of the same question. That
+needs N draws per question, not one.
