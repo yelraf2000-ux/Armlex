@@ -470,7 +470,7 @@ const FTS_POOL = Number(process.env['FTS_POOL'] ?? 0);
  *
  * Monotonic to 3 then flat, for +0.8 chunks. 4 buys nothing and sends more.
  */
-const GUARANTEED_VECTOR_SLOTS = Number(process.env['GUARANTEED_VECTOR_SLOTS'] ?? 3);
+const GUARANTEED_VECTOR_SLOTS = Number(process.env['GUARANTEED_VECTOR_SLOTS'] ?? 0);
 
 export const rerankedRetriever: Retriever = async (query, limit) => {
   const candidates = await vectorRetriever(query, RERANK_POOL);

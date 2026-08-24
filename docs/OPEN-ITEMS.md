@@ -251,3 +251,34 @@ traffic and 40% of hard failures; Class-2 fired once in 250. New order:
     **IFRS is blocked, not pending** — not on ARLIS, IFRS Foundation copyright,
     adopted by Armenian law only by reference. A licensing decision, not an
     engineering one.
+
+31. **The contextualiser flips regime between runs — the real instability.**
+    Measured on identical input: vector search deterministic, rerank-2.5
+    deterministic (1 distinct top-8 in 3 calls), contextualiser NOT. And it does
+    not vary in *how* it rewrites so much as *whether* it rewrites at all: one
+    run returned all 46 golden questions untouched, another rewrote 24 of 46, a
+    direct probe gave 2 distinct outputs in 3 calls. Retrieval faithfully
+    propagates whichever regime it lands in, which is why the same question can
+    deliver its answer on one draw and not the next.
+
+    This is upstream of every retrieval number in the project. Fix candidates:
+    pin `temperature: 0` on the contextualiser call; or skip the rewrite
+    entirely when the question is already standalone (no history, no pronouns),
+    which is the common case in a first turn and would remove the variance
+    rather than reduce it.
+
+32. **The 46-question golden set can no longer resolve the changes being made.**
+    One question is 2.2 points; the noise floor is ~3 questions; the last two
+    experiments moved 1–2. Guaranteed vector slots measured +4.4 single-draw and
+    −2.2 on three draws — unproven, defaulted OFF. Further retrieval tuning is
+    unfalsifiable until either the query is pinned (score raw questions only,
+    evaluate the contextualiser separately) or the arbiter moves to the
+    250-question triage, where 2 questions is 0.8%. See `BENCHMARK.md`.
+
+33. **The reranker demotes gold articles the vector leg ranked highly** — real,
+    verified per question, currently unfixed. Of six questions never receiving
+    all required articles, four had the gold article in the vector top-8:
+    `Հոդված 150` @2, `117` @3, `5` @7, `130` @8. The aggregate agrees —
+    vector-only beats reranked on hit@5 (89.1 vs 87.0) and recall@5 (83.0 vs
+    80.4), losing only MRR. The guaranteed-slots fix for this is written and
+    env-gated (`GUARANTEED_VECTOR_SLOTS`); it needs a set that can measure it.

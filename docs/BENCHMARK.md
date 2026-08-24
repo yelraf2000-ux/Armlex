@@ -238,3 +238,45 @@ not a permanent failure.
 
 **The actionable backlog is the 5 never-delivered**, not the 3 flippers: those
 fail deterministically and no amount of stability work reaches them.
+
+### The set can no longer resolve the changes being made (2026-08-24)
+
+The guaranteed-vector-slots change measured **+4.4 recall on a single draw** and
+**−2.2 on a three-draw reliability run**. Both are 1–2 questions on n=46, and
+the noise floor here is ~3 questions. The two measurements disagree and neither
+can settle it. It is therefore **unproven and defaulted OFF**
+(`GUARANTEED_VECTOR_SLOTS=0`), on the same rule that kept hybrid RRF and FTS
+fusion off — not because the mechanism is wrong, but because it cannot be shown.
+
+The mechanism IS verified per question: of six questions never receiving all
+required articles, four had the gold article in the vector top-8 and the
+reranker demoted it (`Հոդված 150` @2, `117` @3, `5` @7, `130` @8). That is a
+real defect. What cannot be established at n=46 is whether fixing it helps
+overall.
+
+**Where the variance comes from — measured, and not where it was first
+attributed.** On identical input:
+
+| stage | behaviour |
+|---|---|
+| vector search | deterministic |
+| rerank-2.5 | deterministic — 1 distinct top-8 in 3 calls |
+| **contextualiser** | **non-deterministic, and bimodal** |
+
+The contextualiser does not vary in *how* it rewrites so much as *whether* it
+rewrites. One run left all 46 questions untouched; another rewrote 24 of 46; a
+direct probe gave 2 distinct outputs in 3 calls. Retrieval faithfully propagates
+whichever regime it lands in.
+
+**Consequence for anyone tuning retrieval next:** stop tuning against this set.
+A 1–2 question effect cannot be separated from a rewriter that flips regime
+between runs. Two ways forward, both bigger than a parameter change:
+
+1. **Pin the query.** Score retrieval on raw questions only, removing the
+   contextualiser from the measurement, and evaluate the contextualiser
+   separately. Fast, and it makes retrieval changes decidable again.
+2. **Change arbiter.** Use the 250-question real-traffic triage, where a
+   2-question effect is 0.8% rather than 4.3%, and which measures answers rather
+   than ranks.
+
+Until one of those is done, further retrieval tuning is unfalsifiable.
