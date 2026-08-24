@@ -55,11 +55,24 @@ export function isVerbatimQuote(quote: string, chunkTexts: string[]): boolean {
   return chunkTexts.some((t) => matches(needle, normalise(t)));
 }
 
-/** The notice shown in place of a quote that could not be verified. */
-export function removalNotice(language: 'hy' | 'ru'): string {
-  return language === 'hy'
-    ? '[մեջբերումը չհաստատվեց և հանվեց — բացեք հոդվածը հղումով]'
-    : '[цитата не прошла проверку и была удалена — откройте статью по ссылке]';
+/**
+ * What replaces a quote that could not be verified.
+ *
+ * Deliberately a bare elision, not a sentence. The removal happens INLINE,
+ * wherever the model put the quote — which is regularly mid-clause, and a
+ * bracketed explanation there destroys the sentence around it:
+ *
+ *   «…հանդիսանում է ոչ թե առևտրական, այլ [մեջբերումը չհաստատվեց և հանվեց —
+ *    բացեք հոդվածը հղումով], որի համար Օրենսգիրքը սահմանում է…»
+ *
+ * Observed three times in ONE answer, including inside the clarifying question,
+ * leaving the reader a question with no second half. The explanation is not
+ * lost: the UI already carries it once as a footer whenever invalidCount > 0,
+ * and the full article is one click away in the article panel. The safety
+ * guarantee is unchanged — unverified law text is still never displayed.
+ */
+export function removalNotice(_language: 'hy' | 'ru'): string {
+  return '[…]';
 }
 
 export interface QuoteCheck {

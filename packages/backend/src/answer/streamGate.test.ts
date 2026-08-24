@@ -37,7 +37,7 @@ describe('QuoteStreamGate', () => {
     const fake = 'Միկրոձեռնարկատիրության սուբյեկտները ազատվում են բոլոր հարկերից ամբողջությամբ';
     const out = streamCharwise(`Норма: «${fake}» — конец.`, gate);
     assert.doesNotMatch(out, /ազատվում են բոլոր հարկերից/, 'fabricated text leaked');
-    assert.match(out, /цитата не прошла проверку/);
+    assert.match(out, /[…]/);
     assert.equal(gate.invalidCount, 1);
   });
 
@@ -91,7 +91,7 @@ describe('QuoteStreamGate', () => {
     const gate = new QuoteStreamGate([SOURCE], 'hy');
     const fake = 'Ամբողջովին հորինված իրավական դրույթ որը գոյություն չունի օրենքում';
     const out = streamCharwise(`Նորմ՝ «${fake}»։`, gate);
-    assert.match(out, /մեջբերումը չհաստատվեց/);
+    assert.match(out, /[…]/);
   });
 
   test('text accumulates exactly what was emitted', () => {
