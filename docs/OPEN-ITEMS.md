@@ -393,3 +393,21 @@ traffic and 40% of hard failures; Class-2 fired once in 250. New order:
     `կետ 63`: «12-րդ, 13-րդ, 15-րդ, 18-20-րդ կետերում` [Գ] = [Ա] x [Բ]». No 9.x
     sub-line exists because article 260 excludes item 9 from the deduction
     mechanism. Both required chunks are pinned on golden question 36.
+
+42. **DELIVERED, UNUSED is now measured — and it is the top defect.** Baseline
+    60% of delivered provisions used (`answer-coverage.ts`, n=6, Sonnet). No fix
+    attempted yet. Candidate mechanisms, none tested:
+    - The answer template's "what to check" section is specified to name
+      *adjacent grounds and exceptions in the cited articles* and demonstrably
+      does not. It is a prompt rule competing with 30k characters of statute —
+      the exact shape `GOTCHAS` says must be COMPUTED, not inferred.
+    - A second cheap pass over the delivered text asking only "which provisions
+      here bear on the question and are absent from this draft?", mirroring the
+      cited-slot guarantee: deterministic, bounded, one extra call.
+    - Part-level delivery may still be truncating: check whether part 6(2) was
+      inside the delivered window for `Հոդված 258` or only in the stored chunk.
+      **Check the delivered text before blaming the model** — the rule that has
+      held six times.
+
+    Grow the marker file before trusting the number: 6 provisions is 17% per
+    provision, far coarser than the golden set it complements.

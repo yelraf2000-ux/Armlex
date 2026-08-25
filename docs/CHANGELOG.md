@@ -1055,3 +1055,34 @@ prints `needsRetrieval`, the rewritten query and the ranked chunks. "It cannot
 find anything" has four causes that look identical in the UI — empty index,
 `needsRetrieval: false`, retrieval returning nothing, retrieval returning the
 wrong things — and this separates them in one call.
+
+**2026-08-25** — **A number for the project's oldest defect: `answer-coverage.ts`.**
+The golden set scores retrieval and is structurally blind to "we retrieved it,
+we sent it, the answer ignored it". The EV-charging question proved the point —
+`Հոդված 258` at rank 1, the calculation table at rank 2, a perfect retrieval
+score, and an answer that dropped the 3% deduction floor and the fixed-asset
+exclusion that decides the question.
+
+Each required provision is now classified `NOT DELIVERED` / `DELIVERED, USED` /
+`DELIVERED, UNUSED` against hand-pinned markers in
+`data/eval/required-provisions.jsonl`. First baseline, 2 questions / 6
+provisions, `claude-sonnet-5`:
+
+    NOT DELIVERED       1 (17%)
+    DELIVERED, USED     3 (50%)
+    DELIVERED, UNUSED   2 (33%)
+    -> of provisions DELIVERED, 60% were used
+
+It reproduces both documented cases exactly: Q36's row 20 is NOT DELIVERED
+(rank 11, `OPEN-ITEMS` 26) and its `կետ 63` is DELIVERED, UNUSED (`OPEN-ITEMS`
+34). That agreement is the reason to trust the instrument.
+
+**Treat 60% as a first reading, not a figure.** Six provisions is a tiny base,
+and the 3% floor was USED on this run while the live answer that prompted the
+work missed it — so there is run-to-run variance of at least one provision.
+Markers are deliberately generous, which biases toward USED and therefore
+UNDERSTATES the defect.
+
+The EV question is also pinned into `golden_verified.csv` (backup:
+`golden_verified.pre-ev.bak`) as a retrieval guard — though note it will score
+100% there, which is exactly why the new instrument had to exist.
