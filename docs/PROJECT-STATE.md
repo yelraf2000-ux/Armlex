@@ -46,6 +46,31 @@ Generation: `claude-sonnet-5`, ~$0.06–0.12/question.
 
 ---
 
+## ⚠ LIVE INCIDENT — 2026-08-25, action required by the owner
+
+**The Gemini embedding balance is depleted.** `HTTP 429 RESOURCE_EXHAUSTED —
+"Your prepayment credits are depleted."` Top up at https://ai.studio/projects;
+nothing in the code can fix it and it does not recover on its own.
+
+**The corpus is INTACT** — 33 documents / 1,737 chunks / 6,992 vectors / 1,100
+ref edges, verified. No data was lost. The site *looked* wiped because with no
+embeddings API every query's vector leg failed, retrieval degraded to FTS-only,
+FTS found nothing, and the model then correctly reported that its (empty)
+fragments contained no relevant norm. **A billing failure rendered as a
+confident legal negative.**
+
+Fixed in code so it cannot happen silently again: retrieval now throws
+`VectorLegUnavailableError` instead of returning an empty result, and
+`/api/chat/stream` sends `search_unavailable` with a message stating that the
+search is down and that this does NOT mean no norm exists. See `GOTCHAS.md` —
+"A console warning is not a safety mechanism".
+
+**Still open from this incident:** the UI has not been checked against the new
+`search_unavailable` event (frontend has uncommitted changes, left untouched);
+`ask.ts` and the non-streaming route were not given the same guard; and there is
+no budget alarm on any provider, so the next depletion will also be discovered
+by a user.
+
 ## DO THIS NEXT
 
 **1. HAND-TEST 22 QUESTIONS — the owner, not the agent.** Nobody has verified

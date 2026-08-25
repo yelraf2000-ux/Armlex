@@ -1026,3 +1026,32 @@ by ref gets `text_hy`, which is NOT the part-reduced text the model was given �
 an early version of the power harness did exactly that and reported the
 label-scoped guard as no better than the unscoped one, having silently removed
 the labels first.
+
+**2026-08-25** — **INCIDENT: the live site appeared to lose all its data. It had
+not.** The Gemini embedding prepayment balance emptied. Every query's vector leg
+returned `HTTP 429 RESOURCE_EXHAUSTED`, retrieval degraded to FTS-only, FTS
+returned nothing, and generation — correctly, from empty fragments — told a user
+asking about EV charging stations and the 7% turnover-tax rate that **no norm
+covering the question exists**, listing the Tax Code chapters it would have
+needed. Corpus verified intact throughout: 33 / 1,737 / 6,992 / 1,100.
+
+Two things are worth keeping from it. **429 does not mean rate limit** — the body
+said "prepayment credits are depleted", which no amount of backoff fixes; that
+is the third provider in this project to disguise running out of money as
+something else. And **the console warning built for exactly this case did not
+help.** `warnVectorUnavailable` fired as designed; the log was not being watched
+and the request went on to answer anyway.
+
+Fixed: `retrieve` now throws `VectorLegUnavailableError` rather than returning an
+empty result, and `/api/chat/stream` sends `search_unavailable` with text saying
+the search is down and that this does NOT mean no norm exists. 3 tests. An empty
+result because nothing matched and an empty result because we could not search
+must never reach generation as the same thing — the second is an outage, and an
+outage phrased as a legal conclusion is worse than a visible error, because a
+negative answer is actionable.
+
+Also added `eval/probe-question.ts`: runs one question through the live path and
+prints `needsRetrieval`, the rewritten query and the ranked chunks. "It cannot
+find anything" has four causes that look identical in the UI — empty index,
+`needsRetrieval: false`, retrieval returning nothing, retrieval returning the
+wrong things — and this separates them in one call.

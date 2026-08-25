@@ -6,7 +6,7 @@ import { join } from 'node:path';
 import Fastify from 'fastify';
 import fastifyStatic from '@fastify/static';
 import { authEnabled, authStatus, login, requireAuth } from './auth.js';
-import { retrieve, warmRetrieval } from './retrieval/retrieve.js';
+import { retrieve, warmRetrieval, VectorLegUnavailableError } from './retrieval/retrieve.js';
 import { db } from './db/pool.js';
 import { ask, isConfigured } from './answer/ask.js';
 import { chat } from './answer/chat.js';
@@ -146,6 +146,24 @@ app.post<{ Body: ChatBody }>('/api/chat/stream', async (req, reply) => {
   } catch (err) {
     const e = err as { status?: number; message?: string };
     req.log.error({ err }, 'chat stream failed');
+
+    // Search being down is not "chat failed" — it is the one failure that must
+    // never be mistaken for an answer. On 2026-08-25 the embedding balance ran
+    // out, retrieval quietly returned nothing, and a user was told no norm
+    // existed for their question. An outage that reads as a legal conclusion is
+    // far worse than a visible outage, so this case is named explicitly rather
+    // than folded into the generic handler.
+    if (err instanceof VectorLegUnavailableError) {
+      send('error', {
+        error: 'search_unavailable',
+        detail:
+          'Որոնման համակարգը ժամանակավորապես անհասանելի է, ուստի պատասխան չի տրվում։ ' +
+          'Սա ՉԻ նշանակում, որ Ձեր հարցին վերաբերող նորմ չկա։ / ' +
+          'Поиск временно недоступен, поэтому ответ не даётся. Это НЕ значит, ' +
+          'что по вашему вопросу нет нормы.',
+      });
+      return;
+    }
     send('error', { error: 'chat failed', detail: `${e.status ?? ''} ${e.message ?? String(err)}`.trim() });
   } finally {
     reply.raw.end();

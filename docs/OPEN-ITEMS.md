@@ -332,6 +332,22 @@ traffic and 40% of hard failures; Class-2 fired once in 250. New order:
     enough" IS the failure mode. The correct fix is FEWER strips — prompt the
     model to quote only what it can copy exactly — never weaker checking.
 
+40. **No budget alarm on any provider.** The 2026-08-25 outage was discovered by
+    a user receiving a wrong answer, not by monitoring. Three providers are now
+    on the critical path (Gemini embeddings, Voyage rerank, Anthropic
+    generation) and each disguises exhaustion differently — 429, and 400. A
+    depleted embeddings balance takes retrieval to zero, which is the most
+    damaging of the three. Cheapest useful version: a startup + daily probe of
+    each provider with one cheap call, logged to `crawl_log` and surfaced in the
+    corpus banner.
+
+41. **`search_unavailable` is unverified in the UI, and `ask.ts` is unguarded.**
+    The streaming route names the failure; the non-streaming `/api/ask` path and
+    `ask.ts` still degrade silently, and the frontend's handling of the new event
+    was not checked because the working tree has uncommitted frontend changes.
+    Until then a user on the ask path can still be told a norm does not exist
+    when the truth is that search is down.
+
 37. **The number guard is built and REPORT-ONLY — the enforcement decision is
     open.** `answer/validateNumbers.ts`, 20 tests, logged in `chat.ts` and
     recorded per-question by `triage.ts`. Measured power against a falsified

@@ -417,3 +417,44 @@ regenerable at ~$0.012 a question). The general rule: when instrumenting a
 decision, persist the decision's actual INPUT. Reconstructing it later from an
 identifier gets something adjacent and plausible, which is worse than getting
 nothing, because it still produces a results table.
+
+## Gemini credit exhaustion is a 429, and it does not recover
+
+    HTTP 429  RESOURCE_EXHAUSTED
+    "Your prepayment credits are depleted."
+
+429 reads as a rate limit, so the instinct is to back off and retry. There is
+nothing to wait for — the balance is empty until someone tops it up at
+ai.studio. This is the third provider in this project to disguise "you are out
+of money" as something else (Anthropic sends 400; Gemini's *free-tier* quota is
+per-DAY while its 429 looks per-minute). **Read the response BODY before
+classifying any 429.**
+
+Cost of not knowing: every query's vector leg failed, retrieval degraded to
+FTS-only, and FTS found nothing — so the app told a user asking about EV
+charging stations that **no norm covering the question exists**, complete with a
+list of the Tax Code chapters it would have needed. Well-structured, fluent, and
+a confident legal negative caused by a billing failure. It read from the outside
+like total data loss; the corpus was intact at 33 / 1,737 / 6,992 / 1,100.
+
+## A console warning is not a safety mechanism
+
+`warnVectorUnavailable` was added on 2026-08-15 with the comment "degrading to
+FTS-only must never be silent". It worked exactly as written — and the failure
+above still reached a user, because the warning went to a server log nobody was
+watching while the request went on to produce an answer.
+
+**A guard that only logs does not prevent anything.** If a condition means the
+output cannot be trusted, the code path has to stop, not annotate. Retrieval now
+throws `VectorLegUnavailableError` and the route sends `search_unavailable`,
+which says the search is down and explicitly says this does NOT mean no norm
+exists.
+
+The distinction that matters: **an empty result because nothing matched and an
+empty result because we could not search must never reach generation as the same
+thing.** The first is a legitimate answer. The second is an outage, and phrasing
+an outage as a legal conclusion is worse than a visible error, because a
+negative answer is actionable — someone plans around it.
+
+`OPEN-ITEMS` 24 is the same bug in the eval harness (`score.ts` renders a wiped
+index as a plausible 0.0% table). Same shape, same fix: fail loudly.

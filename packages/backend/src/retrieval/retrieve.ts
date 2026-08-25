@@ -192,6 +192,10 @@ export async function embedQuery(text: string): Promise<number[] | null> {
  */
 let lastVectorWarning = '';
 function warnVectorUnavailable(reason: string): void {
+  // Record BEFORE the de-duplication return. The dedupe exists to keep the log
+  // readable; letting it also skip the flag would mean the second and every
+  // subsequent identical failure — i.e. an outage — silently answered anyway.
+  vectorFailure = reason;
   if (reason === lastVectorWarning) return; // don't spam identical failures
   lastVectorWarning = reason;
   console.error(
@@ -199,6 +203,37 @@ function warnVectorUnavailable(reason: string): void {
       `which scores ~0% on non-Armenian queries.`,
   );
 }
+
+/**
+ * The vector leg is down, so no answer may be attempted.
+ *
+ * Warning on the console was not enough, and 2026-08-25 showed exactly what it
+ * costs. The Gemini embedding balance emptied; every query's vector leg
+ * returned HTTP 429; retrieval fell back to FTS, which found nothing; and the
+ * model — correctly, given empty fragments — told a user asking about EV
+ * charging stations that **no norm covering the question exists**, listing the
+ * Tax Code chapters it would have needed. Fluent, well-structured, and a
+ * confident legal negative produced by a billing failure. The owner read it as
+ * "all the data is lost".
+ *
+ * That is the worst output this system can produce. A visibly broken tool is
+ * safe; a tool that answers "there is no such law" when it simply cannot search
+ * is not, because a negative answer is *actionable* — someone plans around it.
+ *
+ * So this throws. Refusing to answer is a correct response to being unable to
+ * search; saying "no norm found" is not. Grounding (principle #1) governs what
+ * we do with retrieved text and cannot cover the case where retrieval itself
+ * did not run.
+ */
+export class VectorLegUnavailableError extends Error {
+  constructor(public readonly reason: string) {
+    super(`vector retrieval unavailable: ${reason}`);
+    this.name = 'VectorLegUnavailableError';
+  }
+}
+
+/** Set by `embedQuery` on failure, consumed by `rerankedRetriever`. */
+let vectorFailure: string | null = null;
 
 /**
  * Vector search over pgvector, max-pooling a chunk's slices.
@@ -473,7 +508,11 @@ const FTS_POOL = Number(process.env['FTS_POOL'] ?? 0);
 const GUARANTEED_VECTOR_SLOTS = Number(process.env['GUARANTEED_VECTOR_SLOTS'] ?? 3);
 
 export const rerankedRetriever: Retriever = async (query, limit) => {
+  vectorFailure = null;
   const candidates = await vectorRetriever(query, RERANK_POOL);
+  // An empty result because we could not SEARCH is not an empty result because
+  // nothing matched, and the two must not reach generation as the same thing.
+  if (vectorFailure) throw new VectorLegUnavailableError(vectorFailure);
   if (candidates.length === 0) return [];
 
   let pool = candidates;
