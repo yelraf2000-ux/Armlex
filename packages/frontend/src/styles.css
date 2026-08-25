@@ -123,12 +123,21 @@ a { color: var(--accent); }
   flex-wrap: wrap;
 }
 
+/* A button, because it is the way home — but it must still read as a masthead,
+   so it carries none of a button's chrome. */
 .provenance .brand {
   font-family: var(--display);
   font-size: 24px;
   letter-spacing: 0.01em;
   color: var(--ink);
+  padding: 0;
+  border: 0;
+  background: none;
+  cursor: pointer;
+  line-height: 1.2;
 }
+.provenance .brand:hover { color: var(--accent); }
+.provenance .brand:focus-visible { outline: 1px solid var(--accent); outline-offset: 4px; }
 
 .masthead-sub {
   font-size: 12.5px;
