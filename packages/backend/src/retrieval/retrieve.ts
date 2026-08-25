@@ -183,12 +183,19 @@ export async function embedQuery(text: string): Promise<number[] | null> {
 }
 
 /**
- * Degrading to FTS-only must never be silent.
+ * Losing the vector leg must never be silent.
  *
- * Without the vector leg, retrieval measures 0% on Russian questions — the
- * system looks like it is working (it returns answers, it says "no relevant
- * fragments") while being comprehensively broken. That failure is
+ * Without it the system looks like it is working — it returns answers, it says
+ * "no relevant fragments" — while being comprehensively broken, and that is
  * indistinguishable from a genuine miss unless it announces itself.
+ *
+ * **This used to say "falling back to FTS-only", and that was wrong.**
+ * `FTS_POOL` defaults to 0 (lexical fusion was measured and switched off), and
+ * `rerankedRetriever` returns early on an empty vector result before the FTS
+ * block is even reached. There is no fallback: the vector leg IS retrieval. The
+ * old wording would have told anyone reading the log during the 2026-08-25
+ * outage that the system was still searching, weakly, when it was returning
+ * nothing at all.
  */
 let lastVectorWarning = '';
 function warnVectorUnavailable(reason: string): void {
@@ -199,8 +206,8 @@ function warnVectorUnavailable(reason: string): void {
   if (reason === lastVectorWarning) return; // don't spam identical failures
   lastVectorWarning = reason;
   console.error(
-    `[retrieval] VECTOR LEG UNAVAILABLE (${reason}) — falling back to FTS-only, ` +
-      `which scores ~0% on non-Armenian queries.`,
+    `[retrieval] VECTOR LEG UNAVAILABLE (${reason}) — retrieval returns NOTHING. ` +
+      `FTS_POOL=${FTS_POOL}; there is no second leg to fall back to.`,
   );
 }
 
