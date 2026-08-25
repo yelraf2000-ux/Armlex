@@ -394,20 +394,46 @@ traffic and 40% of hard failures; Class-2 fired once in 250. New order:
     sub-line exists because article 260 excludes item 9 from the deduction
     mechanism. Both required chunks are pinned on golden question 36.
 
-42. **DELIVERED, UNUSED is now measured — and it is the top defect.** Baseline
-    60% of delivered provisions used (`answer-coverage.ts`, n=6, Sonnet). No fix
-    attempted yet. Candidate mechanisms, none tested:
-    - The answer template's "what to check" section is specified to name
-      *adjacent grounds and exceptions in the cited articles* and demonstrably
-      does not. It is a prompt rule competing with 30k characters of statute —
-      the exact shape `GOTCHAS` says must be COMPUTED, not inferred.
-    - A second cheap pass over the delivered text asking only "which provisions
-      here bear on the question and are absent from this draft?", mirroring the
-      cited-slot guarantee: deterministic, bounded, one extra call.
-    - Part-level delivery may still be truncating: check whether part 6(2) was
-      inside the delivered window for `Հոդված 258` or only in the stored chunk.
-      **Check the delivered text before blaming the model** — the rule that has
-      held six times.
+42. **THE TOP DEFECT IS CONTEXT ASSEMBLY, not the model and not retrieval.**
+    Measured by `answer-coverage.ts` (n=6 provisions, 2 questions, Sonnet):
 
-    Grow the marker file before trusting the number: 6 provisions is 17% per
-    provision, far coarser than the golden set it complements.
+        of provisions DELIVERED to generation, 100% were used
+        50% of required provisions were NEVER delivered
+        27% and 33% of retrieved characters reached the model
+
+    `Հոդված 258` is retrieved at **rank 1** and then reduced from 8,134
+    characters to 1,672 by `generationDocument`. The 7% rate survives; the 3%
+    deduction floor (part 3) and the fixed-asset exclusion (part 6(2)) do not —
+    and the second decides the EV-charging question outright.
+
+    **This retracts the prompt-side diagnosis.** The model reads what it is
+    given, so a stronger "what to check" instruction, a completeness pass, or a
+    second opinion all aim at the wrong layer. The lever is the extraction
+    window in `retrieval/rerank.ts`.
+
+    Candidates, none measured:
+    - **Follow same-article references, which already exists but is bounded to
+      parts the delivered text names.** Part 1's table does not name part 6, so
+      the deduction machinery is unreachable from the rate row. Widening the
+      trigger from "named parts" to "parts the QUESTION implicates" would reach
+      it.
+    - **Deliver the whole article when it is short enough.** 8,134 characters is
+      ~14k tokens of Armenian — real money at Sonnet prices, but `FRESH_LIMIT`
+      is already 8 chunks and the 4→8 change bought 57.6%→81.8% on complete
+      context. Measure the same way.
+    - **Never trim the rank-1 chunk.** Cheapest possible version, and it would
+      have fixed this case outright.
+
+    Measure with `answer-coverage.ts` before and after; `score.ts` is blind to
+    all of it, since retrieval already scores 100% here.
+
+    Caveat: 6 provisions is a very small base. Grow the marker file — the 22
+    hand-test answers are the natural source, which is one more reason the
+    hand-test matters.
+
+43. **Q36's row 20 may already be fixed.** `OPEN-ITEMS` 26/34 record
+    `137687#Հավելված 1, աղյուսակ 3` at rerank rank 11 and undelivered. On
+    2026-08-25 `answer-coverage.ts` reported it DELIVERED **and** USED. If that
+    holds, the tie-aware cut or guaranteed vector slots closed it and both items
+    can be retired. Confirm before believing it — one run, and the marker
+    («Այլ ակտիվների») could match another chunk.

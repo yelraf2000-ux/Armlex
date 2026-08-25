@@ -115,6 +115,14 @@ Deterministic now, so each is individually diagnosable.
 **5. Re-embed** — `split.ts` duplicated-lead-in fix only reaches the index on a
 re-embed (~7,000 slices, ~10 min quota).
 
+**6. THE BOTTLENECK IS CONTEXT ASSEMBLY** (found 2026-08-25, `OPEN-ITEMS` 42).
+Of provisions delivered to generation, **100% are used**; **50% of required
+provisions are never delivered**, and only 27–33% of retrieved characters reach
+the model. `Հոդված 258` arrives at rank 1 and is cut from 8,134 characters to
+1,672, losing the two provisions that decide the question. Retrieval is fine and
+the model is fine — `generationDocument` is where the answer is lost. Measure
+with `answer-coverage.ts`; `score.ts` cannot see any of it.
+
 **Retrieval is NO LONGER what blocks shipping.** What does: no accountant has
 reviewed a sample; one shared password with no rate limiting at ~$0.12/question;
 long conversations crash on the context limit (`OPEN-ITEMS` 12); NEW-document
