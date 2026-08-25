@@ -14,6 +14,14 @@ data/snapshots/
 data/vectors/
 data/vectors-old/
 *.jsonl.bak
+
+# Triage answer dumps: the answer text PLUS the fragment text generation read,
+# so a guard can be measured against the exact haystack the model saw. That
+# makes them ~100 KB per question — 80 MB over the 250-question set. Local-only
+# and regenerable for about $0.012 a question; the small metadata sibling
+# (`triage-results.jsonl`) is the one that stays in git.
+data/eval/*-answers.jsonl
+
 data/audit/*.json
 data/audit/*.md
 !data/audit/.gitkeep

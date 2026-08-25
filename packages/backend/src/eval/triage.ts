@@ -9,6 +9,8 @@
  * What each signal means:
  *   coverage none/partial — corpus or retrieval could not carry the question
  *   invalidQuotes > 0     — the model asserted something it could not prove
+ *   unsourcedLegal > 0    — stated a line/point/rate/deadline number that is in
+ *                           no fragment (REPORT ONLY, see validateNumbers.ts)
  *   asksForArticle        — named a norm it needed instead of citing it
  *                           (Class-2 smell: it may be sitting in our corpus)
  *   lowTopScore           — reranker's best candidate is weak (Class-1 smell)
@@ -16,9 +18,16 @@
  * Output: data/eval/triage-results.jsonl (one line per question, resumable)
  * and a summary table. Cost ≈ $0.012/question.
  *
+ * The ANSWER TEXT goes to a sibling `-answers.jsonl`. Storing only metadata was
+ * a false economy: every later question about answer quality — is a `full`
+ * verdict a good answer, does the number guard fire on valid input — needed the
+ * text and had to pay for a fresh run to get it. It is kept out of the results
+ * file so that file stays small and diff-comparable.
+ *
  * Usage:
  *   npx tsx packages/backend/src/eval/triage.ts              # all harvested
  *   npx tsx packages/backend/src/eval/triage.ts --limit 50
+ *   npx tsx packages/backend/src/eval/triage.ts --limit 40 --out numbers-sample
  */
 import { appendFile, readFile } from 'node:fs/promises';
 import { join } from 'node:path';
@@ -28,12 +37,23 @@ import { generate } from '../answer/llm.js';
 import { SYSTEM } from '../answer/chat.js';
 import { CoverageParser } from '../answer/coverage.js';
 import { validateQuotes } from '../answer/validateQuotes.js';
+import { validateNumbers } from '../answer/validateNumbers.js';
 import { answerLanguage } from '../answer/language.js';
 import { retrieve, closeRetrieval } from '../retrieval/retrieve.js';
 
 const EVAL_DIR = join(process.cwd(), 'data', 'eval');
 const IN = join(EVAL_DIR, 'accountant-am.jsonl');
-const OUT = join(EVAL_DIR, 'triage-results.jsonl');
+
+/**
+ * `--out <name>` redirects both output files, so a fresh sample can be taken
+ * without touching the 250-question baseline that every headline figure and
+ * every `triage-diff` comparison rests on. Resume is keyed to whichever pair is
+ * selected.
+ */
+const outIdx = process.argv.indexOf('--out');
+const OUT_NAME = outIdx >= 0 ? process.argv[outIdx + 1]! : 'triage-results';
+const OUT = join(EVAL_DIR, `${OUT_NAME}.jsonl`);
+const OUT_ANSWERS = join(EVAL_DIR, `${OUT_NAME}-answers.jsonl`);
 
 /** Cheap and fast; triage needs volume, not eloquence. */
 const TRIAGE_MODEL = 'gemini-3.5-flash-lite';
@@ -55,6 +75,12 @@ interface Triage {
   articles: string[];
   /** The answer names a Հոդված absent from what was retrieved. */
   asksForArticle: string[];
+  /** Numbers stated with a legal label that appear in no fragment. Report only. */
+  unsourcedLegal: number;
+  /** Unsourced numbers without a legal label — mostly the model's arithmetic. */
+  unsourcedOther: number;
+  /** The flagged numbers in context, so a firing can be judged without a re-run. */
+  unsourced: { text: string; severity: string; context: string }[];
   answerChars: number;
   ms: number;
   error?: string;
@@ -112,8 +138,27 @@ async function main(): Promise<void> {
       );
       answer += cov.flush();
 
-      const quotes = validateQuotes(answer, chunks.map((c) => c.text));
+      const chunkTexts = chunks.map((c) => c.text);
+      const quotes = validateQuotes(answer, chunkTexts);
       const articles = chunks.map((c) => `${c.arlisId}#${c.ref}`);
+
+      // Numbers are checked against the SANITIZED answer: a number inside a
+      // quote that was already stripped is not a claim the reader will see, and
+      // counting it would double-report one failure as two.
+      const numbers = validateNumbers(quotes.sanitized, chunkTexts, [q.question], articles);
+      const flagged = numbers.checks.filter((c) => !c.valid);
+
+      // The CHUNK TEXTS are stored, not just their refs. Re-fetching an
+      // article by ref afterwards gets `text_hy`, which is not what generation
+      // read — the delivered text is part-reduced — so a guard measured against
+      // the database is measured against the wrong haystack. Cost is disk; the
+      // alternative is paying for a fresh run every time a question about
+      // answer quality comes up, which is what storing metadata alone forced.
+      await appendFile(
+        OUT_ANSWERS,
+        JSON.stringify({ url: q.url, title: q.title, answer, articles, chunkTexts }) + '\n',
+        'utf8',
+      );
 
       const row: Triage = {
         url: q.url,
@@ -124,6 +169,13 @@ async function main(): Promise<void> {
         topScore: chunks[0]?.score ?? null,
         articles,
         asksForArticle: namedNotRetrieved(answer, articles),
+        unsourcedLegal: numbers.legalCount,
+        unsourcedOther: numbers.otherCount,
+        unsourced: flagged.map((c) => ({
+          text: c.text,
+          severity: c.severity,
+          context: c.context,
+        })),
         answerChars: answer.length,
         ms: Date.now() - t0,
       };
@@ -157,6 +209,16 @@ async function main(): Promise<void> {
   console.log(`no header/error   : ${count((r) => !r.coverage)}`);
   console.log(`invalid quotes    : ${count((r) => (r.invalidQuotes ?? 0) > 0)}`);
   console.log(`names unretrieved article (Class-2 smell): ${count((r) => (r.asksForArticle?.length ?? 0) > 0)}`);
+
+  // Report only — nothing is rewritten or withheld on these. The point of the
+  // run is to learn how often the guard fires and on what, BEFORE deciding
+  // whether it may act. A guard that fires on valid input is worse than none.
+  console.log(`\n--- number guard (REPORT ONLY) ---`);
+  console.log(`unsourced legal number : ${count((r) => (r.unsourcedLegal ?? 0) > 0)}`);
+  console.log(`unsourced other number : ${count((r) => (r.unsourcedOther ?? 0) > 0)}`);
+  const legalHits = rows.flatMap((r) => (r.unsourced ?? []).filter((u) => u.severity === 'legal'));
+  console.log(`total legal firings    : ${legalHits.length}`);
+  for (const h of legalHits.slice(0, 25)) console.log(`  ${h.text.padEnd(14)} ${h.context.slice(0, 90)}`);
 
   await closeRetrieval();
 }
