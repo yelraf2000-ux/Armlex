@@ -1,38 +1,40 @@
 /**
- * Did the answer USE what retrieval delivered?
+ * Where does a required provision actually get lost?
  *
- * The golden set scores retrieval: question -> ranked article IDs. It cannot
- * see this failure at all. On 2026-08-25 a user asked whether an EV charging
- * station built on solar panels is "production activity" taxed at 7% with a 5%
- * expense deduction. Retrieval returned `Հոդված 258` at rank 1 and the
- * calculation table at rank 2 — a perfect score. The answer then quoted the 7%
- * rate and the 5% mechanism correctly and silently dropped two provisions that
- * were in the delivered text:
+ * The golden set scores retrieval — question -> ranked article IDs — and stops
+ * there. It cannot distinguish an article that was found and used from one that
+ * was found, ranked first, and then trimmed out of the prompt. This classifies
+ * every REQUIRED provision into three states, at PROVISION granularity:
  *
- *   - part 3's second sentence, capping the deduction so the tax stays at 3%
- *     of the base (also line 6.9 of the same table it quoted from);
- *   - part 6(2), which excludes fixed-asset purchases from deductible costs —
- *     decisive, because the asker plans to BUY the solar stations.
+ *   NOT DELIVERED      its text was not in what generation read
+ *   DELIVERED, USED    working as intended
+ *   DELIVERED, UNUSED  we had it, we sent it, the answer ignored it
  *
- * An accountant acting on that answer computes the wrong tax and expects a
- * deduction they cannot take. The golden set would have scored the question
- * 100%.
+ * **What it found first time out, and the finding is the opposite of the
+ * assumption behind building it.** A user asked whether an EV charging station
+ * on solar panels is "production activity" at 7% with a 5% expense deduction.
+ * The answer got the rate right and omitted both the 3% deduction floor
+ * (`Հոդված 258` part 3) and the exclusion of fixed-asset purchases from
+ * deductible costs (part 6(2)) — the provision that decides the question for
+ * someone who plans to BUY the solar stations.
  *
- * This is the project's most persistent defect (`Հոդված 288` at rank 4 never
- * read; `254` at 6; `112` at 7; `կետ 63` delivered and half-used) and it has
- * never had a number. This gives it one, by classifying each REQUIRED provision
- * into exactly three states:
+ * That looked like the project's oldest defect: delivered and not read. It was
+ * not. `Հոդված 258` is 8,134 characters and `generationDocument` delivered
+ * 1,672 of them; both provisions were outside the window. Measured across two
+ * cases: **of provisions DELIVERED, 100% were used — and 50% of required
+ * provisions were never delivered at all**, with 27–33% of retrieved characters
+ * reaching the model.
  *
- *   NOT DELIVERED    retrieval's problem — the chunk never reached generation
- *   DELIVERED, USED  working as intended
- *   DELIVERED, UNUSED  the defect: we had it, we sent it, the answer ignored it
+ * So the model reads what it is given. The bottleneck is what it is given, and
+ * it sits in context assembly, downstream of a retrieval leg that had already
+ * put the right article at rank 1.
  *
  * Requirements are hand-authored in `data/eval/required-provisions.jsonl`,
  * because "did the answer engage with this provision" is a judgement about
- * meaning that only a human can pin. Each provision carries literal markers —
- * a rate, a term, a line number — whose presence is evidence of engagement.
- * Markers are deliberately generous: a false "USED" understates the defect,
- * which is the safer direction for a metric whose job is to expose it.
+ * meaning that only a human can pin. `source` locates the provision in the
+ * statute; `markers` are evidence the answer engaged with it. Markers are
+ * deliberately generous: a false "USED" understates the defect, which is the
+ * safer direction for a metric whose job is to expose it.
  *
  * Usage:
  *   npx tsx packages/backend/src/eval/answer-coverage.ts
@@ -47,10 +49,25 @@ import { SYSTEM } from '../answer/chat.js';
 import { CoverageParser } from '../answer/coverage.js';
 import { answerLanguage } from '../answer/language.js';
 import { retrieve, closeRetrieval } from '../retrieval/retrieve.js';
+import { generationDocument } from '../retrieval/rerank.js';
 
 interface Provision {
   id: string;
   chunk: string;
+  /**
+   * A literal string from the STATUTE identifying this provision.
+   *
+   * Delivery must be judged on the text generation actually received, not on
+   * whether the chunk's name appeared in the retrieved list. The first version
+   * of this file checked chunk membership and got the EV case exactly backwards:
+   * `Հոդված 258` was retrieved at rank 1, so all four provisions counted as
+   * delivered — but `generationDocument` reduced the article from 8,134
+   * characters to 1,672, and both the 3% floor and the fixed-asset exclusion
+   * were outside that window. The instrument blamed the model for a
+   * context-assembly failure, which is the `Հոդված 267` part-5 mistake in
+   * GOTCHAS repeated by the very tool built to catch it.
+   */
+  source: string;
   markers: string[];
   note: string;
 }
@@ -89,13 +106,18 @@ async function main(): Promise<void> {
     const ctx = await contextualize([], c.question);
     const query = [ctx.standaloneQuery, ctx.searchTerms].filter(Boolean).join(' ');
     const chunks = ctx.needsRetrieval ? await retrieve(query, 4) : [];
-    const delivered = new Set(chunks.map((k) => `${k.arlisId}#${k.ref}`));
+
+    // The REDUCED text, which is what generation reads. Using `chunk.text` here
+    // would measure a haystack the model never saw — the same mistake the
+    // number guard's harness made, for the same reason.
+    const docs = chunks.map((k) => generationDocument(k));
+    const deliveredText = docs.join('\n\n---\n\n');
 
     const lang = answerLanguage(c.question) === 'ru' ? 'RUSSIAN' : 'ARMENIAN';
     const user = [
       `User message: ${c.question}`,
       `\n\nANSWER LANGUAGE: ${lang}.`,
-      `\n\nLegal act fragments:\n\n${chunks.map((k) => k.text).join('\n\n---\n\n')}`,
+      `\n\nLegal act fragments:\n\n${deliveredText}`,
     ].join('');
 
     const cov = new CoverageParser();
@@ -106,12 +128,23 @@ async function main(): Promise<void> {
     );
     answer += cov.flush();
 
+    const storedChars = chunks.reduce((n, k) => n + k.text.length, 0);
     console.log(`## ${c.title}`);
-    console.log(`   coverage verdict: ${cov.coverage} · ${chunks.length} chunk(s) delivered`);
-    report.push(`## ${c.title}`, '', `- verdict: \`${cov.coverage}\``, '');
+    console.log(
+      `   verdict: ${cov.coverage} · ${chunks.length} chunk(s) · ` +
+        `${storedChars} chars stored -> ${deliveredText.length} delivered ` +
+        `(${((100 * deliveredText.length) / (storedChars || 1)).toFixed(0)}%)`,
+    );
+    report.push(
+      `## ${c.title}`,
+      '',
+      `- verdict: \`${cov.coverage}\``,
+      `- delivered ${deliveredText.length} of ${storedChars} stored characters`,
+      '',
+    );
 
     for (const p of c.provisions) {
-      const isDelivered = delivered.has(p.chunk);
+      const isDelivered = deliveredText.includes(p.source);
       const state: State = !isDelivered
         ? 'NOT DELIVERED'
         : mentions(answer, p.markers)

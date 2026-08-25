@@ -5,10 +5,10 @@ Golden questions: 46
 | Retriever | hit@5 | hit@8 | recall@5 | recall@8 | MRR |
 |---|---|---|---|---|---|
 | fts (baseline) | 15.2% | 17.4% | 15.2% | 15.9% | 0.120 |
-| vector (pgvector) | 89.1% | 89.1% | 83.0% | 87.0% | 0.638 |
-| hybrid RRF (pgvector+FTS) | 73.9% | 80.4% | 65.9% | 76.1% | 0.483 |
+| vector (pgvector) | 89.1% | 89.1% | 81.9% | 87.0% | 0.638 |
+| hybrid RRF (pgvector+FTS) | 73.9% | 80.4% | 65.9% | 76.1% | 0.485 |
 | vector + rerank-2.5 | 87.0% | 89.1% | 80.4% | 87.0% | 0.740 |
-| gemini-embedding-2 | 89.1% | 89.1% | 83.0% | 87.0% | 0.638 |
+| gemini-embedding-2 | 89.1% | 89.1% | 81.9% | 87.0% | 0.638 |
 | voyage-3-large | 17.4% | 23.9% | 14.5% | 19.2% | 0.131 |
 
 ## Per-question detail — vector (pgvector)

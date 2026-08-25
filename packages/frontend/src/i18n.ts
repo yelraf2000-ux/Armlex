@@ -96,6 +96,11 @@ const hy: Dict = {
   'masthead.sub': 'ՀՀ հարկային և աշխատանքային օրենսդրության տեղեկատու',
   'card.expand': 'Ցույց տալ հոդվածը',
   'card.collapse': 'Ծալել',
+  'oneshot.placeholder': 'Հարց ռուսերեն, հայերեն կամ լատինատառ (xanut bacel)',
+  'oneshot.run': 'Կատարել',
+  'oneshot.nothing': 'Ոչինչ չի գտնվել։ Կորպուսը՝ հարկային և աշխատանքային օրենսդրություն՝ Հարկային օրենսգիրք, Աշխատանքային օրենսգիրք, Կառավարության որոշումներ և ՊԵԿ հրամաններ։ Քաղաքացիական իրավունքը և դատական պրակտիկան դրա մեջ չեն մտնում։',
+  'search.note': 'Մոդելը չի մասնակցում — միայն գտնված հատվածները',
+  'search.found': 'Գտնվել է հատված՝',
 };
 
 const ru: Dict = {
@@ -173,6 +178,11 @@ const ru: Dict = {
   'masthead.sub': 'справочник по налоговому и трудовому законодательству Республики Армения',
   'card.expand': 'Показать статью',
   'card.collapse': 'Свернуть',
+  'oneshot.placeholder': 'Вопрос на русском, армянском или латиницей (xanut bacel)',
+  'oneshot.run': 'Выполнить',
+  'oneshot.nothing': 'Ничего не найдено. Корпус — налоговое и трудовое законодательство: Налоговый кодекс, Трудовой кодекс, решения Правительства и приказы КГД. Гражданское право и судебная практика в него не входят.',
+  'search.note': 'Модель не участвует — только найденные фрагменты',
+  'search.found': 'Найдено фрагментов:',
 };
 
 const en: Dict = {
@@ -250,6 +260,11 @@ const en: Dict = {
   'masthead.sub': 'a reference to the tax and labour law of the Republic of Armenia',
   'card.expand': 'Show the article',
   'card.collapse': 'Collapse',
+  'oneshot.placeholder': 'A question in Russian, Armenian or Latin script (xanut bacel)',
+  'oneshot.run': 'Run',
+  'oneshot.nothing': 'Nothing found. The corpus is tax and labour law: the Tax Code, the Labour Code, government decisions and SRC orders. Civil law and court practice are not in it.',
+  'search.note': 'No model involved — retrieved fragments only',
+  'search.found': 'Fragments found:',
 };
 
 const DICTS: Record<Lang, Dict> = { hy, ru, en };

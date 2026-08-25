@@ -1086,3 +1086,38 @@ UNDERSTATES the defect.
 The EV question is also pinned into `golden_verified.csv` (backup:
 `golden_verified.pre-ev.bak`) as a retrieval guard — though note it will score
 100% there, which is exactly why the new instrument had to exist.
+
+**2026-08-25 (correction, same day)** — **The instrument above was wrong on its
+first run, and the corrected reading inverts the conclusion.**
+
+`answer-coverage.ts` judged delivery by asking whether the CHUNK appeared in the
+retrieved list. `Հոդված 258` was at rank 1, so all four of its provisions
+counted as delivered, and the two the answer omitted were scored
+`DELIVERED, UNUSED` — the model's fault. Then the delivered text was checked:
+
+    Հոդված 258   stored 8,134 chars -> DELIVERED 1,672 chars
+      part 1 table row 4 (7% rate)      in window: YES
+      part 3, the 3% floor              in window: NO
+      part 6(2), fixed assets excluded  in window: NO
+
+Both provisions were cut out by `generationDocument`. The tool built to catch
+"the model was right, the context was wrong" made exactly that mistake, on its
+first case, for the same reason the number-guard harness did: it measured
+against a haystack the model never saw.
+
+Corrected, judging delivery on the reduced text at PROVISION granularity:
+
+    NOT DELIVERED       3 (50%)
+    DELIVERED, USED     3 (50%)
+    DELIVERED, UNUSED   0 (0%)
+    -> of provisions DELIVERED, 100% were used
+    -> 27% and 33% of retrieved characters reached the model
+
+**The model uses what it is given. The bottleneck is context assembly**, sitting
+downstream of a retrieval leg that had already put the right article at rank 1.
+`OPEN-ITEMS` 42 is rewritten accordingly: the candidate fixes aimed at the
+prompt are the wrong target.
+
+Incidental: Q36's row 20 now comes back DELIVERED and USED, where `OPEN-ITEMS`
+26 records it at rerank rank 11 and undelivered. Worth confirming separately —
+if real, the tie-aware cut or guaranteed vector slots fixed it.
