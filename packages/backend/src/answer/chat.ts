@@ -20,6 +20,7 @@ import type { RetrievedChunk } from '../retrieval/retrieve.js';
 import { generationDocument } from '../retrieval/rerank.js';
 import { contextualize } from './contextualize.js';
 import { QuoteStreamGate } from './streamGate.js';
+import { validateNumbers } from './validateNumbers.js';
 import { CoverageParser } from './coverage.js';
 import type { Coverage } from './coverage.js';
 import { answerLanguage } from './language.js';
@@ -484,6 +485,33 @@ export async function chat(
     // Those need opposite fixes, and the count alone cannot tell them apart.
     for (const q of gate.rejected) {
       console.error(`[quotes]   rejected: ${q.slice(0, 160)}`);
+    }
+  }
+
+  // Numbers: REPORT ONLY. Rule 3a forbids stating a number the fragments do not
+  // contain, and unlike a quote that rule has never been checked mechanically.
+  // Nothing is rewritten here — a number cannot be excised without collapsing
+  // the sentence around it, and the guard's measured firing rate (2 in 39 real
+  // answers) is a sample too small to license acting on. Logging it in
+  // production is how that sample grows. See validateNumbers.ts.
+  const numbers = validateNumbers(
+    answer,
+    chunkTexts,
+    [message, ctx.factSummary ?? ''],
+    [
+      ...[...fresh, ...carried].map((c) => `${c.arlisId}#${c.ref}`),
+      ...new Set(
+        [...fresh, ...carried].map((c) => c.actNumber).filter(Boolean).map((n) => `հրաման N ${n}`),
+      ),
+    ],
+  );
+  if (numbers.legalCount > 0) {
+    console.error(
+      `[numbers] ${numbers.legalCount} unsourced legal number(s) ` +
+        `(session ${sessionId}, turn ${turnNumber})`,
+    );
+    for (const c of numbers.checks.filter((x) => !x.valid && x.severity === 'legal')) {
+      console.error(`[numbers]   ${c.text} — ${c.context.slice(0, 160)}`);
     }
   }
 

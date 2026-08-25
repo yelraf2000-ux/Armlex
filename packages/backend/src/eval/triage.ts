@@ -145,7 +145,15 @@ async function main(): Promise<void> {
       // Numbers are checked against the SANITIZED answer: a number inside a
       // quote that was already stripped is not a claim the reader will see, and
       // counting it would double-report one failure as two.
-      const numbers = validateNumbers(quotes.sanitized, chunkTexts, [q.question], articles);
+      // Act numbers («N 300-Ն») identify the DOCUMENT and appear neither in a
+      // chunk's text nor in its ref, so citing one read as a fabrication. They
+      // are labelled here the way the answer writes them, so the ordinary
+      // family rule applies rather than a special case.
+      const sources = [
+        ...articles,
+        ...new Set(chunks.map((c) => c.actNumber).filter(Boolean).map((n) => `հրաման N ${n}`)),
+      ];
+      const numbers = validateNumbers(quotes.sanitized, chunkTexts, [q.question], sources);
       const flagged = numbers.checks.filter((c) => !c.valid);
 
       // The CHUNK TEXTS are stored, not just their refs. Re-fetching an

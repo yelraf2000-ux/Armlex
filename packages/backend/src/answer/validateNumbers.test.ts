@@ -94,6 +94,77 @@ describe('whole-run matching', () => {
   });
 });
 
+describe('part and point citations', () => {
+  /**
+   * The law labels its parts by position. An answer that writes «մաս 13» is
+   * citing something the fragment calls `13.`, and demanding the word made
+   * every part citation in a 40-answer sample fire falsely.
+   */
+  const ARTICLE_55 =
+    'Հոդված 55. Հաշվարկային փաստաթղթեր\n' +
+    '12. Հաշվարկային փաստաթուղթը դուրս է գրվում։\n' +
+    '13. Ապրանքի մատակարարման դեպքում կիրառվում է հարկային հաշիվ։\n';
+
+  test('a part written as a bare enumerator vouches for «մաս 13»', () => {
+    const v = validateNumbers('(ՀՀ ՀԱՐԿԱՅԻՆ ՕՐԵՆՍԳԻՐՔ, Հոդված 55, մաս 13)', [ARTICLE_55], [], [
+      '109017#Հոդված 55',
+    ]);
+    assert.deepEqual(unsourced(v), []);
+  });
+
+  test('a part the article does not have is still caught', () => {
+    const v = validateNumbers('(ՀՀ ՀԱՐԿԱՅԻՆ ՕՐԵՆՍԳԻՐՔ, Հոդված 55, մաս 41)', [ARTICLE_55], [], [
+      '109017#Հոդված 55',
+    ]);
+    assert.ok(unsourced(v).includes('41'));
+  });
+
+  test('an article number is sourced by the delivered REF, not its body text', () => {
+    const v = validateNumbers('Տե՛ս Հոդված 298-ը։', ['Հաշվարկային փաստաթղթեր։'], [], [
+      '109017#Հոդված 298',
+    ]);
+    assert.deepEqual(unsourced(v), []);
+  });
+
+  test('a form LINE gets no such latitude — 9.2 is still caught', () => {
+    const v = validateNumbers('Լրացրեք 9.2 տողը։', ['9.2. Այլ դրույթներ\n'], [], []);
+    assert.ok(unsourced(v).includes('9.2'));
+  });
+});
+
+describe('labels found by measurement, not by reasoning', () => {
+  test('an act number is recognised by its `N …-Ն` form, not by nearby words', () => {
+    // The threshold, not the code, is what «115 միլիոն դրամը (ՀՀ ՕՐԵՆՍԳԻՐՔ)» is about.
+    const v = validateNumbers('չի գերազանցել 115 միլիոն դրամը (ՀՀ ՀԱՐԿԱՅԻՆ ՕՐԵՆՍԳԻՐՔ, Հոդված 254)', [
+      'շեմը կազմում է 115 000 000 դրամ',
+    ], [], ['109017#Հոդված 254']);
+    assert.deepEqual(unsourced(v), []);
+  });
+
+  test('a year is not a labelled legal quantity', () => {
+    const v = validateNumbers('ՆԱԽԱԳԱՀԻ 2016 ԹՎԱԿԱՆԻ ՀՐԱՄԱՆԻ (Հավելված 1, կետ 5)', [
+      'Հավելված 1\n2016 թվականին ընդունված հրաման։\n5. Սյունակները լրացվում են։',
+    ]);
+    assert.deepEqual(unsourced(v), []);
+  });
+
+  test('every member of an enumerated citation shares its trailing label', () => {
+    const v = validateNumbers('(ՀՀ Հարկային օրենսգրքի 71-րդ, 72-րդ, 73-րդ հոդվածներ)', [''], [], [
+      '109017#Հոդված 71',
+      '109017#Հոդված 72',
+      '109017#Հոդված 73',
+    ]);
+    assert.deepEqual(unsourced(v), []);
+  });
+
+  test('a table row number is vouched for by the row itself', () => {
+    const v = validateNumbers('աղյուսակ 3-ի «9. Այլ գործունեությունից» տողը', [
+      'Հավելված 1, աղյուսակ 3\n9. Այլ գործունեությունից ստացվող եկամուտներ\n',
+    ]);
+    assert.deepEqual(unsourced(v), []);
+  });
+});
+
 describe('severity', () => {
   test('a label binds to the number beside it, not across a comma', () => {
     const v = validateNumbers('Հարկը կկազմի 1500000 դրամ, տես 9.2 տողը։', ['դրույքաչափը 5 տոկոս']);

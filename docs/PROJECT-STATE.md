@@ -50,9 +50,16 @@ Generation: `claude-sonnet-5`, ~$0.06–0.12/question.
 
 **1. HAND-TEST 22 QUESTIONS — the owner, not the agent.** Nobody has verified
 that a "full" verdict means a correct answer; the 47% is Flash-Lite grading
-itself. Question text is in `data/eval/accountant-am.jsonl` (search by title).
+itself. **The 22 are now pinned in [`../data/eval/handtest-22.md`](../data/eval/handtest-22.md)**
+with question text, triage verdict and the delivered article refs; regenerate
+with `npx tsx packages/backend/src/eval/handtest-sheet.ts data/eval/triage-results-preTier1.jsonl data/eval/triage-results.jsonl data/eval/handtest-22.md`.
 Score in three buckets only: *would send to a client* / *right but useless* /
 *wrong or refused*.
+
+> As of 2026-08-25 the owner reports 3 questions tested — micro-business and
+> inbound-tourism good, the turnover-tax line still unable to name the line
+> (known, `OPEN-ITEMS` 34). Only the first of those is inside the pinned 22, so
+> **19–21 remain**.
 
 - **10 marked `full`** — if 8 hold up, 47% is real; if 5, the true figure is
   ~25% and every number in these docs needs a caveat.
@@ -69,8 +76,12 @@ fidelity (11% of answers contain a quote the validator strips). Test with
 `compare-generators.ts`; `llm.ts` already has the Gemini path, so it is a config
 flag. Pass bar: not materially worse than Sonnet on invalid quotes, declines to
 invent a line number, and reaches the 129 → 113/109/124 conclusion.
-**Before switching, build a mechanical validator for cited NUMBERS** — quotes
-are checked, numbers are guarded only by prompt rule 3a.
+~~**Before switching, build a mechanical validator for cited NUMBERS**~~ —
+**DONE 2026-08-25.** `answer/validateNumbers.ts`, report-only, 20 tests, logged
+in `chat.ts`. Power is 100% on the shapes that carry the documented harm (form
+line refs, article/act numbers, thresholds) and 21% on one-digit numbers, which
+is where RATES live — measured, not assumed, by falsifying every number in 39
+real answers. Whether it may ACT is still open (`OPEN-ITEMS` 37, 38).
 
 **4. Tier 2 — the remaining retrieval backlog.** 6 golden questions never
 deliver everything; `աղյուսակ 3` sits at rerank rank 11 (`OPEN-ITEMS` 26, 34).

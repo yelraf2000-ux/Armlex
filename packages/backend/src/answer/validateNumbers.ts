@@ -83,6 +83,28 @@ const MARKER_FAMILIES: { family: string; pattern: RegExp }[] = [
 ];
 
 /**
+ * An act number («N 300-Ն»), recognised by adjacency for the same reason a
+ * percentage is.
+ *
+ * A word-based `act` family was tried and withdrawn on measurement: nearly
+ * every legal claim ends in a citation parenthesis, so «115 միլիոն դրամը (ՀՀ
+ * ՀԱՐԿԱՅԻՆ ՕՐԵՆՍԳԻՐՔ…)» had its THRESHOLD labelled an act number by the
+ * «ՕՐԵՆՍԳԻՐՔ» that follows it. The act number is the one wearing the `N` and
+ * the `-Ն` suffix; nothing else is.
+ */
+const ACT_BEFORE = /(?:^|[^\p{L}])N[°\s]*$/u;
+const ACT_AFTER = /^-[ԱՆ]/u;
+
+/**
+ * A calendar year carries no legal label of its own.
+ *
+ * Left to the general rule, «2016 ԹՎԱԿԱՆԻ N 300-Ն ՀՐԱՄԱՆԻ (Հավելված 1…)» had
+ * the YEAR labelled an annex reference by the «Հավելված» downstream. A year is
+ * still checked — it simply is not checked as a labelled legal quantity.
+ */
+const YEAR_AFTER = /^\s*(?:թ|ԹՎ|թվական|г\.|года|году)/iu;
+
+/**
  * A percentage, unlike the other families, is recognised by ADJACENCY rather
  * than by a nearby word.
  *
@@ -92,6 +114,30 @@ const MARKER_FAMILIES: { family: string; pattern: RegExp }[] = [
  * the same way. A rate is the number the marker is stuck to.
  */
 const PERCENT_ADJACENT = /^\s*(?:%|տոկոս|процент)/i;
+
+/**
+ * The nearest label in a stretch of text, and how far away it is.
+ *
+ * Distance matters because Armenian and Russian put the label on opposite
+ * sides: «Հոդված 258» labels from the left, «209-րդ հոդվածը» from the right.
+ * Preferring one side systematically mislabels the other language's citations —
+ * measured, it made «հավելված 1-ի 11-րդ կետի» an ANNEX reference because
+ * «հավելված» was scanned first, even though «կետի» is adjacent. Whichever label
+ * is closer is the one the number is wearing.
+ */
+function nearestFamily(text: string, side: 'before' | 'after'): { family: string; at: number } | null {
+  let best: { family: string; at: number } | null = null;
+  for (const { family, pattern } of MARKER_FAMILIES) {
+    const global = new RegExp(pattern.source, 'giu');
+    for (const m of text.matchAll(global)) {
+      // Distance from the number, which sits at the far end of `before` and the
+      // near end of `after`.
+      const at = side === 'before' ? text.length - (m.index + m[0].length) : m.index;
+      if (!best || at < best.at) best = { family, at };
+    }
+  }
+  return best;
+}
 
 function familyOf(text: string): string | null {
   return MARKER_FAMILIES.find((f) => f.pattern.test(text))?.family ?? null;
@@ -109,7 +155,47 @@ export function familyAt(text: string, at: number, length: number): string | nul
   const after = text.slice(at + length, at + length + MARKER_WINDOW);
   if (PERCENT_ADJACENT.test(after)) return 'percent';
   const before = text.slice(Math.max(0, at - MARKER_WINDOW), at);
-  return familyOf(markerSide(before, 'before')) ?? familyOf(markerSide(after, 'after'));
+  if (ACT_BEFORE.test(before) && ACT_AFTER.test(after)) return 'act';
+
+  const number = text.slice(at, at + length);
+  const n = Number(number);
+  if (number.length === 4 && n >= 1900 && n <= 2100 && YEAR_AFTER.test(after)) return null;
+
+  // Statute labels a part or point by POSITION, not by word — see vouchesFor.
+  // The opening delimiter is allowed because the model quotes enumerated points
+  // verbatim, and «`58.2) …`» is the same enumerator as one starting a line.
+  if (/(?:^|\n)[ \t]*[«"“(]?[ \t]*$/.test(before) && /^[.)]/.test(after)) return 'enumerator';
+  // A markdown table's first cell is that row's number — how the chunker
+  // renders a rate table, and the only form a table row's number ever takes.
+  if (/(?:^|\n)\s*\|\s*$/.test(before) && /^\s*\|/.test(after)) return 'enumerator';
+
+  const b = nearestFamily(markerSide(before, 'before'), 'before');
+  const a = nearestFamily(markerSide(after, 'after'), 'after');
+  if (!b) return a?.family ?? null;
+  if (!a) return b.family;
+  return a.at <= b.at ? a.family : b.family;
+}
+
+/**
+ * Which fragment labels can vouch for a number the answer labelled.
+ *
+ * Measured on 40 real answers: 21 of 21 firings were part or point citations,
+ * and every one was a false positive for the same structural reason — an answer
+ * writes «Հոդված 55, մաս 13», and the law writes part 13 as a bare `13.` at the
+ * start of a line. It never says «մաս 13» about itself. Requiring the word made
+ * the part and point families unverifiable by construction, which is a guard
+ * that is always wrong rather than a guard that is strict.
+ *
+ * `line` is deliberately NOT given the same latitude. Form line numbers are the
+ * documented fabrication — 8.8, 9.1, 9.2 — and the genuine ones appear in the
+ * fragments under an explicit «տողերը» label, so strictness there costs nothing
+ * and is the whole point of the exercise.
+ */
+const POSITIONAL = new Set(['part', 'point', 'table']);
+
+function vouchesFor(answerFamily: string, fragmentFamily: string | null): boolean {
+  if (fragmentFamily === answerFamily) return true;
+  return fragmentFamily === 'enumerator' && POSITIONAL.has(answerFamily);
 }
 
 /**
@@ -122,14 +208,28 @@ export function familyAt(text: string, at: number, length: number): string | nul
  * label binds to the number beside it, not to one across a comma.
  */
 const MARKER_WINDOW = 90;
-const CLAUSE_BOUNDARY = /[,;.։:\n]/;
+/**
+ * `՝` (U+055D, the Armenian comma) belongs here for the same reason `,` does,
+ * and its absence was a live bug: a citation like «…օրենսգրքի 209-րդ հոդվածը»
+ * kept reading backwards past the clause break and picked up a marker from the
+ * previous sentence, which then outranked the label sitting right beside it.
+ */
+const CLAUSE_BOUNDARY = /[,;.։:՝\n]/;
 
 /**
  * One member of a numeric enumeration, with the Armenian ordinal suffix that
  * legal text attaches to it (`18-20-րդ`, `5.10`).
  */
-const LIST_MEMBER = /\d+(?:[.,-]\d+)*(?:-[Ա-և]{1,4})?/;
-const LIST_LEAD = new RegExp(`^(?:[\\s,ևи]*${LIST_MEMBER.source})+`, 'u');
+const ORDINAL = '(?:-[Ա-և]{1,4})?';
+const LIST_MEMBER = new RegExp(`\\d+(?:[.,]\\d+)*${ORDINAL}`, 'u');
+/**
+ * The lead allows a bare ordinal suffix first: the number itself has already
+ * been consumed by the caller, so what remains of «71-րդ, 72-րդ, 73-րդ
+ * հոդվածներ» begins with `-րդ`. Without that, only the LAST member of an
+ * enumerated citation could see the label they all share, and the first two
+ * fired as unsourced while the third passed.
+ */
+const LIST_LEAD = new RegExp(`^${ORDINAL}(?:[\\s,ևи]*${LIST_MEMBER.source})*`, 'u');
 const LIST_TRAIL = new RegExp(`(?:${LIST_MEMBER.source}[\\s,ևи]*)+$`, 'u');
 
 /**
@@ -251,7 +351,7 @@ function presentIn(
       // otherwise `5` from an unrelated provision would vouch for a `5 տոկոս`
       // rate the law never states.
       if (family === null) return true;
-      if (familyAt(h, m.index, run.length) === family) return true;
+      if (vouchesFor(family, familyAt(h, m.index, run.length))) return true;
     }
   }
   return false;

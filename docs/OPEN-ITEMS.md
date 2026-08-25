@@ -332,6 +332,44 @@ traffic and 40% of hard failures; Class-2 fired once in 250. New order:
     enough" IS the failure mode. The correct fix is FEWER strips — prompt the
     model to quote only what it can copy exactly — never weaker checking.
 
+37. **The number guard is built and REPORT-ONLY — the enforcement decision is
+    open.** `answer/validateNumbers.ts`, 20 tests, logged in `chat.ts` and
+    recorded per-question by `triage.ts`. Measured power against a falsified
+    number of the same shape in the same sentence: **100% on hierarchical refs
+    (`9.2`), 3–4 digit integers and grouped amounts; 91% on 2-digit; 21% on
+    1-digit**. Firing rate on real answers is 2 in 39, both defensible.
+
+    What is NOT decided is whether it may act, and there are three candidate
+    answers, none measured:
+    - **Enforce on the `line` family only.** It is the documented harm (`8.8`,
+      `9.1`, `9.2`), its power is 100%, and the genuine line numbers in the
+      corpus appear under an explicit «տողերը» label. Narrowest useful action.
+    - **Surface without rewriting** — a footer naming the unverified number, as
+      the quote validator does for strips. Cheap, and it cannot break a
+      sentence.
+    - **Regenerate the sentence.** Correct in principle, an extra API call and
+      an unbounded loop in practice; see item 22's cautionary note.
+
+    Do NOT excise the number the way a quote is excised: «լրացրեք […] տողը»
+    tells the reader nothing and destroys the sentence. And do not raise
+    1-digit power by loosening the label rule — that is the direction item 35
+    rejects for quotes, for the same reason.
+
+38. **Tax RATES are the weakest protected class, structurally.** A rate is
+    usually one digit, and one digit appears somewhere in 30,000 characters of
+    statute essentially always, so digit matching cannot verify it — only the
+    adjacent «տոկոս»/`%` label can, which is what lifted 2-digit power from 58%
+    to 91%. Residual 1-digit power is 21%. A fabricated «5 տոկոս» where the law
+    says 10 would still pass if any provision in context states any 5 next to a
+    percent marker. Candidate fix: check the rate against the SPECIFIC row of
+    the rate table the answer cites, rather than against the whole context.
+
+39. **`namedNotRetrieved` in `triage.ts` misses Armenian word order.** It
+    matches «Հոդված 209»; an answer writing «209-րդ հոդվածը» is invisible to it.
+    It reports 0 of 250 Class-2 smells, and the number guard flagged exactly
+    this shape on real answers. The Class-2 figure is therefore an undercount
+    of unknown size — fix the regex before citing 1-of-250 again.
+
 36. **"Line 9.2" is wrong and has now been asserted three times** by external
     review (after 8.8 and 9.1). Verified against primary text: `կետ 50` says
     9.1 is «այլ ԳՈՐԾՈՒՆԵՈՒԹՅՈՒՆԻՑ», so section 9 is other ACTIVITIES. Asset

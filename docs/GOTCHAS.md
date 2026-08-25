@@ -347,3 +347,73 @@ also invented a provision (`ԱՕ 129 մաս 1.1`, which does not exist — 129 h
 parts and never mentions 112) and named the wrong answer for another question
 (line 9.1 is «այլ գործունեությունից», not «այլ ակտիվների օտարումից»). Take the
 symptom, verify the cause.
+
+## The law does not label its own parts — it numbers them
+
+An answer cites «ՀՀ ՀԱՐԿԱՅԻՆ ՕՐԵՆՍԳԻՐՔ, Հոդված 55, մաս 13». The statute never
+writes «մաս 13» about itself. It writes:
+
+    13. Ապրանքի մատակարարման դեպքում կիրառվում է հարկային հաշիվ։
+
+The part's label IS its position. Checked across 40 real answers, **every**
+part citation was written as a bare enumerator in the source and none as
+«մաս N» — so any check that demands the word is not strict, it is always wrong.
+This produced 21 false positives out of 21 firings on the first honest run of
+the number validator. The same holds for `կետ` (points), for annex points, and
+for table rows, where the number is a markdown cell.
+
+Anything matching a citation against source text has to accept positional
+notation as the source's way of saying the label.
+
+## Armenian labels a number from the right, Russian from the left
+
+    Հոդված 258      label first   (Russian/mixed word order)
+    209-րդ հոդվածը   label last    (Armenian ordinal construction)
+
+Code that scans one side first will systematically mislabel the other
+language's citations. «հավելված 1-ի 11-րդ կետի» read as an ANNEX reference
+because `հավելված` was scanned before the adjacent `կետի`. Take the label
+NEAREST the number, not the one on the preferred side.
+
+**And `՝` (U+055D, the Armenian comma) is a clause boundary.** Leaving it out of
+the boundary set let a backwards scan run past the clause break and pick up a
+marker from the previous sentence, which then outranked the correct adjacent
+one. Armenian punctuation is not a subset of ASCII punctuation: `՝ ՞ ՜ ։` all
+carry work that `, ? ! .` do in English.
+
+## A guard's firing count cannot tell "clean" from "vacuous"
+
+The number validator fired ZERO times on 40 real questions. That is the result a
+perfect guard gives and the result a guard that checks nothing gives, and the
+count alone does not distinguish them. Here it was closer to the second:
+generation reads ~30,000 characters of statute, which contains hundreds of
+numeric runs, so a bare `5` is "verified" by coincidence essentially always.
+Measured power against a deliberately falsified number of the same shape:
+
+    hierarchical refs (9.2)   100%
+    3+ digit integers         100%
+    2-digit integers           58%
+    1-digit integers           12%   <- where tax RATES live
+
+**For any guard, measure POWER against a known-bad input, not just its rate on
+real input.** The rate tells you how often it complains; only power tells you
+whether silence means anything. `number-guard-power.ts` does this by perturbing
+each real number in place and re-checking.
+
+**And perturb it IN ITS SENTENCE.** The first version of that harness validated
+each number on its own, which stripped the label beside it — half of what the
+guard checks — and reported a real improvement as no improvement at all.
+
+## Measure a guard against the text the model actually read
+
+`triage.ts` stored article REFS, not the fragment text. Re-fetching by ref
+returns `articles.text_hy`; generation was handed the part-reduced output of
+`generationDocument`. Those are different haystacks, so a validator scored
+against the database is scored against text the model never saw — and it will
+pass or fail for reasons that have nothing to do with the answer.
+
+Triage now stores the delivered chunk texts (~100 KB per question, gitignored,
+regenerable at ~$0.012 a question). The general rule: when instrumenting a
+decision, persist the decision's actual INPUT. Reconstructing it later from an
+identifier gets something adjacent and plausible, which is worse than getting
+nothing, because it still produces a results table.

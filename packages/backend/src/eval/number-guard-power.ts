@@ -60,6 +60,20 @@ function shapeOf(text: string): string {
   return `bare integer (${text.length} digit${text.length === 1 ? '' : 's'})`;
 }
 
+/**
+ * Act numbers for the documents behind a set of refs, labelled the way an
+ * answer cites them. Fetched here rather than stored, because they are a
+ * property of the document and never change between a run and its analysis.
+ */
+async function actNumbers(refs: string[]): Promise<string[]> {
+  const sql = db();
+  const ids = [...new Set(refs.map((r) => Number(r.slice(0, r.indexOf('#')))))];
+  if (ids.length === 0) return [];
+  const rows = await sql<{ act_number: string | null }[]>`
+    SELECT DISTINCT act_number FROM documents WHERE arlis_id = ANY(${ids}) AND act_number IS NOT NULL`;
+  return rows.map((r) => `հրաման N ${r.act_number}`);
+}
+
 async function fragmentTexts(refs: string[]): Promise<string[]> {
   const sql = db();
   const out: string[] = [];
@@ -179,7 +193,8 @@ async function main(): Promise<void> {
   for (const r of rows) {
     const chunks = r.chunkTexts ?? (await fragmentTexts(r.articles));
     if (chunks.length === 0) continue;
-    const v = validateNumbers(r.answer, chunks, [questions.get(r.url) ?? ''], r.articles);
+    const sources = [...r.articles, ...(await actNumbers(r.articles))];
+    const v = validateNumbers(r.answer, chunks, [questions.get(r.url) ?? ''], sources);
     legal += v.legalCount;
     other += v.otherCount;
     for (const c of v.checks.filter((x) => !x.valid && x.severity === 'legal')) {
