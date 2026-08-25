@@ -51,8 +51,6 @@ const hy: Dict = {
   'coverage.none':
     'Գտնված հոդվածներում այս հարցին ուղղակի պատասխանող նորմ չկա։ Ստորև՝ միայն հարակից դրույթներ։',
 
-  'intro.lead':
-    'Համատեքստը պահպանվում է հաղորդագրությունների միջև, ուստի կարող եք իրավիճակը նկարագրել մաս առ մաս, ապա խնդրել եզրակացություն ամբողջ քննարկվածի վերաբերյալ։',
 
   'composer.first': 'Նկարագրեք իրավիճակը կամ տվեք հարց…',
   'composer.next': 'Ճշտող հարց կամ «եզրակացրու ամբողջ քննարկվածից»',
@@ -86,12 +84,8 @@ const hy: Dict = {
   'norm.title': 'Աղբյուրներ',
   'norm.carried': 'Փոխանցված է նախորդ հաղորդագրություններից — կարդացվել է, բայց այս պատասխանում չի մեջբերվել։',
   'norm.openArlis': 'Բացել ARLIS-ում',
-  'intro.title': 'Տվեք հարց, ապա ճշտեք։',
-  'intro.caution': 'Յուրաքանչյուր պատասխան հենվում է միայն գտնված հոդվածների տեքստի վրա։ Եթե նորմը կորպուսում չկա, հրատարակությունը կասի դա ուղիղ, այլ ոչ թե կընտրի նմանատիպը։',
-  'intro.start': 'Որտեղից են սկսում',
-  'contents.title': 'Հրատարակության կազմը',
-  'contents.outside': 'Կորպուսից դուրս',
-  'contents.outsideNote': 'Դատական պրակտիկա, քաղաքացիական իրավունք, նամակների տեսքով պարզաբանումներ։ Այս ոլորտների հարցը կստանա ազնիվ մերժում, այլ ոչ թե մոտավոր պատասխան։',
+  'intro.title': 'Ես քեզ կօգնեմ վերլուծել նույնիսկ ամենաբարդ դեպքը։',
+  'intro.start': 'Հարցերի օրինակներ',
   'cites.label': 'Կարդացված հոդվածներ',
   'masthead.sub': 'ՀՀ հարկային և աշխատանքային օրենսդրության տեղեկատու',
   'card.expand': 'Ցույց տալ հոդվածը',
@@ -133,8 +127,6 @@ const ru: Dict = {
   'coverage.none':
     'Прямой нормы по этому вопросу в найденных статьях нет. Ниже — только смежные положения.',
 
-  'intro.lead':
-    'Контекст сохраняется между сообщениями, поэтому можно описать ситуацию по частям, а затем попросить вывод по совокупности обсуждённого.',
 
   'composer.first': 'Опишите ситуацию или задайте вопрос…',
   'composer.next': 'Уточняющий вопрос или «сделай вывод по всему обсуждённому»',
@@ -168,12 +160,8 @@ const ru: Dict = {
   'norm.title': 'Источники',
   'norm.carried': 'Перенесено из прошлых сообщений — прочитано, но в этом ответе не процитировано.',
   'norm.openArlis': 'Открыть в ARLIS',
-  'intro.title': 'Задайте вопрос, затем уточняйте.',
-  'intro.caution': 'Каждый ответ опирается только на текст найденных статей. Если нормы в корпусе нет, издание скажет об этом прямо, а не подберёт похожую.',
-  'intro.start': 'С чего начинают',
-  'contents.title': 'Состав издания',
-  'contents.outside': 'Вне корпуса',
-  'contents.outsideNote': 'Судебная практика, гражданское право, разъяснения в форме писем. Вопрос из этих областей получит честный отказ, а не приблизительный ответ.',
+  'intro.title': 'Я помогу разобрать даже самый сложный случай.',
+  'intro.start': 'Примеры вопросов',
   'cites.label': 'Прочитанные статьи',
   'masthead.sub': 'справочник по налоговому и трудовому законодательству Республики Армения',
   'card.expand': 'Показать статью',
@@ -215,8 +203,6 @@ const en: Dict = {
   'coverage.none':
     'No provision answering this was found. Below are related provisions only.',
 
-  'intro.lead':
-    'Context carries between messages, so you can describe the situation in pieces and then ask for a conclusion across the whole discussion.',
 
   'composer.first': 'Describe the situation or ask a question…',
   'composer.next': 'A follow-up, or “summarise everything discussed”',
@@ -250,12 +236,8 @@ const en: Dict = {
   'norm.title': 'Sources',
   'norm.carried': 'Carried from earlier messages — read, but not quoted in this answer.',
   'norm.openArlis': 'Open in ARLIS',
-  'intro.title': 'Ask a question, then refine it.',
-  'intro.caution': 'Every answer rests only on the text of the articles found. If the corpus holds no such provision, the edition says so plainly rather than offering something similar.',
-  'intro.start': 'Where readers start',
-  'contents.title': 'What this edition holds',
-  'contents.outside': 'Outside the corpus',
-  'contents.outsideNote': 'Court practice, civil law, clarifications issued as letters. A question from those areas gets an honest refusal, not an approximate answer.',
+  'intro.title': 'I will help you work through even the most complex case.',
+  'intro.start': 'Example questions',
   'cites.label': 'Articles read',
   'masthead.sub': 'a reference to the tax and labour law of the Republic of Armenia',
   'card.expand': 'Show the article',

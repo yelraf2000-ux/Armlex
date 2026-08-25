@@ -313,7 +313,10 @@ function Workbench() {
   }
 
   return (
-    <>
+    // A column: masthead, the mode, colophon. The middle one takes the slack,
+    // so the colophon rests at the foot of the window on a short page and is
+    // pushed below the fold on a long one — never floating mid-screen.
+    <div className="page">
       {/*
         Provenance sits above everything, permanently. A legal tool that does
         not say how current it is invites the reader to assume it is current,
@@ -331,8 +334,14 @@ function Workbench() {
           <span className="brand">ArmLex</span>
           <span className="masthead-sub">{t('masthead.sub')}</span>
           <span className="spacer" />
+          {/*
+            Search is HIDDEN, not deleted. `SearchMode` and `/api/search` both
+            still work — it is a retrieval diagnostic, useful when tuning the
+            index and confusing beside two modes that answer. Put 'search' back
+            in this list to bring the tab back.
+          */}
           <div className="segmented" role="tablist">
-            {(['chat', 'ask', 'search'] as Mode[]).map((m) => (
+            {(['chat', 'ask'] as Mode[]).map((m) => (
               <button
                 key={m}
                 role="tab"
@@ -346,20 +355,19 @@ function Workbench() {
           </div>
         </div>
 
+        {/*
+          Only what qualifies an answer stays up here: how to reach the register,
+          and when the corpus was last checked. The size of the corpus and the
+          not-legal-advice notice moved to the colophon at the foot of the page —
+          they are the imprint of the edition, not its running head.
+        */}
         <div className="masthead-facts">
           <RailToggle />
-          {corpus ? (
-            <>
-              <span className="corpus-counts">
-                <span className="num">{corpus.documents}</span> {t('corpus.acts')} ·{' '}
-                <span className="num">{corpus.chunks}</span> {t('corpus.chunks')}
-              </span>
-              {synced ? <span>{t('corpus.synced')} <span className="num">{synced}</span></span> : null}
-            </>
+          {corpus && synced ? (
+            <span>{t('corpus.synced')} <span className="num">{synced}</span></span>
           ) : null}
           <span className="spacer" />
           <SettingsControls />
-          <span className="disclaimer">{t('corpus.disclaimer')}</span>
         </div>
 
         <div className="masthead-rule" />
@@ -368,7 +376,18 @@ function Workbench() {
       {mode === 'chat' ? <Chat corpusSynced={synced} /> : null}
       {mode === 'ask' ? <AskMode corpusSynced={synced} /> : null}
       {mode === 'search' ? <SearchMode /> : null}
-    </>
+
+      {/* The colophon: what this is, and how much of it there is. */}
+      <footer className="colophon">
+        <div className="colophon-disclaimer">{t('corpus.disclaimer')}</div>
+        {corpus ? (
+          <div className="colophon-counts">
+            <span className="num">{corpus.documents}</span> {t('corpus.acts')} ·{' '}
+            <span className="num">{corpus.chunks}</span> {t('corpus.chunks')}
+          </div>
+        ) : null}
+      </footer>
+    </div>
   );
 }
 

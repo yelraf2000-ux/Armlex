@@ -93,16 +93,18 @@ const COVERAGE_KEY: Record<string, string> = {
  * micro-business rules, and one transliterated — the input style Armenian users
  * actually type when they lack an Armenian keyboard.
  */
+/**
+ * Starter questions. Three, not five: the list is a nudge for an empty screen,
+ * not a catalogue, and it disappears for good after the first question.
+ */
 const EXAMPLES = [
   'Какая ставка НДС в Армении?',
-  'ես բուդկա եմ ուզում բացել',
-  'es uzum em pokr xanut bacel',
   'Какой оборот считается пределом для микропредпринимательства?',
   'Отпускные при увольнении в середине месяца',
 ];
 
 /** Figures for the example list — this is an edition, so it numbers in roman. */
-const ROMAN = ['I', 'II', 'III', 'IV', 'V', 'VI', 'VII', 'VIII'];
+const ROMAN = ['I', 'II', 'III', 'IV', 'V'];
 
 /** Grow the composer to fit its content, up to a ceiling. */
 function autoGrow(el: HTMLTextAreaElement): void {
@@ -364,28 +366,30 @@ export function Chat({ corpusSynced }: { corpusSynced: string | null }) {
       {railOpen ? (
       <nav className="rail">
         <div className="panel-title">{t('nav.consultations')}</div>
-        <div className="register-rule" />
-        <Sessions currentId={sessionId} onOpen={(id) => void openSession(id)} reloadKey={reloadKey} />
+        {/*
+          Starting a new consultation is the one ACTION in this column; the rest
+          is a list to read. Below forty register entries it sat off the bottom
+          of a scrolling column, which is nowhere.
+        */}
         <button className="new-case" onClick={reset} disabled={turns.length === 0}>
           {t('nav.newCase')}
         </button>
+        <div className="register-rule" />
+        <Sessions currentId={sessionId} onOpen={(id) => void openSession(id)} reloadKey={reloadKey} />
       </nav>
       ) : null}
 
       <section className="thread">
+      {/*
+        The empty state carries a heading and examples — and nothing else.
+        It used to carry a lede and a caution paragraph as well: onboarding read
+        once, then read past every day by someone who already knows what the
+        tool is. The masthead already states the corpus and the disclaimer.
+      */}
       {turns.length === 0 ? (
         <div className="intro measure">
           <h1 className="intro-title">{t('intro.title')}</h1>
-          <p>{t('intro.lead')}</p>
-          <p className="intro-note">{t('intro.caution')}</p>
 
-          {/*
-            Examples are clickable and deliberately concrete. They do double
-            duty: they save typing, and they show what the corpus reaches —
-            one clean Russian question, one colloquial Armenian, one
-            transliterated, one threshold question, and one labour question,
-            since the corpus stopped being tax-only.
-          */}
           <div className="panel-title">{t('intro.start')}</div>
           <div className="examples-rule" />
           <div className="examples">

@@ -219,17 +219,13 @@ export function NormPanel({
           <span className="app-title">{t('norm.title')}</span>
         </div>
         <div className="app-rule" />
-        <p className="norm-empty">{t('norm.empty')}</p>
-
         {/*
-          With no answer yet this column would be dead space, so it states the
-          corpus boundary instead. A professional needs to know what the edition
-          does NOT cover before the first question, not after a bad answer.
+          One line about what will appear here, and nothing more. A paragraph
+          on what the corpus does not cover used to sit below it; the masthead
+          already names the corpus, and a reader on their fortieth consultation
+          does not need the boundary restated on every empty screen.
         */}
-        <div className="outside">
-          <div className="panel-title">{t('contents.outside')}</div>
-          <p>{t('contents.outsideNote')}</p>
-        </div>
+        <p className="norm-empty">{t('norm.empty')}</p>
       </aside>
     );
   }
