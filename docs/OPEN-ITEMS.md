@@ -323,3 +323,19 @@ traffic and 40% of hard failures; Class-2 fired once in 250. New order:
     number so far has also been wrong — `8.8`, `9.1` and the review's `9.2`.
     Section 9 is «այլ գործունեությունից» (other ACTIVITIES), as points 9.1, 9.3
     and 9.6-9.11 all state.
+
+35. **REJECT the recurring "soft verifier" suggestion.** External reviews keep
+    proposing that `validateQuotes.ts` accept ~95% semantic similarity instead
+    of exact substring matching, because `[…]` redactions look untidy. Do not.
+    A quote reading «մինչև 25-ը» for «մինչև 20-ը» is ~97% similar and gives an
+    accountant the wrong filing deadline. Item 11 already settled this: "close
+    enough" IS the failure mode. The correct fix is FEWER strips — prompt the
+    model to quote only what it can copy exactly — never weaker checking.
+
+36. **"Line 9.2" is wrong and has now been asserted three times** by external
+    review (after 8.8 and 9.1). Verified against primary text: `կետ 50` says
+    9.1 is «այլ ԳՈՐԾՈՒՆԵՈՒԹՅՈՒՆԻՑ», so section 9 is other ACTIVITIES. Asset
+    disposal is **row 20 of `Հավելված 1, աղյուսակ 3`, filled directly** —
+    `կետ 63`: «12-րդ, 13-րդ, 15-րդ, 18-20-րդ կետերում` [Գ] = [Ա] x [Բ]». No 9.x
+    sub-line exists because article 260 excludes item 9 from the deduction
+    mechanism. Both required chunks are pinned on golden question 36.
