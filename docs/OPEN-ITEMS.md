@@ -437,3 +437,20 @@ traffic and 40% of hard failures; Class-2 fired once in 250. New order:
     holds, the tie-aware cut or guaranteed vector slots closed it and both items
     can be retired. Confirm before believing it — one run, and the marker
     («Այլ ակտիվների») could match another chunk.
+
+44. **Per-turn diagnostics are not persisted — only the text is.** `messages`
+    holds `id, session_id, role, content, created_at` and nothing else. The
+    retrieved article refs, the coverage verdict, the stripped-quote count, the
+    model and the cost all go out in the `done` SSE event and are then dropped.
+
+    This is about to cost real information. 2026-08-25 showed twice over that
+    the first question about any bad answer is *"what text did generation
+    actually receive"* — and for a live session there is now no way to answer
+    it. Handing the app to a tester without this means their session produces
+    opinions we cannot diagnose.
+
+    Cheapest sufficient version: one additive table keyed by message id holding
+    `article_refs text[]`, `coverage`, `invalid_quotes`, `unsourced_legal`,
+    `model`, `ms`. Additive only — no change to `messages` — so it cannot
+    disturb the live site. `eval/review.ts` already reads and exports the
+    conversations and would join it directly.
