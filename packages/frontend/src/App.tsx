@@ -257,6 +257,8 @@ interface CorpusInfo {
 function Workbench() {
   const { t } = useSettings();
   const [mode, setMode] = useState<Mode>('chat');
+  /** Bumped to remount the active mode, which is how "go home" clears it. */
+  const [homeKey, setHomeKey] = useState(0);
   const [corpus, setCorpus] = useState<CorpusInfo | null>(null);
   /** null = not yet known; the gate is off entirely in local development. */
   const [authed, setAuthed] = useState<boolean | null>(null);
@@ -303,6 +305,13 @@ function Workbench() {
     ? corpus.lastChecked.slice(0, 10).split('-').reverse().join('.')
     : null;
 
+  /** Back to a clean Dialogue, from wherever you are. */
+  function goHome(): void {
+    setMode('chat');
+    setHomeKey((k) => k + 1);
+    window.scrollTo({ top: 0 });
+  }
+
   if (authed === null) return <div className="wrap" />;
   if (!authed) {
     return (
@@ -331,7 +340,13 @@ function Workbench() {
           panel — it sits with the title because it names what you are reading.
         */}
         <div className="masthead-top">
-          <span className="brand">ArmLex</span>
+          {/*
+            The masthead is the way home, as it is on any site. Clicking it
+            returns to Dialogue and starts a fresh consultation — remounting
+            rather than clearing field by field, so nothing survives by
+            accident. There is no router here, so this is the only "home".
+          */}
+          <button className="brand" onClick={goHome}>ArmLex</button>
           <span className="masthead-sub">{t('masthead.sub')}</span>
           <span className="spacer" />
           {/*
@@ -373,9 +388,9 @@ function Workbench() {
         <div className="masthead-rule" />
       </header>
 
-      {mode === 'chat' ? <Chat corpusSynced={synced} /> : null}
-      {mode === 'ask' ? <AskMode corpusSynced={synced} /> : null}
-      {mode === 'search' ? <SearchMode /> : null}
+      {mode === 'chat' ? <Chat key={homeKey} corpusSynced={synced} /> : null}
+      {mode === 'ask' ? <AskMode key={homeKey} corpusSynced={synced} /> : null}
+      {mode === 'search' ? <SearchMode key={homeKey} /> : null}
 
       {/* The colophon: what this is, and how much of it there is. */}
       <footer className="colophon">
