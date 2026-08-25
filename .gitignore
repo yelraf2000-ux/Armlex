@@ -22,6 +22,12 @@ data/vectors-old/
 # (`triage-results.jsonl`) is the one that stays in git.
 data/eval/*-answers.jsonl
 
+# Conversation exports from eval/review.ts — real user questions and the
+# answers they were given. Regenerable from the database at any time, and not
+# something to commit: it is user content, not source.
+armlex-conversations*.md
+review*.md
+
 data/audit/*.json
 data/audit/*.md
 !data/audit/.gitkeep
