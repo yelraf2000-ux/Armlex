@@ -77,8 +77,13 @@ export function SettingsControls() {
   // Words, not dingbats. ◐ ☀ ☾ are typographic strays here — every other
   // control in the edition is a word with a rule under it, and the glyphs
   // rendered differently on every platform anyway.
+  //
+  // "Auto" is still the DEFAULT — an unset preference follows the OS, and a
+  // reader whose machine switches at sunset switches with it. It simply has no
+  // button of its own: two words say everything a third one did, and until one
+  // is pressed neither is marked, which is what "following the system" looks
+  // like. `applyTheme` clears the attribute for 'auto', so nothing else changes.
   const themes: { key: Theme; label: string }[] = [
-    { key: 'auto', label: t('theme.auto') },
     { key: 'light', label: t('theme.light') },
     { key: 'dark', label: t('theme.dark') },
   ];

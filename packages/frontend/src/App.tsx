@@ -11,6 +11,9 @@ import type { Chunk } from './types.js';
 import { ChunkCard } from './ChunkCard.js';
 import { Chat } from './Chat.js';
 import { Login } from './Login.js';
+import { MarkdownView } from './MarkdownView.js';
+import { NormPanel } from './NormPanel.js';
+import { extractQuotes } from './quotes.js';
 import { RailToggle, SettingsControls, SettingsProvider, useSettings } from './Settings.js';
 
 type Mode = 'search' | 'ask' | 'chat';
@@ -27,8 +30,19 @@ interface AskResponse {
   model: string;
 }
 
-function OneShot({ mode }: { mode: 'search' | 'ask' }) {
+/**
+ * The query, shared by both one-shot modes.
+ *
+ * Only the request and its parsing are common. Search and Ask are different
+ * JOBS — a ranked list of what the index holds, versus one grounded opinion
+ * with its sources — and they render nothing in common, which is why they no
+ * longer share a component.
+ */
+function useOneShot(mode: 'search' | 'ask') {
+  const { t } = useSettings();
   const [query, setQuery] = useState('');
+  /** The question as submitted, kept so the heading cannot drift as you retype. */
+  const [asked, setAsked] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [chunks, setChunks] = useState<Chunk[]>([]);
@@ -43,6 +57,7 @@ function OneShot({ mode }: { mode: 'search' | 'ask' }) {
     setAnswer(null);
     setModel(null);
     setChunks([]);
+    setAsked(query.trim());
 
     try {
       const res = await fetch(`/api/${mode}`, {
@@ -60,8 +75,8 @@ function OneShot({ mode }: { mode: 'search' | 'ask' }) {
       } catch {
         setError(
           raw.trim()
-            ? `HTTP ${res.status}: ответ не JSON — ${raw.slice(0, 200)}`
-            : `API не отвечает (HTTP ${res.status}). Запущен ли backend на :3001? Запустите «npm run dev».`,
+            ? `HTTP ${res.status}: ${raw.slice(0, 200)}`
+            : `${t('error.noApi')} (HTTP ${res.status})`,
         );
         return;
       }
@@ -88,54 +103,148 @@ function OneShot({ mode }: { mode: 'search' | 'ask' }) {
     }
   }
 
+  return { query, setQuery, asked, loading, error, chunks, answer, model, ran, run };
+}
+
+/** The query bar. Big, because in a one-shot mode it IS the page. */
+function QueryBar({
+  value,
+  onChange,
+  onSubmit,
+  loading,
+}: {
+  value: string;
+  onChange: (v: string) => void;
+  onSubmit: () => void;
+  loading: boolean;
+}) {
+  const { t } = useSettings();
   return (
-    <>
-      <div className="controls">
-        <input
-          value={query}
-          onChange={(e) => setQuery(e.target.value)}
-          onKeyDown={(e) => {
-            if (e.key === 'Enter') void run();
-          }}
-          placeholder="Вопрос на русском, армянском или латиницей (xanut bacel)"
-          autoFocus
-        />
-        <button onClick={() => void run()} disabled={loading || !query.trim()}>
-          {loading ? '…' : 'Выполнить'}
-        </button>
+    <div className="controls">
+      <input
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+        onKeyDown={(e) => {
+          if (e.key === 'Enter') onSubmit();
+        }}
+        placeholder={t('oneshot.placeholder')}
+        autoFocus
+      />
+      <button onClick={onSubmit} disabled={loading || !value.trim()}>
+        {loading ? '…' : t('oneshot.run')}
+      </button>
+    </div>
+  );
+}
+
+/** Shown when retrieval came back empty — and it must name the CURRENT corpus. */
+function NothingFound() {
+  const { t } = useSettings();
+  return <div className="empty">{t('oneshot.nothing')}</div>;
+}
+
+/**
+ * Search — retrieval only, no model.
+ *
+ * One wide ranked list and nothing else: there is no opinion to set above it,
+ * so an apparatus column would have nothing to hold. Rank and rerank score
+ * hang in the gutter, and a weak score is printed rather than hidden.
+ */
+function SearchMode() {
+  const { t } = useSettings();
+  const { query, setQuery, loading, error, chunks, ran, run } = useOneShot('search');
+
+  return (
+    <div className="wrap">
+      <QueryBar value={query} onChange={setQuery} onSubmit={() => void run()} loading={loading} />
+
+      <div className="modes">
+        <span>{t('search.note')}</span>
+        {chunks.length > 0 ? (
+          <>
+            <span className="spacer" />
+            <span>
+              {t('search.found')} <span className="num">{chunks.length}</span>
+            </span>
+          </>
+        ) : null}
       </div>
 
       {error ? <div className="error">{error}</div> : null}
 
-      {answer !== null ? (
-        <div className="answer">
-          <div className="answer-head">
-            Ответ {model ? <span className="model">{model}</span> : null}
-          </div>
-          <div className="answer-body">{answer}</div>
-        </div>
-      ) : null}
+      {chunks.map((c, i) => (
+        <ChunkCard key={`${c.arlisId}#${c.ref}`} chunk={c} rank={i} />
+      ))}
 
-      {chunks.length > 0 ? (
-        <>
-          <h2>
-            {answer !== null ? 'Фрагменты, переданные модели' : 'Найденные фрагменты'} (
-            {chunks.length})
-          </h2>
-          {chunks.map((c, i) => (
-            <ChunkCard key={`${c.arlisId}#${c.ref}`} chunk={c} rank={i} />
-          ))}
-        </>
-      ) : null}
+      {ran && !loading && !error && chunks.length === 0 ? <NothingFound /> : null}
+    </div>
+  );
+}
 
-      {ran && !loading && !error && chunks.length === 0 ? (
-        <div className="empty">
-          Ничего не найдено. Корпус — только налоговое законодательство
-          (Налоговый кодекс, решения правительства, приказы КГД). Вопросы по
-          трудовому, гражданскому праву и судебной практике в него не входят.
+/**
+ * Ask — one grounded answer, no memory.
+ *
+ * This is the Dialogue screen minus the register and minus the conversation:
+ * an opinion with its apparatus beside it. It shared a component with Search
+ * until now, which cost it three things it should always have had — the answer
+ * rendered as markdown rather than as literal asterisks, the quoted fragments
+ * marked inside the article text, and sources presented as sources instead of
+ * as a ranked result list.
+ */
+function AskMode({ corpusSynced }: { corpusSynced: string | null }) {
+  const { t } = useSettings();
+  const { query, setQuery, asked, loading, error, chunks, answer, model, ran, run } =
+    useOneShot('ask');
+  const [selectedId, setSelectedId] = useState<string | null>(null);
+
+  const entries = chunks.map((chunk) => ({ chunk, carried: false }));
+  const quotes = extractQuotes(answer ?? '');
+
+  return (
+    <div className="workbench rail-hidden">
+      <section className="thread">
+        <div className="measure">
+          <QueryBar value={query} onChange={setQuery} onSubmit={() => void run()} loading={loading} />
+
+          {asked && answer !== null ? (
+            <div className="turn user">
+              <div className="turn-role">{t('turn.question')}</div>
+              <div className="turn-text">{asked}</div>
+            </div>
+          ) : null}
+
+          {error ? <div className="error">{error}</div> : null}
+
+          {loading ? (
+            <div className="stage">
+              <span className="stage-pulse" />
+              {t('stage.writing')}
+            </div>
+          ) : null}
+
+          {answer !== null ? (
+            <div className="turn assistant">
+              <div className="turn-role">
+                ArmLex {model ? <span className="model">{model}</span> : null}
+              </div>
+              <div className="turn-text">
+                <MarkdownView text={answer} />
+              </div>
+            </div>
+          ) : null}
+
+          {ran && !loading && !error && chunks.length === 0 ? <NothingFound /> : null}
         </div>
-      ) : null}
-    </>
+      </section>
+
+      <NormPanel
+        entries={entries}
+        quotes={quotes}
+        corpusSynced={corpusSynced}
+        selectedId={selectedId}
+        onSelect={setSelectedId}
+      />
+    </div>
   );
 }
 
@@ -204,7 +313,10 @@ function Workbench() {
   }
 
   return (
-    <>
+    // A column: masthead, the mode, colophon. The middle one takes the slack,
+    // so the colophon rests at the foot of the window on a short page and is
+    // pushed below the fold on a long one — never floating mid-screen.
+    <div className="page">
       {/*
         Provenance sits above everything, permanently. A legal tool that does
         not say how current it is invites the reader to assume it is current,
@@ -222,8 +334,14 @@ function Workbench() {
           <span className="brand">ArmLex</span>
           <span className="masthead-sub">{t('masthead.sub')}</span>
           <span className="spacer" />
+          {/*
+            Search is HIDDEN, not deleted. `SearchMode` and `/api/search` both
+            still work — it is a retrieval diagnostic, useful when tuning the
+            index and confusing beside two modes that answer. Put 'search' back
+            in this list to bring the tab back.
+          */}
           <div className="segmented" role="tablist">
-            {(['chat', 'ask', 'search'] as Mode[]).map((m) => (
+            {(['chat', 'ask'] as Mode[]).map((m) => (
               <button
                 key={m}
                 role="tab"
@@ -237,31 +355,39 @@ function Workbench() {
           </div>
         </div>
 
+        {/*
+          Only what qualifies an answer stays up here: how to reach the register,
+          and when the corpus was last checked. The size of the corpus and the
+          not-legal-advice notice moved to the colophon at the foot of the page —
+          they are the imprint of the edition, not its running head.
+        */}
         <div className="masthead-facts">
           <RailToggle />
-          {corpus ? (
-            <>
-              <span className="corpus-counts">
-                <span className="num">{corpus.documents}</span> {t('corpus.acts')} ·{' '}
-                <span className="num">{corpus.chunks}</span> {t('corpus.chunks')}
-              </span>
-              {synced ? <span>{t('corpus.synced')} <span className="num">{synced}</span></span> : null}
-            </>
+          {corpus && synced ? (
+            <span>{t('corpus.synced')} <span className="num">{synced}</span></span>
           ) : null}
           <span className="spacer" />
           <SettingsControls />
-          <span className="disclaimer">{t('corpus.disclaimer')}</span>
         </div>
 
         <div className="masthead-rule" />
       </header>
 
-      {mode === 'chat' ? (
-        <Chat corpusSynced={synced} />
-      ) : (
-        <div className="wrap"><OneShot mode={mode} /></div>
-      )}
-    </>
+      {mode === 'chat' ? <Chat corpusSynced={synced} /> : null}
+      {mode === 'ask' ? <AskMode corpusSynced={synced} /> : null}
+      {mode === 'search' ? <SearchMode /> : null}
+
+      {/* The colophon: what this is, and how much of it there is. */}
+      <footer className="colophon">
+        <div className="colophon-disclaimer">{t('corpus.disclaimer')}</div>
+        {corpus ? (
+          <div className="colophon-counts">
+            <span className="num">{corpus.documents}</span> {t('corpus.acts')} ·{' '}
+            <span className="num">{corpus.chunks}</span> {t('corpus.chunks')}
+          </div>
+        ) : null}
+      </footer>
+    </div>
   );
 }
 

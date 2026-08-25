@@ -27,6 +27,16 @@
   --accent-bg: #F2E2E2;
   --mark:    #F6DCC8;  /* the quoted fragment, marked as a printed page marks it */
 
+  /*
+   * Masthead plus colophon. The two sticky columns are capped to the window
+   * MINUS this, or each would stand a full viewport tall on its own and push
+   * the colophon below the fold on every screen — including an empty one with
+   * nothing to scroll for. Only applies above 900px, where those columns are
+   * sticky at all; deliberately generous, since a page shorter than the window
+   * still rests the colophon at its foot but a taller one scrolls.
+   */
+  --chrome: 230px;
+
   --display: "Prata", Georgia, "Times New Roman", serif;
   --body:    "Lora", Georgia, "Times New Roman", serif;
   /* Noto first for coverage everywhere, Sylfaen behind it for Windows offline. */
@@ -94,6 +104,13 @@ a { color: var(--accent); }
    Masthead
    --------------------------------------------------------------------------- */
 
+/* Masthead, mode, colophon — the middle one absorbs the slack. */
+.page { display: flex; flex-direction: column; min-height: 100vh; }
+.page > .provenance,
+.page > .colophon { flex: 0 0 auto; }
+.page > .workbench,
+.page > .wrap { flex: 1 1 auto; }
+
 .provenance {
   padding: 16px 44px 0;
   background: var(--paper);
@@ -132,9 +149,31 @@ a { color: var(--accent); }
   color: var(--ink-3);
 }
 
-.provenance .num { font-variant-numeric: tabular-nums; color: var(--ink-2); }
-.provenance .spacer { flex: 1; }
-.provenance .disclaimer { color: var(--accent); }
+/* Global, not masthead-scoped: the search summary line uses both too. */
+.num { font-variant-numeric: tabular-nums; color: var(--ink-2); }
+.spacer { flex: 1; }
+
+/*
+ * The colophon: the imprint of the edition, set small and centred at the foot
+ * of the page. Both facts used to sit in the masthead, where they crowded the
+ * one thing that belongs there — how current the corpus is — and were read
+ * past every day.
+ */
+.colophon {
+  text-align: center;
+  padding: 24px 20px 30px;
+  border-top: 1px solid var(--rule);
+  margin-top: 26px;
+}
+.colophon-disclaimer { font-size: 12.5px; font-style: italic; color: var(--accent); }
+.colophon-counts {
+  font-size: 11px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--ink-3);
+  margin-top: 8px;
+}
+.colophon-counts .num { color: var(--ink-3); }
 
 /*
  * The double rule under a masthead. Two elements would be one too many, so the
@@ -175,7 +214,9 @@ a { color: var(--accent); }
   display: grid;
   grid-template-columns: 244px minmax(0, 1fr) minmax(0, 520px);
   align-items: stretch;
-  min-height: calc(100vh - 118px);
+  /* Height comes from `.page` now — the flex column already fills the window
+     and leaves the colophon at its foot, so a hand-counted offset would only
+     drift the moment the masthead changes. */
 }
 .workbench.rail-hidden { grid-template-columns: minmax(0, 1fr) minmax(0, 520px); }
 .rail, .thread, .norm { min-width: 0; }
@@ -186,7 +227,7 @@ a { color: var(--accent); }
   position: sticky;
   top: 0;
   align-self: start;
-  max-height: 100vh;
+  max-height: calc(100vh - var(--chrome));
   overflow-y: auto;
 }
 
@@ -202,7 +243,8 @@ a { color: var(--accent); }
   padding: 24px 44px 28px 32px;
   position: sticky;
   top: 0;
-  max-height: 100vh;
+  align-self: start;
+  max-height: calc(100vh - var(--chrome));
   overflow-y: auto;
 }
 
@@ -216,6 +258,8 @@ a { color: var(--accent); }
 .rail .panel-title { margin-bottom: 6px; }
 .register-rule { border-top: 1px solid var(--ink); margin-bottom: 2px; }
 
+/* Sits above the register now, so it carries no rule of its own — the
+   register's own top rule immediately follows it. */
 .new-case {
   width: 100%;
   text-align: left;
@@ -223,10 +267,8 @@ a { color: var(--accent); }
   font-size: 12px;
   letter-spacing: 0.1em;
   text-transform: uppercase;
-  padding: 12px 0 0;
-  margin-top: 10px;
+  padding: 0 0 12px;
   border: 0;
-  border-top: 1px solid var(--rule);
   background: none;
   color: var(--accent);
   cursor: pointer;
@@ -286,18 +328,10 @@ a { color: var(--accent); }
   font-weight: 400;
   margin: 0 0 16px;
 }
-.intro p { margin: 0 0 6px; font-size: 17px; line-height: 1.65; color: var(--ink-2); }
-.intro .intro-note {
-  font-size: 14.5px;
-  font-style: italic;
-  color: var(--ink-3);
-  margin-bottom: 30px;
-}
-
 .examples { display: block; margin-top: 6px; }
 .examples-rule { border-top: 1px solid var(--ink); }
 
-/* Examples as a table of contents: figure, question, and what it demonstrates. */
+/* Examples as a table of contents: a figure and a question, nothing else. */
 .example {
   display: flex;
   align-items: baseline;
@@ -317,31 +351,6 @@ a { color: var(--accent); }
 .example:hover .example-n { color: var(--accent); }
 .example-n { flex: 0 0 22px; font-size: 12px; color: var(--ink-3); }
 .example-q { flex: 1; font-size: 15.5px; line-height: 1.45; }
-.example-note { flex: 0 0 auto; font-size: 11px; font-style: italic; color: var(--ink-3); }
-
-.contents-title { font-family: var(--display); font-size: 17px; margin: 0 0 5px; }
-.contents-rule { border-top: 1px solid var(--ink); margin-bottom: 12px; }
-.contents-row { display: flex; align-items: baseline; gap: 8px; }
-.contents-row .name { font-size: 14px; font-weight: 600; }
-.contents-row .dots {
-  flex: 1;
-  border-bottom: 1px dotted var(--rule-2);
-  transform: translateY(-3px);
-}
-.contents-row .count { font-size: 12px; font-variant-numeric: tabular-nums; color: var(--ink-3); }
-.contents-note {
-  font-size: 12.5px;
-  font-style: italic;
-  color: var(--ink-3);
-  line-height: 1.5;
-  margin: 3px 0 16px;
-}
-.outside {
-  border-top: 1px solid var(--rule);
-  padding-top: 14px;
-  margin-top: 4px;
-}
-.outside p { margin: 0; font-size: 12.5px; font-style: italic; line-height: 1.6; color: var(--ink-3); }
 
 /* ---------------------------------------------------------------------------
    Transcript
@@ -743,24 +752,8 @@ a { color: var(--accent); }
 }
 .hint { color: var(--ink-3); font-size: 12.5px; font-style: italic; }
 
-h2 {
-  font-family: var(--display);
-  font-size: 17px;
-  font-weight: 400;
-  margin: 30px 0 5px;
-  color: var(--ink);
-}
-
-.answer { margin-top: 24px; border-top: 1px solid var(--rule-2); padding-top: 18px; }
-.answer-head {
-  font-size: 11px;
-  letter-spacing: 0.16em;
-  text-transform: uppercase;
-  color: var(--ink-3);
-  margin-bottom: 10px;
-}
+/* The model that produced an answer, named beside the ArmLex label. */
 .model { font-style: italic; letter-spacing: 0; text-transform: none; margin-left: 8px; }
-.answer-body { white-space: pre-wrap; font-size: 16px; line-height: 1.66; }
 
 .empty {
   margin-top: 24px;
@@ -1013,13 +1006,8 @@ h2 {
   .thread { padding: 0 20px; min-height: 0; }
   .provenance { padding: 12px 20px 0; }
   .masthead-sub { display: none; }
-  /*
-   * The provenance line wrapped to six rows here — 218px of masthead above a
-   * 375px-wide reading column. Keep the fact that actually qualifies an answer
-   * (when the corpus was last checked) and the disclaimer; the act and fragment
-   * counts are reference material, not something to read past on every visit.
-   */
-  .corpus-counts { display: none; }
+  /* The provenance line wrapped to six rows here — 218px of masthead above a
+     375px-wide reading column. It carries two things now, so it fits. */
   .masthead-facts { gap: 6px 16px; }
   .settings { gap: 12px; }
   .switcher { gap: 8px; }
