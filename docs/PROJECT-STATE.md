@@ -15,110 +15,98 @@ what we intend. This file and its siblings are the state — what is true.
 
 ---
 
-## Status at a glance (2026-08-24)
+## Status at a glance (end of 2026-08-24)
 
-**Corpus:** 33 documents · 1,737 chunks · 6,992 vectors (100% coverage) ·
-1,100 `article_refs` edges. No longer tax-only — Labour Code, accounting/audit,
-pensions, sickness+maternity benefits, cashless, currency, stamp-duty law, and
-the SRC form-filling orders (N 299-Ն turnover tax, N 300-Ն income tax, N 1257-Ն
-document issuance, N 2335-Ն travel, N 1260-Ն cash, N 326-Ն non-resident).
+**Live:** https://armlex.onrender.com — `/api/version` reports the deployed
+commit. Corpus lives in shared Neon (live immediately); code needs push +
+Render rebuild.
 
-**Golden set:** 46 questions — 24 Russian tax, 5 Armenian labour, 3 Armenian
-form-filling, 9 Armenian table-lookup, plus others. Hand-pinned answers where
-the proposer structurally cannot see the chunk (`OPEN-ITEMS` 27).
+**Real traffic — the number that matters.** 250 authentic accountant questions,
+Flash-Lite triage:
 
-**Retrieval, 46 questions:** 87.0% hit@5 · 89.1% hit@8 · 87.0% recall@8 ·
-MRR 0.740.
+| | 2026-08-19 | 2026-08-23 | **now** |
+|---|---|---|---|
+| full | 31% | 29% | **47%** |
+| partial | 40% | 47% | 38% |
+| none | 29% | 24% | **14%** |
+| names an article it lacked | — | — | **1 of 250** |
 
-**Reliability (3 draws per question — the number that matters):**
+Improved 80 / worsened 25 / unchanged 145. Noise floor ~6% on verdict flips.
 
-| | |
-|---|---|
-| all required articles delivered EVERY draw | **87.0%** |
-| flipping between draws | **0%** |
-| never delivered | 13.0% (6 questions) |
+**Retrieval — 46 golden questions:** 87.0% hit@5 · 89.1% hit@8 · 87.0% recall@8
+· MRR 0.740. Reliability over 3 draws: **87% always, 0% flipping, 13% never**.
 
-**Shipped retrieval config:** vector top-50 → one-hop citation expansion →
-rerank-2.5 → tie-aware cut (`RERANK_TIE_DELTA=0.02`) → `FRESH_LIMIT=8` fresh
-chunks, each reduced by `generationDocument` (matched part + lead + neighbours +
-same-article cross-references), plus `GUARANTEED_VECTOR_SLOTS=3`.
-`FTS_POOL=0` (measured, did not help).
+**Corpus:** 33 documents · 1,737 chunks · 6,992 vectors · 1,100 ref edges.
 
-**Live:** https://armlex.onrender.com — check `/api/version` for the deployed
-commit. Corpus lives in shared Neon, so corpus changes are live immediately;
-code changes need a push + Render rebuild.
+**Shipped config:** vector top-50 → one-hop expansion → rerank-2.5 → tie-aware
+cut (`RERANK_TIE_DELTA=0.02`) → `FRESH_LIMIT=8`, each chunk reduced by
+`generationDocument` → `GUARANTEED_VECTOR_SLOTS=3` → `CITED_SLOTS=3`.
+`FTS_POOL=0` (measured, did not help). Contextualiser at `temperature: 0`.
+Generation: `claude-sonnet-5`, ~$0.06–0.12/question.
 
 ---
 
-## DO THIS NEXT, in order
+## DO THIS NEXT
 
-**1. ~~`temperature: 0` on generation~~ — DONE DIFFERENTLY, 2026-08-24.**
-Sonnet 5 **rejects sampling parameters** (`400: temperature is deprecated for
-this model`), so the generator cannot be made deterministic the way the
-contextualiser was. Do not retry this.
+**1. HAND-TEST 22 QUESTIONS — the owner, not the agent.** Nobody has verified
+that a "full" verdict means a correct answer; the 47% is Flash-Lite grading
+itself. Question text is in `data/eval/accountant-am.jsonl` (search by title).
+Score in three buckets only: *would send to a client* / *right but useless* /
+*wrong or refused*.
 
-The analogy was wrong anyway. The generator was not drifting randomly — it
-REASONED to a false number: seeing `5.10, 6.10, 7.10, 8.8, 9.10` in a
-cross-reference, it inferred section 8 was asset disposal and stated line 17/8.8
-as fact (section 8 is catering outside Yerevan). Fixed by prompt rule 3a — never
-state a number that does not appear in a fragment attached to that meaning.
-Measured over 3 runs: it now cites those numbers as evidence that sections
-exist, and explicitly declines to name the line.
+- **10 marked `full`** — if 8 hold up, 47% is real; if 5, the true figure is
+  ~25% and every number in these docs needs a caveat.
+- **6 of the 25 that WORSENED** — `ՏՏ ոլորտի ԱՁ` (full→partial) matters most;
+  it is the IT-benefits case the enumeration work started from.
+- **6 marked `none`** — corpus gap, or an article we hold and did not deliver?
+  Expect at least half to be delivery. Check the RANK before believing a gap.
 
-Tier 1 is COMPLETE: rule 3a (no invented numbers), `[…]` redaction instead of a
-sentence spliced mid-clause, and rule 7a (ask only for facts the user has, never
-for norms the system lacks). Generation is behaviourally stable, NOT
-deterministic — a weaker guarantee. If a fabricated number ever reappears, build
-a mechanical validator that checks cited line numbers against the delivered
-text, mirroring `validateQuotes.ts`. Do not reach for a sampling parameter.
+**2. Classify the 25 regressions.** Easier now than after another change.
 
-**2. Retest the micro-business question** once `/api/version` shows `eb1739d` or
-later. `eb1739d` fixes same-article cross-reference following and was verified
-LOCALLY to turn that answer from `partial` + "part 5 is absent" into `full` +
-a definitive yes. It has not yet been confirmed on the deployed path.
+**3. Cheap-model decision.** The triage IS the Flash-Lite arm — it reached 47%
+full at ~$0.01/question versus Sonnet's ~$0.06. Its open question is quote
+fidelity (11% of answers contain a quote the validator strips). Test with
+`compare-generators.ts`; `llm.ts` already has the Gemini path, so it is a config
+flag. Pass bar: not materially worse than Sonnet on invalid quotes, declines to
+invent a line number, and reaches the 129 → 113/109/124 conclusion.
+**Before switching, build a mechanical validator for cited NUMBERS** — quotes
+are checked, numbers are guarded only by prompt rule 3a.
 
-    Կահույքի արտադրությամբ զբաղվող ԱՁ-ն կարո՞ղ է աշխատել միկրոձեռնարկատիրության համակարգով:
+**4. Tier 2 — the remaining retrieval backlog.** 6 golden questions never
+deliver everything; `աղյուսակ 3` sits at rerank rank 11 (`OPEN-ITEMS` 26, 34).
+Deterministic now, so each is individually diagnosable.
 
-**3. ~~The quote-removal bug~~ — DONE 2026-08-24.** Redacts as `[…]` instead of
-a sentence spliced mid-clause. The UI already carries the explanation once as a
-footer; the safety guarantee is unchanged.
+**5. Re-embed** — `split.ts` duplicated-lead-in fix only reaches the index on a
+re-embed (~7,000 slices, ~10 min quota).
 
-**3b. ~~Cross-article references (tier 3)~~ — DONE 2026-08-24.** Articles the
-DELIVERED text cites now get a slot the reranker cannot take away
-(`CITED_SLOTS=3`, same document only, ordered by who cited them).
-`Հոդված 129` defines severance by reference to 113(1)(3,7), 109(1)(9) and 124;
-those now arrive, and the wage-delay answer went from hedging to a definitive
-"no severance regardless of seniority". Golden set unchanged — this alters the
-DELIVERED set, not the ranking, so rank metrics cannot see it.
-
-**TIERS 1 AND 3 ARE COMPLETE. Tier 2 (delivery) is the whole remaining
-retrieval backlog:** 6 questions never receive every required article, and
-`աղյուսակ 3` sits at rerank rank 11 (`OPEN-ITEMS` 26, 34).
-
-**But retrieval is no longer the limiting factor for shipping.** What stands
-between this and paying users is product work, not RAG work:
-
-- **Expert verification.** Three answers have been graded, by the owner. A tax
-  tool needs a practising accountant reviewing 30-50 answers before it is sold.
-  No retrieval metric substitutes for this.
-- **Auth and cost control.** One shared password, no accounts, no rate limits,
-  ~$0.12 per question. Anyone with the password can run up the bill.
-- **Long conversations crash** (`OPEN-ITEMS` 12) — no compaction, hits the
-  context limit, surfaces as an unhandled 502.
-- **Freshness is half-built.** Update detection compares stored text against
-  ARLIS, but NEW-document discovery was never built. Silently serving superseded
-  law is the worst failure mode a legal tool has.
-- **Latency:** 8s to first text, 40-50s to complete.
-
-**4. Re-embed** to clear duplicated enumeration lead-ins out of the vectors.
-`split.ts` was fixed on 2026-08-24 but the fix only reaches the index on a
-re-embed (~7,000 slices, ~10 min of Gemini quota).
-
-**5. The 250-question triage** — the only measurement that says what any of this
-was worth to real users. Baselines exist: `triage-results-preLabour.jsonl`
-(2026-08-19) and `triage-results.jsonl`. ~$3.
+**Retrieval is NO LONGER what blocks shipping.** What does: no accountant has
+reviewed a sample; one shared password with no rate limiting at ~$0.12/question;
+long conversations crash on the context limit (`OPEN-ITEMS` 12); NEW-document
+discovery was never built, so a new SRC order lands and nothing notices —
+silently serving superseded law is the worst failure a legal tool has.
 
 ---
+
+## What shipped on 2026-08-24 (one line each)
+
+Corpus 20→33 in three measured waves (waves 1 and 3 cost nothing; wave 2 cost
+one question) · part-level extraction for generation + `FRESH_LIMIT` 4→8
+(complete-context delivery 57.6%→81.8% at +9.6% cost) · tie-aware cut adopted
+after being rejected once · guaranteed vector slots (reranker demotes articles
+the vector leg ranked 2nd–8th) · same-article cross-references · cited-slot
+guarantee (129→113/109/124; Class-2 smell 1 of 250) · contextualiser
+`temperature: 0` (flipping 6.5%→0%) · rule 3a no invented numbers · `[…]`
+redaction · rule 7a ask only for user facts · golden set 27→46 · benchmark
+`--ctx` arm · `score.ts` empty-index guard · ingest `--apply`-gated after it
+wiped production.
+
+**Measured and REJECTED:** FTS fusion (gain vanished on a larger set) · wider
+reranker budget (recall@8 87.0→85.9) · `temperature` on generation (Sonnet 5
+returns 400) · tie-aware cut at its first measurement.
+
+**Diagnoses RETRACTED:** "the reranker buries tables" (all 9 table questions
+rank 1–4) · "the contextualiser is deterministic" · "the contextualiser degrades
+retrieval" · "the Labour Code displaced Հոդված 254".
 
 ## The rule that keeps proving itself
 
