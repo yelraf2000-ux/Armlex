@@ -28,7 +28,7 @@ const RAIL_KEY = 'armlex.rail';
 const SettingsContext = createContext<Settings | null>(null);
 
 export function SettingsProvider({ children }: { children: ReactNode }) {
-  const [lang, setLangState] = useState<Lang>(() => initialLang());
+  const [lang, setLangState] = useState<Lang>(() => FORCED_LANG ?? initialLang());
   const [theme, setThemeState] = useState<Theme>(() => initialTheme());
   const [railOpen, setRailOpen] = useState<boolean>(() => {
     try {
@@ -70,6 +70,33 @@ export function useSettings(): Settings {
   return ctx;
 }
 
+/**
+ * TEST BUILD: the theme switcher is hidden.
+ *
+ * A tester asked to judge whether the answers are any good should not be
+ * spending attention on Light/Dark. Theme still WORKS — 'auto' is the default,
+ * `applyTheme` leaves the attribute off, and the stylesheet resolves the OS
+ * preference — so a tester on a dark machine still gets the night edition. Only
+ * the manual override is out of sight.
+ *
+ * To restore: flip SHOW_THEME_SWITCHER back to true. Nothing else changed.
+ */
+const SHOW_THEME_SWITCHER = false;
+
+/**
+ * TEST BUILD: Armenian only.
+ *
+ * Hiding the switcher is not enough on its own. `initialLang()` falls back to
+ * the browser's language and then to Russian, so a tester on a Russian or
+ * English machine would have landed in an interface they were never meant to
+ * see, with the control to leave it removed. FORCED_LANG pins the choice; the
+ * other dictionaries are untouched and complete.
+ *
+ * To restore: set FORCED_LANG to null and SHOW_LANG_SWITCHER to true.
+ */
+const SHOW_LANG_SWITCHER = false;
+const FORCED_LANG: Lang | null = 'hy';
+
 /** Compact switchers for the provenance bar. */
 export function SettingsControls() {
   const { lang, setLang, theme, setTheme, t } = useSettings();
@@ -77,43 +104,46 @@ export function SettingsControls() {
   // Words, not dingbats. ◐ ☀ ☾ are typographic strays here — every other
   // control in the edition is a word with a rule under it, and the glyphs
   // rendered differently on every platform anyway.
-  //
-  // "Auto" is still the DEFAULT — an unset preference follows the OS, and a
-  // reader whose machine switches at sunset switches with it. It simply has no
-  // button of its own: two words say everything a third one did, and until one
-  // is pressed neither is marked, which is what "following the system" looks
-  // like. `applyTheme` clears the attribute for 'auto', so nothing else changes.
   const themes: { key: Theme; label: string }[] = [
     { key: 'light', label: t('theme.light') },
     { key: 'dark', label: t('theme.dark') },
   ];
 
+  // With both switchers hidden this would be an empty flex box still claiming a
+  // gap in the masthead row. Render nothing instead.
+  if (!SHOW_LANG_SWITCHER && !SHOW_THEME_SWITCHER) return null;
+
   return (
     <div className="settings">
-      <div className="switcher" role="group" aria-label="Language">
-        {LANGS.map((l) => (
-          <button
-            key={l.code}
-            className={lang === l.code ? 'sw active' : 'sw'}
-            aria-pressed={lang === l.code}
-            onClick={() => setLang(l.code)}
-          >
-            {l.label}
-          </button>
-        ))}
-      </div>
-      <div className="switcher" role="group" aria-label="Theme">
-        {themes.map((th) => (
-          <button
-            key={th.key}
-            className={theme === th.key ? 'sw active' : 'sw'}
-            aria-pressed={theme === th.key}
-            onClick={() => setTheme(th.key)}
-          >
-            {th.label}
-          </button>
-        ))}
-      </div>
+      {SHOW_LANG_SWITCHER ? (
+        <div className="switcher" role="group" aria-label="Language">
+          {LANGS.map((l) => (
+            <button
+              key={l.code}
+              className={lang === l.code ? 'sw active' : 'sw'}
+              aria-pressed={lang === l.code}
+              onClick={() => setLang(l.code)}
+            >
+              {l.label}
+            </button>
+          ))}
+        </div>
+      ) : null}
+
+      {SHOW_THEME_SWITCHER ? (
+        <div className="switcher" role="group" aria-label="Theme">
+          {themes.map((th) => (
+            <button
+              key={th.key}
+              className={theme === th.key ? 'sw active' : 'sw'}
+              aria-pressed={theme === th.key}
+              onClick={() => setTheme(th.key)}
+            >
+              {th.label}
+            </button>
+          ))}
+        </div>
+      ) : null}
     </div>
   );
 }

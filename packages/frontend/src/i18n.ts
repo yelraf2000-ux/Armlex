@@ -95,6 +95,8 @@ const hy: Dict = {
   'oneshot.nothing': 'Ոչինչ չի գտնվել։ Կորպուսը՝ հարկային և աշխատանքային օրենսդրություն՝ Հարկային օրենսգիրք, Աշխատանքային օրենսգիրք, Կառավարության որոշումներ և ՊԵԿ հրամաններ։ Քաղաքացիական իրավունքը և դատական պրակտիկան դրա մեջ չեն մտնում։',
   'search.note': 'Մոդելը չի մասնակցում — միայն գտնված հատվածները',
   'search.found': 'Գտնվել է հատված՝',
+  'example.1': 'Որքա՞ն է ԱԱՀ-ի դրույքաչափը։',
+  'example.2': 'Ինչպե՞ս է հաշվարկվում արձակուրդային փոխհատուցումը աշխատանքից ազատվելիս։',
 };
 
 const ru: Dict = {
@@ -171,6 +173,8 @@ const ru: Dict = {
   'oneshot.nothing': 'Ничего не найдено. Корпус — налоговое и трудовое законодательство: Налоговый кодекс, Трудовой кодекс, решения Правительства и приказы КГД. Гражданское право и судебная практика в него не входят.',
   'search.note': 'Модель не участвует — только найденные фрагменты',
   'search.found': 'Найдено фрагментов:',
+  'example.1': 'Какая ставка НДС в Армении?',
+  'example.2': 'Отпускные при увольнении в середине месяца',
 };
 
 const en: Dict = {
@@ -247,6 +251,8 @@ const en: Dict = {
   'oneshot.nothing': 'Nothing found. The corpus is tax and labour law: the Tax Code, the Labour Code, government decisions and SRC orders. Civil law and court practice are not in it.',
   'search.note': 'No model involved — retrieved fragments only',
   'search.found': 'Fragments found:',
+  'example.1': 'What is the VAT rate in Armenia?',
+  'example.2': 'How is unused leave compensated on dismissal?',
 };
 
 const DICTS: Record<Lang, Dict> = { hy, ru, en };

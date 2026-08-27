@@ -212,23 +212,10 @@ export function NormPanel({
     if (selectedId) setOpen((o) => ({ ...o, [selectedId]: true }));
   }, [selectedId]);
 
-  if (entries.length === 0) {
-    return (
-      <aside className="norm">
-        <div className="app-head">
-          <span className="app-title">{t('norm.title')}</span>
-        </div>
-        <div className="app-rule" />
-        {/*
-          One line about what will appear here, and nothing more. A paragraph
-          on what the corpus does not cover used to sit below it; the masthead
-          already names the corpus, and a reader on their fortieth consultation
-          does not need the boundary restated on every empty screen.
-        */}
-        <p className="norm-empty">{t('norm.empty')}</p>
-      </aside>
-    );
-  }
+  // Nothing to show, so no column: an empty panel headed "Sources" explaining
+  // that it is empty is a section that exists only to describe its own absence.
+  // The caller drops the grid column when this returns null.
+  if (entries.length === 0) return null;
 
   // The first entry opens by default: the statute should be on screen without
   // anyone having to click.

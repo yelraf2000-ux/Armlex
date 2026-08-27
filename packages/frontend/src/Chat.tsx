@@ -96,12 +96,16 @@ const COVERAGE_KEY: Record<string, string> = {
 /**
  * Starter questions. Three, not five: the list is a nudge for an empty screen,
  * not a catalogue, and it disappears for good after the first question.
+ *
+ * They live in the dictionary rather than as literals, so an example is always
+ * in the language the reader is being addressed in. They used to be Russian
+ * regardless — which read as an oversight in an Armenian interface, and would
+ * again the moment the language switcher comes back.
+ *
+ * Two, one per code: a tax question and a labour question, since the corpus
+ * stopped being tax-only.
  */
-const EXAMPLES = [
-  'Какая ставка НДС в Армении?',
-  'Какой оборот считается пределом для микропредпринимательства?',
-  'Отпускные при увольнении в середине месяца',
-];
+const EXAMPLE_KEYS = ['example.1', 'example.2'];
 
 /** Figures for the example list — this is an edition, so it numbers in roman. */
 const ROMAN = ['I', 'II', 'III', 'IV', 'V'];
@@ -362,7 +366,18 @@ export function Chat({ corpusSynced }: { corpusSynced: string | null }) {
   const shownQuotes = extractQuotes(owningTurn?.text ?? '');
 
   return (
-    <div className={railOpen ? 'workbench' : 'workbench rail-hidden'}>
+    // The sources column exists only when there are sources; without it the
+    // grid drops to a single reading column and the measure centres across the
+    // whole width rather than sitting beside a blank panel.
+    <div
+      className={[
+        'workbench',
+        railOpen ? null : 'rail-hidden',
+        entries.length === 0 ? 'no-apparatus' : null,
+      ]
+        .filter(Boolean)
+        .join(' ')}
+    >
       {railOpen ? (
       <nav className="rail">
         <div className="panel-title">{t('nav.consultations')}</div>
@@ -379,7 +394,7 @@ export function Chat({ corpusSynced }: { corpusSynced: string | null }) {
       </nav>
       ) : null}
 
-      <section className="thread">
+      <section className={turns.length === 0 ? 'thread thread-blank' : 'thread'}>
       {/*
         The empty state carries a heading and examples — and nothing else.
         It used to carry a lede and a caution paragraph as well: onboarding read
@@ -393,19 +408,22 @@ export function Chat({ corpusSynced }: { corpusSynced: string | null }) {
           <div className="panel-title">{t('intro.start')}</div>
           <div className="examples-rule" />
           <div className="examples">
-            {EXAMPLES.map((q, i) => (
-              <button
-                key={q}
-                className="example"
-                onClick={() => {
-                  setInput(q);
-                  inputRef.current?.focus();
-                }}
-              >
-                <span className="example-n">{ROMAN[i]}</span>
-                <span className="example-q">{q}</span>
-              </button>
-            ))}
+            {EXAMPLE_KEYS.map((key, i) => {
+              const q = t(key);
+              return (
+                <button
+                  key={key}
+                  className="example"
+                  onClick={() => {
+                    setInput(q);
+                    inputRef.current?.focus();
+                  }}
+                >
+                  <span className="example-n">{ROMAN[i]}</span>
+                  <span className="example-q">{q}</span>
+                </button>
+              );
+            })}
           </div>
         </div>
       ) : null}
