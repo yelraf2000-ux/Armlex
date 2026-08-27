@@ -8,6 +8,7 @@
  */
 import { useEffect, useRef, useState } from 'react';
 import type { Chunk } from './types.js';
+import { BRAND } from './brand.js';
 import { NormPanel } from './NormPanel.js';
 import type { Entry } from './NormPanel.js';
 import { MarkdownView } from './MarkdownView.js';
@@ -403,7 +404,19 @@ export function Chat({ corpusSynced }: { corpusSynced: string | null }) {
       */}
       {turns.length === 0 ? (
         <div className="intro measure">
-          <h1 className="intro-title">{t('intro.title')}</h1>
+          {/*
+            The product names itself here, so the name is set apart from the
+            sentence around it. `{brand}` is a placeholder rather than the name
+            written into each dictionary: only the sentence knows how to decline
+            it (Armenian takes MatyanAI-ն), and the name itself never changes.
+          */}
+          <h1 className="intro-title">
+            {t('intro.title')
+              .split('{brand}')
+              .flatMap((part, i) =>
+                i === 0 ? [part] : [<span key={i} className="brand-name">{BRAND}</span>, part],
+              )}
+          </h1>
 
           <div className="panel-title">{t('intro.start')}</div>
           <div className="examples-rule" />
@@ -432,7 +445,7 @@ export function Chat({ corpusSynced }: { corpusSynced: string | null }) {
         const sources = sourcesOf(turn);
         return (
         <div key={i} className={`turn ${turn.role} measure`}>
-          <div className="turn-role">{turn.role === 'user' ? t('turn.question') : 'ArmLex'}</div>
+          <div className="turn-role">{turn.role === 'user' ? t('turn.question') : BRAND}</div>
           {turn.coverage && COVERAGE_KEY[turn.coverage] ? (
             <div className={`coverage ${turn.coverage}`}>
               <div className="coverage-body">{t(COVERAGE_KEY[turn.coverage]!)}</div>
@@ -446,8 +459,21 @@ export function Chat({ corpusSynced }: { corpusSynced: string | null }) {
           ) : null}
           {turn.stage && !turn.text ? (
             <div className="stage">
-              <span className="stage-pulse" />
-              {STAGE_KEY[turn.stage] ? t(STAGE_KEY[turn.stage]!) : turn.stage}
+              {/*
+                Shown only until the first word arrives — roughly nine seconds
+                of two model calls and a retrieval, which is the stretch that
+                reads as a hung request. Once text is streaming the words are
+                the feedback and this goes away.
+
+                aria-hidden, because the stage line beside it already says what
+                is happening and a screen reader announcing a decorative
+                animation twice is worse than not announcing it at all.
+              */}
+              <span className="stage-figure" aria-hidden="true" />
+              <span className="stage-line">
+                <span className="stage-pulse" />
+                {STAGE_KEY[turn.stage] ? t(STAGE_KEY[turn.stage]!) : turn.stage}
+              </span>
             </div>
           ) : null}
 

@@ -9,6 +9,7 @@
 import { useEffect, useState } from 'react';
 import type { Chunk } from './types.js';
 import { ChunkCard } from './ChunkCard.js';
+import { BRAND } from './brand.js';
 import { Chat } from './Chat.js';
 import { Login } from './Login.js';
 import { MarkdownView } from './MarkdownView.js';
@@ -240,7 +241,7 @@ function AskMode({ corpusSynced }: { corpusSynced: string | null }) {
           {answer !== null ? (
             <div className="turn assistant">
               <div className="turn-role">
-                ArmLex {model ? <span className="model">{model}</span> : null}
+                {BRAND} {model ? <span className="model">{model}</span> : null}
               </div>
               <div className="turn-text">
                 <MarkdownView text={answer} />
@@ -368,7 +369,7 @@ function Workbench() {
             rather than clearing field by field, so nothing survives by
             accident. There is no router here, so this is the only "home".
           */}
-          <button className="brand" onClick={goHome}>ArmLex</button>
+          <button className="brand" onClick={goHome}>{BRAND}</button>
           <RailToggle />
           {corpus && synced ? (
             <span className="masthead-synced">
