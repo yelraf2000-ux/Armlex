@@ -345,6 +345,9 @@ export function Chat({ corpusSynced }: { corpusSynced: string | null }) {
     setTurns([]);
     setError(null);
     setSelectedId(null);
+    // Starting a new consultation from halfway down a long register would
+    // otherwise leave the fresh, empty screen scrolled past.
+    window.scrollTo({ top: 0 });
   }
 
   // Which turn's apparatus is on screen.

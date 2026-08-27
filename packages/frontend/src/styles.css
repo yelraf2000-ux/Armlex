@@ -317,7 +317,16 @@ a { color: var(--accent); }
 /* The empty screen gets a wider block than the reading measure, so the greeting
    fits on one line and the rule under it grows to match. A transcript keeps the
    62ch measure — that limit is about reading long prose, which this is not. */
-.thread-blank { justify-content: center; }
+/*
+ * No vertical justification at all — the block simply starts at the top, with
+ * the spacing `.intro` already carries.
+ *
+ * It used to centre, which was right while the columns were capped to the
+ * viewport. Uncapped, the register sets the row height — 1764px with a full
+ * register — so "centred" put the greeting and the composer some 900px down,
+ * off screen. A fresh page and a new consultation both have to open with the
+ * thing you type into already in view.
+ */
 .thread-blank .measure { max-width: 880px; }
 /* Only its position changes with the state; its appearance must not. */
 .thread-blank .composer {
@@ -1042,7 +1051,13 @@ a { color: var(--accent); }
   cursor: pointer;
 }
 .rail-toggle:hover { color: var(--ink-2); }
-.rail-toggle[aria-expanded="true"] { color: var(--ink); border-bottom-color: var(--rule-2); }
+/*
+ * No pressed state. The register is open by default, so darkening and
+ * underlining the toggle made a freshly-opened page look as though someone had
+ * already clicked it — the only "selected" thing in a masthead where nothing
+ * else is selected. Whether the register is showing is answered by the register
+ * showing; `aria-expanded` still tells assistive technology.
+ */
 .rail-toggle:focus-visible { outline: 1px solid var(--accent); outline-offset: 3px; }
 
 /* Visible to screen readers only. */
