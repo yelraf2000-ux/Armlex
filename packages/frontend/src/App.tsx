@@ -18,6 +18,21 @@ import { RailToggle, SettingsControls, SettingsProvider, useSettings } from './S
 
 type Mode = 'search' | 'ask' | 'chat';
 
+/**
+ * Which modes the interface offers.
+ *
+ * TEST BUILD: Dialogue only. All three still exist and work — `AskMode`,
+ * `SearchMode` and their endpoints are untouched — but a tester asked whether
+ * the ANSWERS are any good should not first have to work out which of three
+ * modes to be in. Ask is Dialogue without memory, and Search is a retrieval
+ * diagnostic; neither teaches a tester anything about answer quality, and both
+ * offer ways to end up somewhere confusing and blame the product for it.
+ *
+ * To restore: add 'ask' (and 'search') back to this list. The switcher renders
+ * itself again as soon as there is more than one.
+ */
+const VISIBLE_MODES: Mode[] = ['chat'];
+
 interface SearchResponse {
   query: string;
   count: number;
@@ -201,7 +216,7 @@ function AskMode({ corpusSynced }: { corpusSynced: string | null }) {
   const quotes = extractQuotes(answer ?? '');
 
   return (
-    <div className="workbench rail-hidden">
+    <div className={entries.length === 0 ? 'workbench rail-hidden no-apparatus' : 'workbench rail-hidden'}>
       <section className="thread">
         <div className="measure">
           <QueryBar value={query} onChange={setQuery} onSubmit={() => void run()} loading={loading} />
@@ -334,10 +349,17 @@ function Workbench() {
       */}
       <header className="provenance">
         {/*
-          A masthead in the sense a printed commentary has one: title and
-          standing on the first line, the facts that qualify every answer on the
-          second, a double rule beneath. Mode is a running head, not a control
-          panel — it sits with the title because it names what you are reading.
+          One line, hard against the top-left. With the standing subtitle, the
+          mode switcher and both settings switchers gone, there is nothing left
+          to justify the two rows a printed masthead would take — and a compact
+          mark in the corner sits better against a centred reading column than a
+          full-width band does.
+
+          What stays is only what qualifies an answer: the way home, the way to
+          the register, and when the corpus was last checked against ARLIS. The
+          corpus size and the not-legal-advice notice live in the colophon at
+          the foot of the page — they are the imprint of the edition, not its
+          running head.
         */}
         <div className="masthead-top">
           {/*
@@ -347,42 +369,34 @@ function Workbench() {
             accident. There is no router here, so this is the only "home".
           */}
           <button className="brand" onClick={goHome}>ArmLex</button>
-          <span className="masthead-sub">{t('masthead.sub')}</span>
-          <span className="spacer" />
-          {/*
-            Search is HIDDEN, not deleted. `SearchMode` and `/api/search` both
-            still work — it is a retrieval diagnostic, useful when tuning the
-            index and confusing beside two modes that answer. Put 'search' back
-            in this list to bring the tab back.
-          */}
-          <div className="segmented" role="tablist">
-            {(['chat', 'ask'] as Mode[]).map((m) => (
-              <button
-                key={m}
-                role="tab"
-                aria-selected={mode === m}
-                className={mode === m ? 'seg active' : 'seg'}
-                onClick={() => setMode(m)}
-              >
-                {t(`mode.${m}`)}
-              </button>
-            ))}
-          </div>
-        </div>
-
-        {/*
-          Only what qualifies an answer stays up here: how to reach the register,
-          and when the corpus was last checked. The size of the corpus and the
-          not-legal-advice notice moved to the colophon at the foot of the page —
-          they are the imprint of the edition, not its running head.
-        */}
-        <div className="masthead-facts">
           <RailToggle />
           {corpus && synced ? (
-            <span>{t('corpus.synced')} <span className="num">{synced}</span></span>
+            <span className="masthead-synced">
+              {t('corpus.synced')} <span className="num">{synced}</span>
+            </span>
           ) : null}
+
           <span className="spacer" />
           <SettingsControls />
+          {/*
+            One mode, so no switcher: a lone tab is a control that cannot do
+            anything, which is worse than no control at all.
+          */}
+          {VISIBLE_MODES.length > 1 ? (
+            <div className="segmented" role="tablist">
+              {VISIBLE_MODES.map((m) => (
+                <button
+                  key={m}
+                  role="tab"
+                  aria-selected={mode === m}
+                  className={mode === m ? 'seg active' : 'seg'}
+                  onClick={() => setMode(m)}
+                >
+                  {t(`mode.${m}`)}
+                </button>
+              ))}
+            </div>
+          ) : null}
         </div>
 
         <div className="masthead-rule" />
