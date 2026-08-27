@@ -3,7 +3,7 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>ArmLex</title>
+    <title>MatyanAI</title>
     <!--
       Prata sets display, Lora sets body, Noto Serif Armenian sets statute.
       Preconnect because the first paint depends on them: this design is
@@ -11,6 +11,14 @@
       Sylfaen stays in the CSS stack behind Noto — it ships with Windows and
       covers Armenian, so a blocked font request still never renders tofu.
     -->
+    <!--
+      Fetched at idle priority, not on demand. It is only needed once a question
+      is asked, but fetching it THEN would race the answer it exists to cover —
+      the first questioner could watch nothing at all while it downloads.
+      `prefetch` rather than `preload` so it never competes with the fonts and
+      the bundle, which the first paint actually depends on.
+    -->
+    <link rel="prefetch" as="image" href="/thinking.png" />
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link

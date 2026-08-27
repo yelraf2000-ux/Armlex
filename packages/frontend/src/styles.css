@@ -16,7 +16,7 @@
 :root {
   color-scheme: light dark;
 
-  --paper:   #F6F2E8;  /* uncoated cream */
+  --paper:   #F6F0E8;  /* uncoated cream */
   --glow:    #FFFDF6;  /* the same paper, lit    — see the body gradient below */
   --shade:   #EDE7D8;  /* the same paper, shaded — the far end of that gradient */
   --leaf:    #FBF8F1;  /* the apparatus column: one shade lighter than paper */
@@ -29,15 +29,16 @@
   --accent-bg: #F2E2E2;
   --mark:    #F6DCC8;  /* the quoted fragment, marked as a printed page marks it */
 
+
   /*
-   * Masthead plus colophon. The two sticky columns are capped to the window
-   * MINUS this, or each would stand a full viewport tall on its own and push
-   * the colophon below the fold on every screen — including an empty one with
-   * nothing to scroll for. Only applies above 900px, where those columns are
-   * sticky at all; deliberately generous, since a page shorter than the window
-   * still rests the colophon at its foot but a taller one scrolls.
+   * The ground, in one place, so anything that has to paint over the page can
+   * paint the SAME thing and disappear into it. Held in a custom property
+   * rather than repeated: the two copies drifting apart is exactly the bug this
+   * exists to prevent.
    */
-  --chrome: 230px;
+  --ground:
+    radial-gradient(125% 85% at 50% -12%, var(--glow) 0%, transparent 58%),
+    linear-gradient(to bottom, var(--paper) 40%, var(--shade) 100%);
 
   --display: "Prata", Georgia, "Times New Roman", serif;
   --body:    "Lora", Georgia, "Times New Roman", serif;
@@ -104,9 +105,7 @@
 body {
   margin: 0;
   background-color: var(--paper);
-  background-image:
-    radial-gradient(125% 85% at 50% -12%, var(--glow) 0%, transparent 58%),
-    linear-gradient(to bottom, var(--paper) 40%, var(--shade) 100%);
+  background-image: var(--ground);
   background-attachment: fixed;
   color: var(--ink);
   font-family: var(--body);
@@ -263,14 +262,19 @@ a { color: var(--accent); }
 .workbench.rail-hidden.no-apparatus { grid-template-columns: minmax(0, 1fr); }
 .rail, .thread, .norm { min-width: 0; }
 
+/*
+ * A plain column that scrolls with the page — no height cap, no scroller of
+ * its own.
+ *
+ * The stickiness had to go WITH the cap, not just alongside it: a sticky
+ * element taller than the window pins at top:0 and never scrolls up again, so
+ * everything past the fold — most of the register — would have been permanently
+ * unreachable. Without a cap this column is exactly that tall.
+ */
 .rail {
   border-right: 1px solid var(--rule-2);
   padding: 22px 22px 22px 44px;
-  position: sticky;
-  top: 0;
   align-self: start;
-  max-height: calc(100vh - var(--chrome));
-  overflow-y: auto;
 }
 
 .thread {
@@ -279,21 +283,29 @@ a { color: var(--accent); }
   padding: 0 40px;
 }
 
+/* The column: stretches the full grid row so its ground ends level with the
+   thread beside it, rather than stopping where the scroller's height cap fell. */
 .norm {
   border-left: 1px solid var(--rule-2);
   background: var(--leaf);
+  align-self: stretch;
+}
+
+/*
+ * Also scrolls with the page now, so the whole screen moves as one document
+ * rather than as three panes with separate scroll positions. Dropping its own
+ * scroller also takes the second scrollbar with it.
+ */
+.norm-inner {
   padding: 24px 44px 28px 32px;
-  position: sticky;
-  top: 0;
-  align-self: start;
-  max-height: calc(100vh - var(--chrome));
-  overflow-y: auto;
 }
 
 /* The opinion is a document, so it gets a document's measure — centred in the
    column, not pinned to its left edge, since the column is far wider than the
-   measure whenever the register is collapsed. */
-.measure { max-width: 62ch; width: 100%; margin-inline: auto; }
+   measure whenever the register is collapsed.
+   Widened from 62ch to 81ch (578px -> 755px, +30%) on request. It grows from
+   the centre because the block is centred, so both margins give equally. */
+.measure { max-width: 81ch; width: 100%; margin-inline: auto; }
 
 /*
  * Before the first question there is nothing to read, so the one thing there
@@ -302,14 +314,15 @@ a { color: var(--accent); }
  * that group; it returns to the foot of the column as soon as a conversation
  * exists to scroll.
  */
+/* The empty screen gets a wider block than the reading measure, so the greeting
+   fits on one line and the rule under it grows to match. A transcript keeps the
+   62ch measure — that limit is about reading long prose, which this is not. */
 .thread-blank { justify-content: center; }
+.thread-blank .measure { max-width: 880px; }
+/* Only its position changes with the state; its appearance must not. */
 .thread-blank .composer {
   position: static;
-  border-top: 0;
   padding-top: 20px;
-  /* Nothing scrolls under it here, so it need not be opaque — and being opaque
-     would stamp a flat paper rectangle across the lit ground. */
-  background: none;
 }
 
 /* ---------------------------------------------------------------------------
@@ -321,20 +334,25 @@ a { color: var(--accent); }
 
 /* Sits above the register now, so it carries no rule of its own — the
    register's own top rule immediately follows it. */
+/* The same design as the send button: this is the one action in its column, and
+   two primary actions in one interface should not look like different species. */
 .new-case {
   width: 100%;
-  text-align: left;
+  text-align: center;
   font-family: var(--body);
   font-size: 12px;
+  font-weight: 600;
   letter-spacing: 0.1em;
   text-transform: uppercase;
-  padding: 0 0 12px;
+  padding: 11px 12px;
+  margin-bottom: 16px;
   border: 0;
-  background: none;
-  color: var(--accent);
+  border-radius: 10px;
+  background: var(--ink);
+  color: var(--paper);
   cursor: pointer;
 }
-.new-case:disabled { color: var(--ink-3); cursor: default; }
+.new-case:disabled { background: var(--rule-2); color: var(--leaf); cursor: default; }
 
 .sessions { display: block; }
 .sessions-empty {
@@ -382,13 +400,34 @@ a { color: var(--accent); }
    --------------------------------------------------------------------------- */
 
 .intro { padding: 40px 0 0; }
+/*
+ * One line, no wider than the rule beneath it.
+ *
+ * Those two constraints fix the size between them. The Armenian greeting is 69
+ * characters; set in Prata it measures 839px at 24px and 1119px at 32px, while
+ * the reading measure caps at 62ch — about 578px. At the old 32px it broke to
+ * three lines, and no font size small enough to fit 578px would still read as
+ * a headline. So the empty screen gets a wider block instead (below), and the
+ * type comes down to 23px — still half again the body size, and ~805px, which
+ * clears the block at every width where the block is full-size.
+ *
+ * `text-wrap: balance` is the safety net: below ~900px the block is narrower
+ * than the sentence and it must wrap, and this makes the two lines even rather
+ * than leaving one orphaned word.
+ */
 .intro-title {
   font-family: var(--display);
-  font-size: 32px;
-  line-height: 1.28;
+  font-size: 23px;
+  line-height: 1.32;
   font-weight: 400;
-  margin: 0 0 16px;
+  margin: 0 0 18px;
+  text-wrap: balance;
 }
+
+/* The product naming itself. The one place the accent is used for identity
+   rather than for attention — it is the brand's own colour, and this is the
+   brand introducing itself. */
+.brand-name { color: var(--accent); }
 .examples { display: block; margin-top: 6px; }
 .examples-rule { border-top: 1px solid var(--ink); }
 
@@ -417,7 +456,10 @@ a { color: var(--accent); }
    Transcript
    --------------------------------------------------------------------------- */
 
-.turn { margin: 0 0 26px; }
+/* Bottom margin only. `margin: 0 0 26px` also set the INLINE margins to zero,
+   which beat the `margin-inline: auto` on .measure — so every turn pinned to
+   the left edge while the composer below it sat centred. */
+.turn { margin-bottom: 26px; }
 
 /* The reader's question is the headline of the piece, not a chat bubble. */
 .turn.user .turn-text {
@@ -458,14 +500,39 @@ a { color: var(--accent); }
  */
 .stage {
   display: flex;
-  align-items: baseline;
-  gap: 11px;
+  align-items: center;
+  gap: 16px;
   padding: 4px 0 8px;
   font-style: italic;
   font-size: 16px;
   color: var(--ink-2);
   animation: stage-in 240ms ease-out;
 }
+.stage-line { display: flex; align-items: baseline; gap: 11px; }
+
+/*
+ * The figure that waits with you.
+ *
+ * A stepped sprite sheet, not a GIF. The source GIF carried a grey studio
+ * backdrop it could not shed — GIF has one transparent palette index, and that
+ * backdrop spans 32 shades — so it sat on the paper as a rectangle. The sheet
+ * is 24-bit colour with a real alpha channel, so the subject's edge feathers
+ * into the page (about 8% of its pixels are partial alpha) and the frames keep
+ * their full 62-step rate instead of being thinned to fit a file budget.
+ *
+ * 107x186 per frame, shown at 71x124 — 1.5x density, so it stays sharp on a
+ * retina screen. 62 frames at 70ms is the source's own timing.
+ */
+.stage-figure {
+  width: 71px;
+  height: 124px;
+  flex: 0 0 auto;
+  background-image: url(/thinking.png);
+  background-repeat: no-repeat;
+  background-size: 71px 7688px;
+  animation: thinking 4.34s steps(62) infinite;
+}
+@keyframes thinking { to { background-position: 0 -7688px; } }
 @keyframes stage-in {
   from { opacity: 0; transform: translateY(4px); }
   to   { opacity: 1; transform: none; }
@@ -486,6 +553,10 @@ a { color: var(--accent); }
 @media (prefers-reduced-motion: reduce) {
   .stage, .stage-pulse, .caret, .sources, .rewrite, .coverage { animation: none; }
   .stage-pulse { opacity: 0.7; }
+  /* Now that it is a CSS animation rather than a GIF it can simply be stopped,
+     so a reader who asked for less motion still gets the figure — standing
+     still on its first frame instead of vanishing. */
+  .stage-figure { animation: none; }
 }
 
 /*
@@ -593,8 +664,18 @@ a { color: var(--accent); }
 .app-count { font-size: 11.5px; font-style: italic; color: var(--ink-3); }
 .app-rule { border-top: 1px solid var(--ink); margin-bottom: 2px; }
 
+/*
+ * Hairline separators only — the apparatus is ruled, not boxed.
+ *
+ * The focused entry used to take a paper-coloured background against the leaf
+ * column. On a collapsed entry that was a small tint; on the FIRST entry, which
+ * opens by default and can run 1300px of statute, it became a large hard-edged
+ * rectangle with a stray-looking seam at each end. The figure in the gutter and
+ * the reference already turn accent when an entry is addressed, which says the
+ * same thing without drawing a box to say it.
+ */
 .entry { border-bottom: 1px solid var(--rule); padding-bottom: 4px; }
-.entry.focused { background: var(--paper); }
+.entry.focused .norm-ref { color: var(--accent); }
 
 .entry-head {
   display: flex;
@@ -713,6 +794,20 @@ a { color: var(--accent); }
    Composer
    --------------------------------------------------------------------------- */
 
+/*
+ * Identical before and after the first question.
+ *
+ * It has to be OPAQUE once a conversation exists, or the transcript scrolls
+ * visibly through it. It used to buy that with flat `--paper` — but by the foot
+ * of the window the page ground has deepened to `--shade`, so a lighter band
+ * appeared behind the composer the moment you asked something, and the empty
+ * screen and the answering screen no longer matched.
+ *
+ * Painting the same fixed ground instead solves both at once: viewport-fixed on
+ * the body and viewport-fixed here means the two line up exactly, so the bar is
+ * fully opaque and completely invisible. No border either — a rule that exists
+ * in one state and not the other is the same inconsistency in another form.
+ */
 .composer {
   position: sticky;
   bottom: 0;
@@ -720,8 +815,9 @@ a { color: var(--accent); }
   gap: 12px;
   align-items: flex-end;
   padding: 14px 0 18px;
-  background: var(--paper);
-  border-top: 1px solid var(--rule-2);
+  background-color: var(--paper);
+  background-image: var(--ground);
+  background-attachment: fixed;
 }
 /*
  * A shallow gradient down the field — the shading a sheet catches where it is
@@ -739,16 +835,26 @@ a { color: var(--accent); }
   font-family: var(--body);
   font-size: 15px;
   line-height: 1.5;
-  border: 1px solid var(--rule-2);
-  border-radius: 0;
+  /* No outline of its own: the shading alone says "write here", and a hard
+     rectangle around it was the only boxed object left on a page built from
+     rules. Rounded just enough to read as soft, not as a pill. */
+  border: 0;
+  border-radius: 10px;
   background-color: var(--leaf);
-  background-image: linear-gradient(to bottom, color-mix(in srgb, var(--ink) 5%, var(--leaf)), var(--leaf) 34%);
+  background-image: linear-gradient(to bottom, color-mix(in srgb, var(--ink) 6%, var(--leaf)), var(--leaf) 38%);
   color: var(--ink);
   overflow-y: auto;
-  transition: border-color 140ms ease;
+  transition: box-shadow 140ms ease;
 }
-.composer textarea:focus { outline: none; border-color: var(--accent); }
+/* The ring appears only on focus — the one moment the field's edge matters,
+   and keyboard users need it to. */
+.composer textarea:focus {
+  outline: none;
+  box-shadow: 0 0 0 1.5px var(--accent);
+}
 .composer textarea:disabled { background: var(--paper); color: var(--ink-3); }
+/* Matches the field's corner, or a soft input beside a sharp button reads as
+   two unrelated controls that happen to be adjacent. */
 .composer button {
   padding: 13px 22px;
   font-family: var(--body);
@@ -758,7 +864,7 @@ a { color: var(--accent); }
   text-transform: uppercase;
   cursor: pointer;
   border: 0;
-  border-radius: 0;
+  border-radius: 10px;
   background: var(--ink);
   color: var(--paper);
   white-space: nowrap;
@@ -784,6 +890,7 @@ a { color: var(--accent); }
   color: var(--ink);
 }
 .controls input:focus { outline: none; border-bottom-color: var(--accent); }
+/* Search's run button, same design as the send button. */
 .controls button {
   padding: 12px 22px;
   font-family: var(--body);
@@ -793,6 +900,7 @@ a { color: var(--accent); }
   text-transform: uppercase;
   cursor: pointer;
   border: 0;
+  border-radius: 10px;
   background: var(--ink);
   color: var(--paper);
   margin-bottom: 4px;
@@ -813,7 +921,7 @@ a { color: var(--accent); }
 }
 .hint { color: var(--ink-3); font-size: 12.5px; font-style: italic; }
 
-/* The model that produced an answer, named beside the ArmLex label. */
+/* The model that produced an answer, named beside the product label. */
 .model { font-style: italic; letter-spacing: 0; text-transform: none; margin-left: 8px; }
 
 .empty {
@@ -1011,7 +1119,8 @@ a { color: var(--accent); }
   text-transform: uppercase;
   cursor: pointer;
   border: 0;
-  border-radius: 0;
+  /* Same corner as every other primary action. */
+  border-radius: 10px;
   background: var(--ink);
   color: var(--paper);
 }
@@ -1060,7 +1169,7 @@ a { color: var(--accent); }
      must go too — otherwise it is a button that does nothing. */
   .rail-toggle { display: none; }
   .provenance, .thread { padding-left: 32px; padding-right: 32px; }
-  .norm { padding-left: 26px; padding-right: 32px; }
+  .norm-inner { padding-left: 26px; padding-right: 32px; }
 }
 
 @media (max-width: 900px) {
@@ -1068,14 +1177,16 @@ a { color: var(--accent); }
   .workbench.rail-hidden,
   .workbench.no-apparatus,
   .workbench.rail-hidden.no-apparatus { grid-template-columns: minmax(0, 1fr); }
+  /* Below this width the column stops being a column: it follows the opinion
+     down the page, so neither half needs its own height or its own scroll. */
   .norm {
     border-left: 0;
     border-top: 1px solid var(--ink);
     background: var(--paper);
-    position: static;
-    max-height: none;
-    padding: 22px 20px 28px;
   }
+  /* Nothing to undo any more — the column no longer sticks or scrolls itself
+     at any width, so only the padding changes here. */
+  .norm-inner { padding: 22px 20px 28px; }
   .thread { padding: 0 20px; min-height: 0; }
   .provenance { padding: 12px 20px 0; }
   .masthead-sub { display: none; }
@@ -1083,7 +1194,7 @@ a { color: var(--accent); }
   .switcher { gap: 8px; }
   .measure { max-width: none; }
   .turn.user .turn-text { font-size: 21px; }
-  .intro-title { font-size: 25px; }
+  .intro-title { font-size: 19px; }
   .wrap { padding: 20px 20px 48px; }
   .controls { flex-direction: column; align-items: stretch; }
   .controls input { font-size: 20px; }

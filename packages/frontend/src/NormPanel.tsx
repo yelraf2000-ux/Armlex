@@ -223,15 +223,24 @@ export function NormPanel({
   const isOpen = (id: string): boolean => open[id] ?? (id === first && selectedId === null);
 
   return (
+    /*
+      Two elements, because the column has two jobs that want different heights.
+      The <aside> is the COLUMN: it stretches the whole grid row, so its ground
+      runs as far down as the thread beside it. The inner div is the SCROLLER:
+      it sticks to the top and is capped to the window. Doing both jobs with one
+      element meant the ground stopped wherever the cap fell — about 100px short
+      of the composer's rule, leaving the column visibly cut off.
+    */
     <aside className="norm">
-      <div className="app-head">
-        <span className="app-title">{t('norm.title')}</span>
-        <span className="app-count">{entries.length}</span>
-      </div>
-      <div className="app-rule" />
+      <div className="norm-inner">
+        <div className="app-head">
+          <span className="app-title">{t('norm.title')}</span>
+          <span className="app-count">{entries.length}</span>
+        </div>
+        <div className="app-rule" />
 
-      {entries.map((entry, i) => (
-        <ApparatusEntry
+        {entries.map((entry, i) => (
+          <ApparatusEntry
           key={entry.chunk.articleId}
           entry={entry}
           n={i + 1}
@@ -250,7 +259,8 @@ export function NormPanel({
             if (next) onSelect(id);
           }}
         />
-      ))}
+        ))}
+      </div>
     </aside>
   );
 }

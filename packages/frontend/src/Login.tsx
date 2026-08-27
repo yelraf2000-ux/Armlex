@@ -5,6 +5,7 @@
  * answer spends real API credit, so an open URL is a bill anyone can run up.
  */
 import { useState } from 'react';
+import { BRAND } from './brand.js';
 import { useSettings } from './Settings.js';
 
 export function Login({ onSuccess }: { onSuccess: () => void }) {
@@ -41,7 +42,7 @@ export function Login({ onSuccess }: { onSuccess: () => void }) {
     // edition should say what it is and how current it is.
     <div className="login">
       <div className="login-head">
-        <h1 className="login-title">ArmLex</h1>
+        <h1 className="login-title">{BRAND}</h1>
         <div className="login-sub">{t('masthead.sub')}</div>
         <div className="masthead-rule" />
       </div>
