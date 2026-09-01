@@ -438,3 +438,35 @@ answers "which line", just for the wrong income type. Showing it more text made
 things worse: single-slice chunks at double budget cost recall@8 87.0 → 85.9 and
 MRR 0.740 → 0.720, and was reverted. `DOC_CHARS` 1800 remains the measured
 optimum. Widening the cut beats sharpening the judge.
+
+## Go-to-market: B2B first, B2C later via ԱՁ automation (2026-08-28)
+
+Settled with the owner after the first external feedback round. The evidence:
+
+- B2C price resistance is measured, not assumed — "iCloud's $3/mo already
+  hurts", "$10+ — few will pay" — while 20-25-year accountants rated accuracy
+  and speed highly and suggested B2B themselves.
+- The core B2B market is a LIST, not an audience: ~297 firms in Spyur's
+  accounting-services category, 33 licensed audit firms, 403 expert
+  accountants in the Chamber. Founder-led demos ("bring your last ten client
+  questions") beat any campaign at this scale.
+- Pricing: ~3,000 AMD/seat (teams), ~2,500 AMD/seat (10+), enterprise flat
+  from ~100K AMD/mo. Per-seat sits BELOW the individual price so the firm
+  deal is obviously rational.
+- The marketing engine is the legislative-change digest — the crawler's
+  output published weekly, free. It is also the experts' top feature request
+  ("highlight what changed"), so product and marketing are the same work.
+
+**B2C is deferred, not abandoned.** The segment that will pay is ԱՁ owners —
+not for information (rejected) but for REPLACING half of a ~20,000 AMD/month
+accountant fee: deadline calendar → threshold alerts → draft filings →
+filing via an authorized accountant (լիազոր mechanism already exists in the
+SRC e-filing system). Sold THROUGH the phase-1 firms — the accountant serves
+3x the simple clients at half the price — which converts the channel-conflict
+trap (competing with our own customers) into the distribution channel.
+
+The dependency that makes the sequence right: phase 2 is built entirely from
+phase-1 obligations — temporal/freshness machinery becomes the calendar,
+line-level form knowledge becomes the draft filler, firm trust becomes
+distribution. Full autopilot only after the accountant-in-the-loop error rate
+earns it; a filing product has no disclaimer to hide behind.
