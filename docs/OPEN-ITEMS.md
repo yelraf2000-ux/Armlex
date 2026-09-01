@@ -495,3 +495,20 @@ wording is the data.
     doubt; the reviewers themselves suggested B2B. Matches the firm-licence
     analysis of 2026-08-25: ~9,000 accountants sit in a few hundred
     organisations, and a few hundred B2B deals beat 4,500 B2C conversions.
+
+49. **Real users stack unrelated questions in one chat — observed by the owner,
+    confirmed in sessions (2026-08-28).** Of 21 multi-question sessions, most
+    are legitimate drill-downs, but e.g. `4f995f13` goes vacation-compensation
+    → turnover-tax rates in one chat. Three consequences:
+    - `fact_summary` + carried chunks deliberately persist across turns, so an
+      unrelated follow-up risks contamination. `isTopicShift` exists to defuse
+      this and HAS NEVER BEEN MEASURED. Test: same question asked fresh vs
+      after an unrelated topic; compare retrieval. If contaminated: clear
+      summary + cache on shift.
+    - Item 12 (context-window crash) is UN-deprioritized. The "91% one-shot"
+      figure included agent probes and forum-shaped traffic; live humans
+      stack. Cheapest fix: turn cap + graceful "new consultation" message.
+    - Two undesigned behaviours observed: a user PASTED AN ARLIS URL expecting
+      the tool to read it (free feature — corpus already keys by arlis id; a
+      link is a document lookup), and bare conversational fragments («հա որ»,
+      «why») as follow-ups, which the contextualiser must survive.
