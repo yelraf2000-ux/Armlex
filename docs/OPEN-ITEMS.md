@@ -454,3 +454,44 @@ traffic and 40% of hard failures; Class-2 fired once in 250. New order:
     `model`, `ms`. Additive only — no change to `messages` — so it cannot
     disturb the live site. `eval/review.ts` already reads and exports the
     conversations and would join it directly.
+
+## Market feedback — first external reviews (recorded 2026-08-28)
+
+Three audiences: first casual users, price-sensitivity screenshots, and
+accountants with 20-25 years of practice. Kept verbatim-ish because the
+wording is the data.
+
+45. **"Հին ու նոր ինֆո յա տալիս" — old and new turnover-tax rules mixed in one
+    answer.** The single most dangerous item in the feedback, and it is NOT a
+    hallucination: the 2025→2026 turnover-tax reform changed rates, the corpus
+    holds articles containing both current text and transitional provisions,
+    and answers do not distinguish "in force now" from "in force from
+    2026-01-01" or "as before the amendment". Three findings converge here:
+    - the crawl of 2026-08-25 found `Հոդված 272` (micro→turnover transition)
+      and the local-duty RATE articles changed on ARLIS and NOT yet re-ingested
+      (the corpus is serving pre-amendment text right now);
+    - the experienced accountants asked, unprompted, for transitional
+      provisions (անցումային դրույթներ) to be emphasised;
+    - they also asked for "what changed recently" to be highlighted.
+    One product gap, three symptoms: THE SYSTEM HAS NO TEMPORAL AWARENESS in
+    its answers. `articles.effective_from/to` exist in the schema and are
+    unused by generation.
+
+46. **"Too much dry statute text" (casual) + "adds irrelevant provisions"
+    (experts) — the answer is too long and under-prioritised.** Both segments,
+    independently. Note the tension with the context-assembly finding (item
+    42): generation READS too little and WRITES too much. These are not
+    contradictory — the fix is prioritisation at both ends, not a knob turned
+    one way.
+
+47. **Validated bets, for the record:** accuracy rated high by 20-25-year
+    accountants; "better than orin.ai — gives the concrete laws, rests on a
+    real base"; "much faster than the competitor"; the citation-first format
+    lands with GPT-accustomed users. The three core bets (grounding, verbatim
+    citations, deterministic pipeline) are the parts the market liked.
+
+48. **B2C price resistance is real.** "iCloud's $3/mo already hurts";
+    "$10+/mo — few will pay". Individual-subscription revenue at scale is in
+    doubt; the reviewers themselves suggested B2B. Matches the firm-licence
+    analysis of 2026-08-25: ~9,000 accountants sit in a few hundred
+    organisations, and a few hundred B2B deals beat 4,500 B2C conversions.
