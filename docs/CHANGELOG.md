@@ -1192,3 +1192,53 @@ not confirm that a token was ever real.
 
 Verified signed OUT entirely: the page renders, `/api/auth/me` reports nobody,
 and the shared endpoint returns the two messages.
+
+**2026-09-04** — **The landing page is now a question box, not a sign-in form.**
+A visitor with no account asks a real question, gets a real answer to the first
+part of it, and registers to see the rest. Migration 005, 9 tests.
+
+Why this shape: a description of "grounded answers with verbatim citations"
+persuades nobody who has not watched it happen to their own question. The old
+landing page asked strangers to create an account before showing them anything.
+
+**Three rules keep it a gate rather than a bait.** The visible part is a true
+answer generated from retrieved law, not a hook written to make the hidden half
+look valuable — it is literally the opening of the answer, and a test asserts
+the shown text is a prefix of the real one. What is withheld is the APPARATUS:
+the articles, the quotes, the application. And the blur is DRAWN, not a CSS
+filter over real text — a filter leaves the withheld answer in the DOM for
+anyone who opens the inspector, which would make the prompt a lie. Verified in
+the browser: 0 characters inside the blurred element, no withheld content
+anywhere in the page.
+
+**Generated with the cheap model, and the endpoint carries its own protections.**
+`/api/preview` is the one route anybody on the internet can call, which is the
+exact hazard the shared password used to cover: at ~$0.012 a preview, an
+unthrottled endpoint is ~$12 per thousand requests to whoever holds the keys. So
+a per-address daily limit (4), a 2,000-character cap on the question, and
+Flash-Lite rather than Sonnet. `trustProxy` is now on, without which Render's
+proxy makes every visitor share one rate-limit bucket and the fifth person of
+the day is blocked. The limiter is in memory — **if this ever runs on more than
+one instance the limit becomes per-instance and must move to the database**;
+that failure is silent, since the endpoint keeps working and simply costs N
+times more.
+
+**The question survives the signup.** It is held in `sessionStorage` and asked
+again properly the moment the account exists — verified end to end. Making
+someone retype the question they just asked charges them twice for the same
+thing, at the exact moment the product is proving it kept its promise.
+
+`previews` also records what was asked and whether it converted. That table is
+the only record of what people ask BEFORE committing — every other question in
+the database came from someone who had already decided to sign up — and it is
+worth more to the marketing than to the product.
+
+Two bugs found by testing rather than reasoning. `splitAnswer` cut mid-word on
+short answers: the guard required the boundary to be at or past `MIN_SHOWN`,
+but `MIN_SHOWN` is also the floor for the target, so when they were equal no
+boundary could ever qualify and it fell through to a raw slice. It now picks
+whichever clean stop is CLOSEST to the target, in either direction — searching
+only backwards landed a whole paragraph short. And the clipboard fallback used
+`window.prompt`, which is blocked outright in embedded contexts and threw,
+making a refused clipboard look like a broken button; the link is now rendered
+inline and selectable, so copying is a convenience rather than the mechanism.

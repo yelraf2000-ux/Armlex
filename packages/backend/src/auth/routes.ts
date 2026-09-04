@@ -19,6 +19,7 @@ import {
   type User,
 } from './users.js';
 import { authorizeUrl, exchangeCode, googleEnabled, issueState, verifyState } from './google.js';
+import { markConverted } from '../answer/preview.js';
 
 /**
  * Paths reachable without a session.
@@ -36,6 +37,10 @@ const PUBLIC_PATHS = new Set([
   '/api/health',
   '/api/version',
   '/health',
+  // The point of the preview is that a visitor with no account can use it. It
+  // is not unprotected — it carries a per-address rate limit and the cheap
+  // model — but the protection is its own, not the session's.
+  '/api/preview',
 ]);
 
 /** A shape the UI can render, with no hash or provider id in it. */
@@ -94,6 +99,12 @@ export async function register(req: FastifyRequest, reply: FastifyReply): Promis
   }
 
   const user = await createWithPassword(email, password, name);
+
+  // If they arrived from a preview, record which one. Conversion is the number
+  // that decides whether the teaser is worth what it costs to run.
+  const previewId = (req.body as { previewId?: unknown })?.previewId;
+  if (typeof previewId === 'string') await markConverted(previewId, user.id);
+
   return reply
     .header('Set-Cookie', setCookie(user.id))
     .send({ user: publicUser(user), usage: await monthlyUsage(user) });

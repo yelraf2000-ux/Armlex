@@ -15,6 +15,7 @@ import { MarkdownView } from './MarkdownView.js';
 import { extractQuotes } from './quotes.js';
 import { Sessions } from './Sessions.js';
 import { useSettings } from './Settings.js';
+import { PENDING_PREVIEW, PENDING_QUESTION } from './Landing.js';
 
 interface ChatResponse {
   sessionId: string;
@@ -145,17 +146,38 @@ export function Chat({ corpusSynced }: { corpusSynced: string | null }) {
   /** The share link for this conversation, once one has been issued. */
   const [shareUrl, setShareUrl] = useState<string | null>(null);
 
+  /**
+   * Ask the question the visitor typed before they had an account.
+   *
+   * They asked it once, saw half an answer, and registered on the strength of
+   * it. Making them retype it now would charge them twice for the same thing —
+   * and the moment right after signup is exactly when a product gets to prove
+   * it kept its promise. Cleared first, so a failed turn cannot loop.
+   */
+  useEffect(() => {
+    const pending = sessionStorage.getItem(PENDING_QUESTION);
+    if (!pending) return;
+    sessionStorage.removeItem(PENDING_QUESTION);
+    sessionStorage.removeItem(PENDING_PREVIEW);
+    void send(pending);
+    // Runs once on mount, after the account exists.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   async function share(): Promise<void> {
     if (!sessionId) return;
     const url = shareUrl ?? (await issueShareLink(sessionId));
     if (!url) return;
     setShareUrl(url);
+    // Copying is a convenience, not the mechanism: the link is rendered beside
+    // the button either way. The first version fell back to `window.prompt`,
+    // which is blocked outright in embedded contexts and threw — leaving the
+    // click looking like nothing had happened, in the one flow where the user
+    // is trying to hand something to somebody else.
     try {
       await navigator.clipboard.writeText(url);
     } catch {
-      // Clipboard access can be refused; the link exists either way, so show it
-      // rather than leaving the click looking like nothing happened.
-      window.prompt(t('share.copied'), url);
+      /* shown inline instead */
     }
   }
   const endRef = useRef<HTMLDivElement>(null);
@@ -234,8 +256,8 @@ export function Chat({ corpusSynced }: { corpusSynced: string | null }) {
     if (stickRef.current) window.scrollTo({ top: document.body.scrollHeight });
   }, [turns]);
 
-  async function send(): Promise<void> {
-    const message = input.trim();
+  async function send(override?: string): Promise<void> {
+    const message = (override ?? input).trim();
     if (!message || loading) return;
 
     setInput('');
@@ -499,6 +521,11 @@ export function Chat({ corpusSynced }: { corpusSynced: string | null }) {
                 </svg>
                 {shareUrl ? t('share.copied') : t('share.share')}
               </button>
+            ) : null}
+            {turn.role === 'user' && i === 0 && shareUrl ? (
+              // Always visible once issued, and selectable — a link the user
+              // can see is a link they can send even when the clipboard refused.
+              <input className="share-link" readOnly value={shareUrl} onFocus={(e) => e.target.select()} />
             ) : null}
           </div>
           {turn.coverage && COVERAGE_KEY[turn.coverage] ? (

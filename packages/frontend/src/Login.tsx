@@ -25,12 +25,17 @@ type Tab = 'signin' | 'register';
 export function Login({
   onSuccess,
   googleEnabled,
+  initialTab,
 }: {
   onSuccess: () => void;
   googleEnabled?: boolean | undefined;
+  /** Which tab opens first. A visitor arriving from "register and see it all"
+   *  must land on Register — sending them to Sign in contradicts the button
+   *  they just pressed. */
+  initialTab?: Tab | undefined;
 }) {
   const { t } = useSettings();
-  const [tab, setTab] = useState<Tab>('signin');
+  const [tab, setTab] = useState<Tab>(initialTab ?? 'signin');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [name, setName] = useState('');

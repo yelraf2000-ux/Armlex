@@ -16,13 +16,23 @@ import {
   requireAuth,
 } from './auth/routes.js';
 import { monthlyUsage } from './auth/users.js';
+import { generatePreview, hashIp } from './answer/preview.js';
+import { checkRate } from './answer/rateLimit.js';
 import { retrieve, warmRetrieval, VectorLegUnavailableError } from './retrieval/retrieve.js';
 import { db } from './db/pool.js';
 import { ask, isConfigured } from './answer/ask.js';
 import { chat } from './answer/chat.js';
 import { DEFAULT_MODEL } from './answer/llm.js';
 
-const app = Fastify({ logger: { transport: { target: 'pino-pretty' } } });
+const app = Fastify({
+  logger: { transport: { target: 'pino-pretty' } },
+  /**
+   * Behind Render's proxy, `req.ip` is the proxy's address unless this is set —
+   * which would make the preview rate limit one shared bucket for the entire
+   * internet, blocking every visitor after the fourth.
+   */
+  trustProxy: true,
+});
 
 /**
  * Refuse to start unsigned in production.
@@ -50,6 +60,45 @@ app.post('/api/auth/logout', logout);
 app.get('/api/auth/me', me);
 app.get('/api/auth/google', googleStart);
 app.get('/api/auth/google/callback', googleCallback);
+
+/**
+ * A real answer for a visitor with no account, partly withheld.
+ *
+ * Public, so it carries its own protections rather than borrowing the session's:
+ * a per-address daily limit (`rateLimit.ts`), the cheap model, and a length cap
+ * on the question so the prompt cannot be used as free inference.
+ */
+app.post<{ Body: QueryBody }>('/api/preview', async (req, reply) => {
+  const question = readQuery(req.body);
+  if (!question) return reply.code(400).send({ error: 'query is required' });
+  if (question.length > 2000) return reply.code(400).send({ error: 'question_too_long' });
+  if (!isConfigured()) return reply.code(501).send({ error: 'not configured' });
+
+  const verdict = checkRate(hashIp(req.ip));
+  if (!verdict.allowed) {
+    return reply
+      .header('Retry-After', Math.ceil(verdict.resetMs / 1000))
+      .code(429)
+      .send({
+        error: 'preview_limit',
+        detail:
+          `Անվճար նախադիտումների սահմանաչափը սպառված է։ Գրանցվեք՝ շարունակելու համար։ / ` +
+          `Лимит бесплатных предпросмотров исчерпан. Зарегистрируйтесь, чтобы продолжить.`,
+      });
+  }
+
+  try {
+    return await generatePreview(question, req.ip);
+  } catch (err) {
+    // Same rule as the chat route: search being down must never read as an
+    // answer, least of all to someone meeting the product for the first time.
+    if (err instanceof VectorLegUnavailableError) {
+      return reply.code(503).send({ error: 'search_unavailable' });
+    }
+    req.log.error({ err }, 'preview failed');
+    return reply.code(502).send({ error: 'preview_failed' });
+  }
+});
 
 interface QueryBody {
   query?: unknown;

@@ -11,7 +11,8 @@ import type { Chunk } from './types.js';
 import { ChunkCard } from './ChunkCard.js';
 import { BRAND } from './brand.js';
 import { Chat } from './Chat.js';
-import { Login, type Account } from './Login.js';
+import { Landing } from './Landing.js';
+import { type Account } from './Login.js';
 import { MarkdownView } from './MarkdownView.js';
 import { NormPanel } from './NormPanel.js';
 import { Shared } from './Shared.js';
@@ -339,16 +340,14 @@ function Workbench() {
 
   if (authed === null) return <div className="wrap" />;
   if (!authed) {
-    return (
-      <div className="wrap">
-        <Login
-          googleEnabled={account?.google}
-          onSuccess={() => {
-            void loadAccount();
-          }}
-        />
-      </div>
-    );
+    /*
+      A visitor with no account meets a question box, not a sign-in form. They
+      get a real partial answer first, and register to see the rest — which is
+      also the only way this product can show a stranger what it is, since a
+      description of "grounded answers with verbatim citations" persuades
+      nobody who has not watched it happen to their own question.
+    */
+    return <Landing googleEnabled={account?.google} onAuthed={() => void loadAccount()} />;
   }
 
   return (

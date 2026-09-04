@@ -75,15 +75,16 @@ export function Sessions({
     if (!res.ok) return;
     const { url } = (await res.json()) as { url: string };
     const full = `${window.location.origin}${url}`;
+    // Copying is a convenience;  as a fallback is not — it is
+    // blocked outright in embedded contexts and throws, which made a refused
+    // clipboard look like a broken button.
     try {
       await navigator.clipboard.writeText(full);
-      setCopied(s.id);
-      window.setTimeout(() => setCopied(null), 2000);
     } catch {
-      // Clipboard access can be refused; the link still exists, so show it
-      // rather than leaving the click looking like it failed.
-      window.prompt(t('share.copied'), full);
+      /* the conversation view shows the link inline */
     }
+    setCopied(s.id);
+    window.setTimeout(() => setCopied(null), 2000);
     setSessions((list) => (list ?? []).map((x) => (x.id === s.id ? { ...x, shared: true } : x)));
   }
 

@@ -1403,3 +1403,160 @@ a { color: var(--accent); }
 
 .turn-share:hover { color: var(--accent); background: var(--accent-bg); }
 .turn-share.on { color: var(--accent); }
+
+/* ── The landing page a visitor with no account meets ───────────────────── */
+
+.landing { padding-top: 2.5rem; }
+
+.landing-lede {
+  max-width: 46ch;
+  margin: 0 auto 1.75rem;
+  text-align: center;
+  color: var(--ink-2);
+  font-size: 1rem;
+  line-height: 1.65;
+}
+
+.landing-examples {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  max-width: 40rem;
+  margin: 0 auto 1.5rem;
+}
+
+.landing-example {
+  background: var(--leaf);
+  border: 1px solid var(--rule);
+  border-radius: 4px;
+  color: var(--ink-2);
+  font-family: var(--body);
+  font-size: 0.9rem;
+  line-height: 1.5;
+  text-align: start;
+  padding: 0.75rem 0.95rem;
+  cursor: pointer;
+  min-height: 44px;
+}
+
+.landing-example:hover:not(:disabled) { border-color: var(--accent); color: var(--ink); }
+.landing-example:disabled { opacity: 0.5; cursor: default; }
+
+.landing-ask {
+  display: flex;
+  gap: 0.6rem;
+  align-items: flex-end;
+  max-width: 40rem;
+  margin: 0 auto 1.5rem;
+}
+
+.landing-ask textarea {
+  flex-grow: 1;
+  font-family: var(--body);
+  font-size: 0.98rem;
+  line-height: 1.55;
+  padding: 0.75rem 0.9rem;
+  border: 1px solid var(--rule);
+  border-radius: 4px;
+  background: var(--glow);
+  color: var(--ink);
+  resize: vertical;
+}
+
+.landing-ask textarea:focus { outline: none; border-color: var(--accent); }
+
+.landing-back { text-align: center; margin-top: 1.5rem; }
+
+.linkish {
+  background: none;
+  border: none;
+  color: var(--ink-3);
+  font-family: var(--body);
+  font-size: 0.85rem;
+  cursor: pointer;
+}
+
+.linkish:hover { color: var(--accent); }
+
+/* ── The withheld half ──────────────────────────────────────────────────── */
+
+.preview { margin: 0 auto; }
+
+.preview-gate { position: relative; margin-top: 0.5rem; }
+
+/*
+ * The blur is DRAWN, not a filter over the real text: a CSS blur leaves the
+ * withheld answer sitting in the DOM for anyone who opens the inspector, which
+ * would make the registration prompt a lie rather than a gate. These are empty
+ * bars in the shape of prose.
+ */
+.preview-blur {
+  display: flex;
+  flex-direction: column;
+  gap: 0.55rem;
+  padding-top: 0.2rem;
+  filter: blur(3px);
+  opacity: 0.5;
+  user-select: none;
+}
+
+.preview-blur span {
+  height: 0.72rem;
+  border-radius: 2px;
+  background: linear-gradient(90deg, var(--ink-3), var(--rule-2));
+}
+
+.preview-cta {
+  position: relative;
+  margin-top: -1.5rem;
+  padding: 1.4rem 1.25rem 1.25rem;
+  background: linear-gradient(to bottom, transparent, var(--paper) 38%);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.7rem;
+  text-align: center;
+}
+
+.preview-cta-text {
+  font-size: 0.92rem;
+  color: var(--ink-2);
+  max-width: 40ch;
+  line-height: 1.5;
+}
+
+.preview-sources { color: var(--ink-3); }
+
+.preview-cta-button {
+  font-family: var(--body);
+  font-size: 0.95rem;
+  padding: 0.8rem 1.6rem;
+  min-height: 44px;
+  border: 1px solid var(--accent);
+  border-radius: 4px;
+  background: var(--accent);
+  color: var(--glow);
+  cursor: pointer;
+}
+
+.preview-cta-button:hover { filter: brightness(1.1); }
+
+.preview-cta-note {
+  font-size: 0.78rem;
+  color: var(--ink-3);
+  letter-spacing: 0.03em;
+}
+
+/* The issued share link, always visible once created. */
+.share-link {
+  margin-left: 0.6rem;
+  font-family: var(--body);
+  font-size: 0.7rem;
+  color: var(--ink-3);
+  background: var(--leaf);
+  border: 1px solid var(--rule);
+  border-radius: 3px;
+  padding: 0.2rem 0.4rem;
+  width: 17rem;
+  max-width: 40vw;
+}
