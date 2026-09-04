@@ -1,0 +1,268 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500;600&family=Noto+Serif+Armenian:wght@400;600;700&display=swap">
+  <style>
+    body { margin: 0; }
+    .inst {
+      --bg:#0C0E11;         /* dark-first, not a dark theme bolted on */
+      --panel:#13161B;
+      --raise:#1A1E25;
+      --line:#242A33;
+      --line-2:#2E3540;
+      --fg:#E6E9ED;
+      --dim:#8A929E;
+      --faint:#5C6672;
+      --accent:#FF5C78;
+      --accent-dim:#2A1620;
+      --amber:#E8A33D;      /* recently amended — the one thing that is not red */
+      --amber-dim:#2A2013;
+      --warn:#FF8FA3;
+      --warn-dim:#2E141C;
+      --mark:#4A1F2B;
+      --sans:"IBM Plex Sans", ui-sans-serif, system-ui, sans-serif;
+      --mono:"IBM Plex Mono", ui-monospace, "SF Mono", Menlo, monospace;
+      --law:"Noto Serif Armenian","Sylfaen",Georgia,serif;
+    }
+    .inst * { box-sizing: border-box; }
+    a { color: var(--accent); } a:hover { color: var(--accent); }
+    .marker:hover { background: var(--accent); color: #0C0E11; }
+    .row:hover { background: var(--raise); }
+    .act:hover { border-color: var(--accent); color: var(--accent); }
+    mark { background: var(--mark); color: #FFD7DF; padding: 0 2px; border-radius: 2px; }
+    .stack::-webkit-scrollbar { width: 10px; }
+    .stack::-webkit-scrollbar-track { background: var(--bg); }
+    .stack::-webkit-scrollbar-thumb { background: var(--line-2); border-radius: 5px; }
+  </style>
+</helmet>
+
+<div class="inst" style="background: var(--bg); color: var(--fg); font-family: var(--sans); font-size: 13.5px; line-height: 1.5; width: 1440px; height: 980px; display: flex; flex-direction: column; overflow: hidden;">
+
+  <!-- A status line, read like an instrument: everything that qualifies the
+       answer is on one row, in mono, at a fixed position. -->
+  <header style="display: flex; align-items: center; gap: 0; height: 38px; border-bottom: 1px solid var(--line); background: var(--panel); flex: 0 0 auto; font-family: var(--mono); font-size: 11.5px;">
+    <span style="font-family: var(--sans); font-weight: 600; font-size: 14px; letter-spacing: -0.01em; padding: 0 16px; color: var(--fg);">ArmLex</span>
+    <span style="width: 1px; height: 38px; background: var(--line);"></span>
+    <sc-for list="{{modes}}" as="m" hint-placeholder-count="3">
+      <button onClick="{{m.pick}}" style="{{m.style}}">{{m.label}}</button>
+    </sc-for>
+    <span style="width: 1px; height: 38px; background: var(--line);"></span>
+    <span style="padding: 0 14px; color: var(--faint);">DOCS <span style="color: var(--dim);">21</span>  CHUNKS <span style="color: var(--dim);">1190</span>  VECTORS <span style="color: var(--dim);">5639</span></span>
+    <span style="width: 1px; height: 38px; background: var(--line);"></span>
+    <span style="padding: 0 14px; color: var(--faint);">SYNC <span style="color: var(--dim);">2026-08-23</span></span>
+    <span style="flex: 1;"></span>
+    <span style="padding: 0 16px; color: var(--warn);">NOT LEGAL ADVICE</span>
+  </header>
+
+  <div style="display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 610px); flex: 1; min-height: 0;">
+
+    <section style="display: flex; flex-direction: column; min-width: 0; overflow-y: auto; padding: 0 28px;">
+
+      <div style="max-width: 68ch; padding: 24px 0 0;">
+        <div style="font-family: var(--mono); font-size: 10.5px; letter-spacing: 0.12em; color: var(--faint); margin-bottom: 8px;">QUERY</div>
+        <div style="font-size: 17px; line-height: 1.45; font-weight: 500; margin-bottom: 20px; color: #F2F4F7;">Оборот вырос до 130 млн драмов в сентябре. С какого момента я плательщик НДС и с какой суммы считать налог?</div>
+
+        <!-- The retrieval trace, shown rather than hidden. This is a diagnostic
+             instrument as much as a reading surface. -->
+        <div style="display: flex; align-items: center; gap: 14px; font-family: var(--mono); font-size: 10.5px; color: var(--faint); padding: 9px 12px; background: var(--panel); border: 1px solid var(--line); border-radius: 4px; margin-bottom: 22px; flex-wrap: wrap;">
+          <span>RETRIEVED <span style="color: var(--dim);">50</span></span>
+          <span style="color: var(--line-2);">→</span>
+          <span>EXPANDED <span style="color: var(--dim);">+11</span></span>
+          <span style="color: var(--line-2);">→</span>
+          <span>RERANKED <span style="color: var(--dim);">4</span></span>
+          <span style="color: var(--line-2);">|</span>
+          <span>TOP <span style="color: var(--accent);">0.847</span></span>
+          <span style="color: var(--line-2);">|</span>
+          <span>COVERAGE <span style="color: var(--amber);">PARTIAL</span></span>
+          <span style="flex: 1;"></span>
+          <span>«превышение порога 115 млн, база исчисления»</span>
+        </div>
+
+        <div style="font-size: 15px; line-height: 1.65;">
+          <p style="margin: 0 0 15px;">НДС исчисляется и уплачивается <strong style="font-weight: 600; color: #F5F7F9;">только с части оборота, превышающей 115 млн драмов</strong><button class="marker" onClick="{{m1.pick}}" style="{{m1.style}}">1</button>, — не со всей суммы. Плательщиком вы становитесь с момента, с которого перестаёте считаться плательщиком налога с оборота<button class="marker" onClick="{{m2.pick}}" style="{{m2.style}}">2</button>.</p>
+
+          <p style="margin: 0 0 15px;">Оборот 130 млн превышает порог на 15 млн — налог считается с этих 15 млн. Порог берётся по всем видам деятельности вместе, включая освобождённые от НДС операции<button class="marker" onClick="{{m2.pick}}" style="{{m2.style}}">2</button>. Заявление подаётся в течение 20 дней со дня наступления основания<button class="marker" onClick="{{m1.pick}}" style="{{m1.style}}">1</button>.</p>
+
+          <p style="margin: 0 0 15px;">Переход на НДС в течение налогового года исключает статус субъекта микропредпринимательства на тот же год<button class="marker" onClick="{{m3.pick}}" style="{{m3.style}}">3</button>.</p>
+        </div>
+
+        <div style="display: flex; gap: 11px; border-left: 2px solid var(--warn); background: var(--warn-dim); color: var(--warn); padding: 12px 14px; margin: 20px 0 0; font-size: 13px; line-height: 1.55;">
+          <svg width="17" height="17" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="flex: 0 0 auto; margin-top: 1px;"><path d="M10 3.2 2.8 15.6a1.2 1.2 0 0 0 1 1.8h12.4a1.2 1.2 0 0 0 1-1.8L10 3.2z"></path><path d="M10 7.8v3.6M10 14.2h.01"></path></svg>
+          <span><strong style="font-weight: 600;">Не покрыто.</strong> Ст. 59 ч. 2 устанавливает иной порядок для некоммерческих организаций и производителей сельхозпродукции — этот случай в найденных статьях не раскрыт.</span>
+        </div>
+      </div>
+
+      <div style="flex: 1; min-height: 24px;"></div>
+
+      <div style="position: sticky; bottom: 0; display: flex; gap: 8px; align-items: flex-end; padding: 12px 0 16px; background: var(--bg); border-top: 1px solid var(--line); max-width: 68ch;">
+        <textarea rows="1" placeholder="Уточняющий вопрос…" style="flex: 1; resize: none; min-height: 40px; padding: 10px 12px; font: inherit; font-family: var(--sans); line-height: 1.45; border: 1px solid var(--line-2); border-radius: 4px; background: var(--panel); color: var(--fg);"></textarea>
+        <button style="padding: 10px 18px; font: inherit; font-family: var(--mono); font-size: 12px; font-weight: 600; letter-spacing: 0.06em; cursor: pointer; border: 1px solid var(--accent); border-radius: 4px; background: var(--accent-dim); color: var(--accent);">SEND ⏎</button>
+      </div>
+    </section>
+
+    <aside style="border-left: 1px solid var(--line); background: var(--panel); display: flex; flex-direction: column; min-width: 0;">
+      <div style="display: flex; align-items: center; gap: 10px; padding: 10px 16px; border-bottom: 1px solid var(--line); font-family: var(--mono); font-size: 10.5px; letter-spacing: 0.12em; color: var(--faint); flex: 0 0 auto;">
+        <span>EVIDENCE · 4</span>
+        <span style="flex: 1;"></span>
+        <button onClick="{{expandAll}}" style="font-family: var(--mono); font-size: 10.5px; letter-spacing: 0.08em; padding: 4px 9px; border: 1px solid var(--line-2); border-radius: 3px; background: var(--raise); color: var(--dim); cursor: pointer;">{{expandLabel}}</button>
+      </div>
+
+      <div class="stack" style="overflow-y: auto; flex: 1; min-height: 0;">
+        <sc-for list="{{cards}}" as="c" hint-placeholder-count="4">
+          <div style="{{c.wrap}}">
+            <button class="row" onClick="{{c.toggle}}" style="{{c.head}}">
+              <span style="{{c.num}}">{{c.n}}</span>
+              <span style="display: flex; flex-direction: column; gap: 3px; align-items: flex-start; min-width: 0; flex: 1;">
+                <span style="display: flex; align-items: baseline; gap: 9px; flex-wrap: wrap;">
+                  <span lang="hy" style="font-family: var(--law); font-size: 16px; font-weight: 700; color: #F2F4F7;">{{c.ref}}</span>
+                  <span style="{{c.revStyle}}">{{c.amended}}</span>
+                  <span style="font-family: var(--mono); font-size: 10.5px; color: var(--faint);">{{c.score}}</span>
+                </span>
+                <span lang="hy" style="font-family: var(--law); font-size: 12px; color: var(--dim); text-align: left;">{{c.title}}</span>
+              </span>
+              <span style="{{c.chevStyle}}">
+                <svg width="14" height="14" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M5.5 8l4.5 4.5L14.5 8"></path></svg>
+              </span>
+            </button>
+
+            <div style="{{c.quoteStyle}}" lang="{{c.lang}}">{{c.quote}}</div>
+
+            <sc-if value="{{c.open}}" hint-placeholder-val="{{true}}">
+              <div style="background: var(--bg); border-top: 1px solid var(--line);">
+                <div lang="hy" style="font-family: var(--law); font-size: 14.5px; line-height: 1.72; white-space: pre-wrap; overflow-wrap: anywhere; padding: 13px 16px 12px; color: #DDE1E6;"><span>{{c.before}}</span><mark>{{c.mark}}</mark><span>{{c.after}}</span></div>
+                <div style="display: flex; gap: 7px; flex-wrap: wrap; padding: 0 16px 13px; align-items: center;">
+                  <button class="act" style="display: inline-flex; align-items: center; gap: 6px; font-family: var(--mono); font-size: 10.5px; letter-spacing: 0.06em; padding: 5px 10px; border: 1px solid var(--line-2); border-radius: 3px; background: var(--raise); color: var(--dim); cursor: pointer;">
+                    <svg width="12" height="12" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="7" y="7" width="9.5" height="9.5" rx="1.8"></rect><path d="M13 4.5H5.3A1.8 1.8 0 0 0 3.5 6.3V14"></path></svg>
+                    COPY QUOTE
+                  </button>
+                  <a class="act" href="#" style="display: inline-flex; align-items: center; gap: 6px; font-family: var(--mono); font-size: 10.5px; letter-spacing: 0.06em; padding: 5px 10px; border: 1px solid var(--line-2); border-radius: 3px; background: var(--raise); color: var(--dim); text-decoration: none;">
+                    ARLIS
+                    <svg width="12" height="12" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M11 3.5h5.5V9M16.5 3.5L9 11"></path><path d="M14 12v3.2a1.3 1.3 0 0 1-1.3 1.3H4.8a1.3 1.3 0 0 1-1.3-1.3V7.3A1.3 1.3 0 0 1 4.8 6H8"></path></svg>
+                  </a>
+                  <span style="flex: 1;"></span>
+                  <span style="font-family: var(--mono); font-size: 10px; color: var(--faint);">REFS {{c.refCount}}</span>
+                </div>
+              </div>
+            </sc-if>
+          </div>
+        </sc-for>
+      </div>
+
+      <div style="border-top: 1px solid var(--line); padding: 11px 16px; display: flex; align-items: center; gap: 10px; background: var(--raise);">
+        <button style="display: inline-flex; align-items: center; gap: 7px; font-family: var(--mono); font-size: 11.5px; font-weight: 600; letter-spacing: 0.06em; padding: 8px 13px; border: 1px solid var(--accent); border-radius: 3px; background: var(--accent); color: #14161A; cursor: pointer;">
+          <svg width="14" height="14" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M11.5 2.5H6.2A1.7 1.7 0 0 0 4.5 4.2v11.6a1.7 1.7 0 0 0 1.7 1.7h7.6a1.7 1.7 0 0 0 1.7-1.7V6.5l-4-4z"></path><path d="M11.5 2.5v4h4M7.5 11h5M7.5 14h3.5"></path></svg>
+          BUILD MEMO
+        </button>
+        <span style="font-family: var(--mono); font-size: 10.5px; color: var(--faint);">вывод + цитаты + ARLIS</span>
+      </div>
+    </aside>
+
+  </div>
+</div>
+</x-dc>
+
+<script data-dc-script data-props='{"$preview":{"width":1440,"height":980}}'>
+class Component extends DCLogic {
+  constructor(props) {
+    super(props);
+    this.state = { open: { '59': true }, focus: '59', mode: 'chat' };
+  }
+
+  data() {
+    return [
+      {
+        id: '59', n: 1, ref: 'Հոդված 59', title: 'Ավելացված արժեքի հարկ վճարողները', amended: '2026-07-01', recent: true, score: '0.847', refCount: 4,
+        quote: '«…իրացման շրջանառության 115 միլիոն դրամի շեմը … գերազանցելու հիմքով ԱԱՀ վճարող համարվելու դեպքում ԱԱՀ-ն հաշվարկվում և վճարվում է ԱԱՀ-ի շեմը գերազանցող մասով»',
+        before: '1. ԱԱՀ վճարողներ են համարվում … հետևյալ դեպքերում և ժամկետներում.\n\n5) հարկային տարվա այն պահից մինչև տվյալ հարկային տարվա ավարտը, որ պահից հարկ վճարողը Օրենսգրքի 13-րդ բաժնի համաձայն, տվյալ հարկային տարում դադարում է համարվել շրջանառության հարկ վճարող: Ընդ որում, ',
+        mark: 'հարկային տարվա ընթացքում գործունեության բոլոր տեսակների մասով իրացման շրջանառության 115 միլիոն դրամի շեմը (այսուհետ նաև՝ ԱԱՀ-ի շեմ) գերազանցելու հիմքով ԱԱՀ վճարող համարվելու դեպքում ԱԱՀ-ն հաշվարկվում և վճարվում է ԱԱՀ-ի շեմը գերազանցող մասով',
+        after: ': Շրջանառության հարկ վճարող համարվելուց դադարելու հիմքերից որևէ մեկը տեղի ունենալու օրվանից մինչև այդ օրվան հաջորդող 20-րդ օրը ներառյալ հարկ վճարողը հարկային մարմին է ներկայացնում հայտարարություն:',
+      },
+      {
+        id: '254', n: 2, ref: 'Հոդված 254', title: 'Շրջանառության հարկ վճարողները', amended: '2022-05', recent: false, score: '0.792', refCount: 2,
+        quote: '«…իրացման շրջանառությունը հաշվարկվում է գործունեության բոլոր տեսակների մասով՝ ներառյալ ԱԱՀ-ից ազատված և ԱԱՀ-ով հարկման օբյեկտ չհամարվող գործարքները»',
+        before: '2. Շրջանառության հարկ վճարող համարվելու համար ',
+        mark: 'իրացման շրջանառությունը հաշվարկվում է գործունեության բոլոր տեսակների մասով՝ ներառյալ ԱԱՀ-ից ազատված և ԱԱՀ-ով հարկման օբյեկտ չհամարվող գործարքները',
+        after: ':\n\n3. Հարկ վճարողը դադարում է համարվել շրջանառության հարկ վճարող այն պահից, երբ տվյալ հարկային տարվա ընթացքում իրացման շրջանառությունը գերազանցում է 115 միլիոն դրամը:',
+      },
+      {
+        id: '267', n: 3, ref: 'Հոդված 267', title: 'Միկրոձեռնարկատիրության սուբյեկտները', amended: '2021-11', recent: false, score: '0.664', refCount: 2,
+        quote: '«…բացառությամբ Օրենսգրքի 254-րդ հոդվածով սահմանված` … շրջանառության հարկ վճարող համարվելու կամ … ԱԱՀ վճարող համարվելու դեպքերի»',
+        before: '1. Սույն հոդվածի 3-րդ մասով սահմանված պայմանը բավարարող ռեզիդենտ առևտրային կազմակերպությունները և անհատ ձեռնարկատերերը միկրոձեռնարկատիրության սուբյեկտներ են համարվում.\n\n1) տվյալ հարկային տարվա հունվարի 1-ից մինչև տվյալ հարկային տարվա ավարտը (բացառությամբ ',
+        mark: 'Օրենսգրքի 254-րդ հոդվածով սահմանված` հարկային տարվա ընթացքում շրջանառության հարկ վճարող համարվելու կամ Օրենսգրքի 59-րդ հոդվածով սահմանված` հարկային տարվա ընթացքում ԱԱՀ վճարող համարվելու դեպքերի',
+        after: '), եթե հարկ վճարողը մինչև տվյալ հարկային տարվա փետրվարի 20-ը ներառյալ հարկային մարմին է ներկայացրել հայտարարություն:',
+      },
+      {
+        id: '64', n: 4, ref: 'Հոդված 64', title: 'ԱԱՀ-ից ազատված գործարքները', amended: '2019-06', recent: false, score: 'carried', refCount: 2,
+        quote: 'Перенесено из прошлого сообщения — прочитано, но в этом ответе не процитировано.',
+        before: '1. ԱԱՀ-ից ազատվում են հետևյալ գործարքները և գործառնությունները.\n\n',
+        mark: '1) կրթական հաստատությունների կողմից մատուցվող կրթական ծառայությունները, ինչպես նաև ուսումնական տետրերի, մանկական և դպրոցական գրականության իրացումը',
+        after: '.\n\n2) գիտահետազոտական աշխատանքների կատարումը:',
+      },
+    ];
+  }
+
+  marker(id) {
+    const base = 'font-family: var(--mono); font-size: 10px; font-weight: 600; line-height: 1; vertical-align: super; margin-left: 2px; padding: 2px 4px; border: 0; border-radius: 2px; cursor: pointer;';
+    return {
+      style: this.state.focus === id ? base + ' background: var(--accent); color: #14161A;' : base + ' background: var(--accent-dim); color: var(--accent);',
+      pick: () => this.setState({ focus: id, open: { ...this.state.open, [id]: true } }),
+    };
+  }
+
+  renderVals() {
+    const rows = this.data();
+    const allOpen = rows.every((d) => !!this.state.open[d.id]);
+    const modeBase = 'font-family: var(--mono); font-size: 11px; letter-spacing: 0.08em; padding: 0 13px; height: 38px; border: 0; cursor: pointer;';
+
+    const cards = rows.map((d) => {
+      const open = !!this.state.open[d.id];
+      const focused = this.state.focus === d.id;
+      return {
+        ...d,
+        open,
+        lang: d.id === '64' ? 'ru' : 'hy',
+        chevStyle: 'display: inline-flex; color: var(--faint); flex: 0 0 auto; margin-top: 4px; transition: transform 140ms ease;' + (open ? '' : ' transform: rotate(-90deg);'),
+        // No cards, no shadows: rows on a rail, with the focused one marked by
+        // a lit left edge. Depth is expensive on a dark ground and buys nothing.
+        wrap: 'border-bottom: 1px solid var(--line); border-left: 2px solid ' + (focused ? 'var(--accent)' : 'transparent') + '; background: ' + (focused ? 'var(--raise)' : 'transparent') + ';',
+        head: 'display: flex; align-items: flex-start; gap: 11px; width: 100%; text-align: left; padding: 12px 16px 8px; border: 0; background: none; color: var(--fg); font: inherit; font-family: var(--sans); cursor: pointer;',
+        num: 'flex: 0 0 auto; font-family: var(--mono); font-size: 11px; font-weight: 600; width: 20px; height: 20px; display: inline-flex; align-items: center; justify-content: center; border-radius: 3px; margin-top: 3px; '
+          + (focused ? 'background: var(--accent); color: #14161A;' : 'background: var(--accent-dim); color: var(--accent);'),
+        // Amber, not red: a recent amendment is a caution, and red already means
+        // "this answer may not hold". Two different alarms need two colours.
+        revStyle: 'font-family: var(--mono); font-size: 10.5px; padding: 2px 6px; border-radius: 2px; white-space: nowrap; '
+          + (d.recent ? 'background: var(--amber-dim); color: var(--amber);' : 'background: var(--raise); color: var(--faint);'),
+        quoteStyle: 'font-family: ' + (d.id === '64' ? 'var(--sans)' : 'var(--law)') + '; font-size: 13px; line-height: 1.6; margin: 0 16px 12px 47px; padding-left: 11px; border-left: 1px solid '
+          + (d.id === '64' ? 'var(--line-2)' : 'var(--accent)') + '; color: ' + (d.id === '64' ? 'var(--faint)' : 'var(--dim)') + ';',
+      };
+    });
+
+    return {
+      cards,
+      m1: this.marker('59'),
+      m2: this.marker('254'),
+      m3: this.marker('267'),
+      expandAll: () => this.setState({ open: allOpen ? {} : rows.reduce((a, d) => ({ ...a, [d.id]: true }), {}) }),
+      expandLabel: allOpen ? 'COLLAPSE' : 'EXPAND ALL',
+      modes: ['CHAT', 'ASK', 'SEARCH'].map((label, i) => {
+        const key = ['chat', 'ask', 'search'][i];
+        return {
+          label,
+          pick: () => this.setState({ mode: key }),
+          style: this.state.mode === key
+            ? modeBase + ' background: var(--accent-dim); color: var(--accent); box-shadow: inset 0 -2px 0 var(--accent);'
+            : modeBase + ' background: none; color: var(--faint);',
+        };
+      }),
+    };
+  }
+}
+</script>
+</body>
+</html>

@@ -1,0 +1,31 @@
+{
+  "artboards": [
+    { "file": "Main.dc.html", "x": 0, "y": 0, "w": 1200, "h": 860, "title": "Հաճախորդի վիջեթ — վստահ պատասխան" },
+    { "file": "Booking.dc.html", "x": 1300, "y": 0, "w": 560, "h": 800, "title": "Մերժում → ամրագրում" },
+    { "file": "FirmView.dc.html", "x": 0, "y": 1000, "w": 1000, "h": 720, "title": "Ընկերության վահանակ" }
+  ],
+  "annotations": [
+    {
+      "id": "note-brand",
+      "x": 0,
+      "y": -150,
+      "w": 460,
+      "text": "The widget wears the FIRM's brand — navy, their logo, their CTA.\nOnly the small \"powered by MatyanAI\" mark is ours."
+    },
+    {
+      "id": "note-quote",
+      "x": 1300,
+      "y": -150,
+      "w": 460,
+      "text": "The strategic move: a question the corpus can't answer becomes\na booked consultation instead of a dead end."
+    },
+    {
+      "id": "note-console",
+      "x": 1100,
+      "y": 1000,
+      "w": 420,
+      "text": "What the firm sees — and what they renew for:\nleads, conversion, and the questions their clients actually ask."
+    }
+  ],
+  "launch": { "view": "canvas" }
+}

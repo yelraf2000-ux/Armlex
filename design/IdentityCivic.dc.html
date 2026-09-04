@@ -1,0 +1,286 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Golos+Text:wght@400;500;600;700&family=Noto+Serif+Armenian:wght@400;600;700&display=swap">
+  <style>
+    body { margin: 0; }
+    .civic {
+      --field:#6E1122;      /* the brand field: deep, flat, no gradient */
+      --field-2:#8A1A2E;
+      --bg:#F6F3F0;         /* warm institutional paper */
+      --card:#FFFFFF;
+      --fg:#1C1A19;
+      --muted:#6F6862;
+      --line:#E4DED8;
+      --accent:#C41E3A;
+      --accent-bg:#FBE9EC;
+      --tax:#B45309;        /* Tax Code — warm ochre */
+      --tax-bg:#FDF3E3;
+      --labour:#0F6E6E;     /* Labour Code — cool teal */
+      --labour-bg:#E4F3F2;
+      --warn-fg:#8E1B2E;
+      --warn-bg:#FBE4E8;
+      --mark:#FCE0C9;
+      --sans:"Golos Text", ui-sans-serif, system-ui, "Segoe UI", sans-serif;
+      --law:"Noto Serif Armenian","Sylfaen",Georgia,serif;
+      --shadow: 0 1px 2px rgba(28,26,25,.06), 0 10px 28px rgba(28,26,25,.05);
+    }
+    .civic * { box-sizing: border-box; }
+    a { color: var(--accent); } a:hover { color: var(--accent); }
+    .chip-btn:hover { filter: brightness(0.97); }
+    .card-btn:hover { border-color: var(--accent); }
+    .marker:hover { background: var(--accent); color: #fff; }
+    .pill:hover { background: rgba(255,255,255,.16); }
+    mark { background: var(--mark); color: inherit; padding: 0 2px; border-radius: 3px; }
+    .stack::-webkit-scrollbar { width: 10px; }
+    .stack::-webkit-scrollbar-thumb { background: var(--line); border-radius: 5px; }
+  </style>
+</helmet>
+
+<div class="civic" style="background: var(--bg); color: var(--fg); font-family: var(--sans); font-size: 15px; line-height: 1.5; width: 1440px; height: 980px; display: flex; flex-direction: column; overflow: hidden;">
+
+  <!-- The brand field. A saturated band that states who this is and how current
+       the corpus is, at a size you read from across the desk. -->
+  <header style="background: var(--field); color: #fff; flex: 0 0 auto; padding: 0 32px;">
+    <div style="display: flex; align-items: center; gap: 26px; height: 58px; border-bottom: 1px solid rgba(255,255,255,.14);">
+      <span style="font-weight: 700; font-size: 21px; letter-spacing: -0.02em;">ArmLex</span>
+      <div style="display: inline-flex; gap: 4px;">
+        <sc-for list="{{modes}}" as="m" hint-placeholder-count="3">
+          <button class="pill" onClick="{{m.pick}}" style="{{m.style}}">{{m.label}}</button>
+        </sc-for>
+      </div>
+      <span style="flex: 1;"></span>
+      <span style="font-size: 13px; color: rgba(255,255,255,.78);">Справочный инструмент. Не юридическая консультация.</span>
+    </div>
+
+    <!-- Corpus provenance as figures, not footnote text. The two codes carry
+         the colours that identify them everywhere else on the page. -->
+    <div style="display: flex; align-items: flex-end; gap: 40px; height: 84px; padding-bottom: 16px;">
+      <div>
+        <div style="font-size: 30px; font-weight: 700; line-height: 1; font-variant-numeric: tabular-nums; letter-spacing: -0.02em;">1 190</div>
+        <div style="font-size: 12px; color: rgba(255,255,255,.7); margin-top: 5px;">фрагментов в индексе</div>
+      </div>
+      <div style="width: 1px; height: 38px; background: rgba(255,255,255,.18);"></div>
+      <div style="display: flex; gap: 10px; align-items: center;">
+        <span style="display: inline-flex; align-items: center; gap: 7px; background: rgba(255,255,255,.12); border-radius: 8px; padding: 7px 12px;">
+          <span style="width: 9px; height: 9px; border-radius: 2px; background: #E9A23B;"></span>
+          <span style="font-size: 13px; font-weight: 500;">Налоговый кодекс</span>
+          <span style="font-size: 13px; font-variant-numeric: tabular-nums; color: rgba(255,255,255,.72);">20 актов</span>
+        </span>
+        <span style="display: inline-flex; align-items: center; gap: 7px; background: rgba(255,255,255,.12); border-radius: 8px; padding: 7px 12px;">
+          <span style="width: 9px; height: 9px; border-radius: 2px; background: #4FC3B8;"></span>
+          <span style="font-size: 13px; font-weight: 500;">Трудовой кодекс</span>
+          <span style="font-size: 13px; font-variant-numeric: tabular-nums; color: rgba(255,255,255,.72);">1 акт</span>
+        </span>
+      </div>
+      <span style="flex: 1;"></span>
+      <div style="text-align: right;">
+        <div style="font-size: 19px; font-weight: 600; font-variant-numeric: tabular-nums; line-height: 1;">23.08.2026</div>
+        <div style="font-size: 12px; color: rgba(255,255,255,.7); margin-top: 5px;">сверено с ARLIS</div>
+      </div>
+    </div>
+  </header>
+
+  <div style="display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 600px); gap: 22px; padding: 22px 32px 26px; flex: 1; min-height: 0;">
+
+    <section style="display: flex; flex-direction: column; gap: 16px; min-width: 0; overflow-y: auto;">
+
+      <div style="background: var(--card); border-radius: 12px; box-shadow: var(--shadow); padding: 20px 24px;">
+        <div style="font-size: 11px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--muted); font-weight: 600; margin-bottom: 8px;">Ваш вопрос</div>
+        <div style="font-size: 19px; line-height: 1.42; font-weight: 500; letter-spacing: -0.01em;">Оборот вырос до 130 млн драмов в сентябре. С какого момента я плательщик НДС и с какой суммы считать налог?</div>
+      </div>
+
+      <div style="background: var(--card); border-radius: 12px; box-shadow: var(--shadow); padding: 22px 24px 20px;">
+        <p style="margin: 0 0 16px; font-size: 17px; line-height: 1.6;">НДС исчисляется и уплачивается <strong style="font-weight: 600;">только с части оборота, превышающей 115 млн драмов</strong><button class="marker" onClick="{{m1.pick}}" style="{{m1.style}}">1</button>, — не со всей суммы. Плательщиком вы становитесь с момента, с которого перестаёте считаться плательщиком налога с оборота<button class="marker" onClick="{{m2.pick}}" style="{{m2.style}}">2</button>.</p>
+
+        <p style="margin: 0 0 14px; line-height: 1.62;">Оборот 130 млн превышает порог на 15 млн — налог считается с этих 15 млн. Порог берётся по всем видам деятельности вместе, включая освобождённые от НДС операции<button class="marker" onClick="{{m2.pick}}" style="{{m2.style}}">2</button>. Заявление подаётся в течение 20 дней со дня наступления основания<button class="marker" onClick="{{m1.pick}}" style="{{m1.style}}">1</button>.</p>
+
+        <p style="margin: 0 0 4px; line-height: 1.62;">Переход на НДС в течение налогового года исключает статус субъекта микропредпринимательства на тот же год<button class="marker" onClick="{{m3.pick}}" style="{{m3.style}}">3</button>.</p>
+
+        <div style="display: flex; gap: 12px; background: var(--warn-bg); color: var(--warn-fg); border-radius: 10px; padding: 14px 16px; margin: 18px 0 0; font-size: 14px; line-height: 1.55;">
+          <svg width="20" height="20" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="flex: 0 0 auto; margin-top: 1px;"><path d="M10 3.2 2.8 15.6a1.2 1.2 0 0 0 1 1.8h12.4a1.2 1.2 0 0 0 1-1.8L10 3.2z"></path><path d="M10 7.8v3.6M10 14.2h.01"></path></svg>
+          <span><strong style="font-weight: 600;">Проверьте прежде чем опираться.</strong> Ст. 59 ч. 2 устанавливает иной порядок для некоммерческих организаций и производителей сельхозпродукции — этот случай в найденных статьях не раскрыт.</span>
+        </div>
+      </div>
+
+      <div style="flex: 1; min-height: 8px;"></div>
+
+      <div style="display: flex; gap: 10px; align-items: flex-end; background: var(--card); border-radius: 12px; box-shadow: var(--shadow); padding: 12px 14px;">
+        <textarea rows="1" placeholder="Уточняющий вопрос…" style="flex: 1; resize: none; min-height: 44px; padding: 11px 12px; font: inherit; font-family: var(--sans); line-height: 1.45; border: 1px solid var(--line); border-radius: 9px; background: var(--bg); color: var(--fg);"></textarea>
+        <button style="display: inline-flex; align-items: center; gap: 8px; padding: 13px 20px; font: inherit; font-family: var(--sans); font-weight: 600; cursor: pointer; border: 0; border-radius: 9px; background: var(--field); color: #fff;">
+          <svg width="16" height="16" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M17 3L8.6 11.4M17 3l-5.4 14-3-6.6L2 7.4 17 3z"></path></svg>
+          Отправить
+        </button>
+      </div>
+    </section>
+
+    <aside style="background: var(--card); border-radius: 12px; box-shadow: var(--shadow); display: flex; flex-direction: column; min-width: 0; overflow: hidden;">
+      <div style="display: flex; align-items: center; gap: 10px; padding: 16px 20px 14px; border-bottom: 1px solid var(--line);">
+        <span style="font-size: 15px; font-weight: 600;">Основание</span>
+        <span style="font-size: 12px; font-weight: 600; font-variant-numeric: tabular-nums; background: var(--accent-bg); color: var(--accent); padding: 2px 8px; border-radius: 20px;">4 статьи</span>
+        <span style="flex: 1;"></span>
+        <button onClick="{{expandAll}}" style="font: inherit; font-family: var(--sans); font-size: 13px; padding: 5px 11px; border: 1px solid var(--line); border-radius: 8px; background: var(--card); color: var(--muted); cursor: pointer;">{{expandLabel}}</button>
+      </div>
+
+      <div class="stack" style="overflow-y: auto; padding: 14px 20px 18px; display: flex; flex-direction: column; gap: 12px; flex: 1; min-height: 0;">
+        <sc-for list="{{cards}}" as="c" hint-placeholder-count="4">
+          <div style="{{c.wrap}}">
+            <button class="card-btn" onClick="{{c.toggle}}" style="{{c.head}}">
+              <span style="{{c.num}}">{{c.n}}</span>
+              <span style="display: flex; flex-direction: column; gap: 5px; align-items: flex-start; min-width: 0; flex: 1;">
+                <span style="{{c.domain}}">
+                  <span style="{{c.dot}}"></span>
+                  {{c.act}}
+                </span>
+                <span style="display: flex; align-items: baseline; gap: 8px; flex-wrap: wrap;">
+                  <span lang="hy" style="font-family: var(--law); font-size: 17px; font-weight: 700;">{{c.ref}}</span>
+                  <span style="{{c.revStyle}}">ред. {{c.amended}}</span>
+                </span>
+                <span lang="hy" style="font-family: var(--law); font-size: 12.5px; color: var(--muted); text-align: left;">{{c.title}}</span>
+              </span>
+              <span style="{{c.chevStyle}}">
+                <svg width="16" height="16" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M5.5 8l4.5 4.5L14.5 8"></path></svg>
+              </span>
+            </button>
+
+            <div style="{{c.quoteStyle}}" lang="{{c.lang}}">{{c.quote}}</div>
+
+            <sc-if value="{{c.open}}" hint-placeholder-val="{{true}}">
+              <div>
+                <div lang="hy" style="font-family: var(--law); font-size: 14.5px; line-height: 1.7; white-space: pre-wrap; overflow-wrap: anywhere; padding: 0 16px 14px;"><span>{{c.before}}</span><mark>{{c.mark}}</mark><span>{{c.after}}</span></div>
+                <div style="display: flex; gap: 8px; flex-wrap: wrap; padding: 0 16px 15px;">
+                  <button style="display: inline-flex; align-items: center; gap: 6px; font: inherit; font-family: var(--sans); font-size: 12.5px; font-weight: 500; padding: 7px 12px; border: 0; border-radius: 8px; background: var(--accent-bg); color: var(--accent); cursor: pointer;">
+                    <svg width="14" height="14" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="7" y="7" width="9.5" height="9.5" rx="1.8"></rect><path d="M13 4.5H5.3A1.8 1.8 0 0 0 3.5 6.3V14"></path></svg>
+                    Скопировать цитату
+                  </button>
+                  <a href="#" style="display: inline-flex; align-items: center; gap: 6px; font-size: 12.5px; padding: 7px 12px; border: 1px solid var(--line); border-radius: 8px; color: var(--fg); text-decoration: none;">
+                    ARLIS
+                    <svg width="13" height="13" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M11 3.5h5.5V9M16.5 3.5L9 11"></path><path d="M14 12v3.2a1.3 1.3 0 0 1-1.3 1.3H4.8a1.3 1.3 0 0 1-1.3-1.3V7.3A1.3 1.3 0 0 1 4.8 6H8"></path></svg>
+                  </a>
+                </div>
+              </div>
+            </sc-if>
+          </div>
+        </sc-for>
+      </div>
+
+      <div style="border-top: 1px solid var(--line); padding: 14px 20px; display: flex; align-items: center; gap: 12px;">
+        <button style="display: inline-flex; align-items: center; gap: 8px; font: inherit; font-family: var(--sans); font-size: 14px; font-weight: 600; padding: 11px 18px; border: 0; border-radius: 9px; background: var(--accent); color: #fff; cursor: pointer;">
+          <svg width="16" height="16" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M11.5 2.5H6.2A1.7 1.7 0 0 0 4.5 4.2v11.6a1.7 1.7 0 0 0 1.7 1.7h7.6a1.7 1.7 0 0 0 1.7-1.7V6.5l-4-4z"></path><path d="M11.5 2.5v4h4M7.5 11h5M7.5 14h3.5"></path></svg>
+          Собрать памятку
+        </button>
+        <span style="font-size: 12.5px; color: var(--muted); line-height: 1.4;">вывод, цитаты и ссылки — одним блоком</span>
+      </div>
+    </aside>
+
+  </div>
+</div>
+</x-dc>
+
+<script data-dc-script data-props='{"$preview":{"width":1440,"height":980}}'>
+class Component extends DCLogic {
+  constructor(props) {
+    super(props);
+    this.state = { open: { '59': true }, focus: '59', mode: 'chat' };
+  }
+
+  data() {
+    return [
+      {
+        id: '59', n: 1, ref: 'Հոդված 59', title: 'Ավելացված արժեքի հարկ վճարողները', act: 'Налоговый кодекс', code: 'tax', amended: '01.07.2026', recent: true,
+        quote: '«…իրացման շրջանառության 115 միլիոն դրամի շեմը … գերազանցելու հիմքով ԱԱՀ վճարող համարվելու դեպքում ԱԱՀ-ն հաշվարկվում և վճարվում է ԱԱՀ-ի շեմը գերազանցող մասով»',
+        before: '1. ԱԱՀ վճարողներ են համարվում … հետևյալ դեպքերում և ժամկետներում.\n\n5) հարկային տարվա այն պահից մինչև տվյալ հարկային տարվա ավարտը, որ պահից հարկ վճարողը Օրենսգրքի 13-րդ բաժնի համաձայն, տվյալ հարկային տարում դադարում է համարվել շրջանառության հարկ վճարող: Ընդ որում, ',
+        mark: 'հարկային տարվա ընթացքում գործունեության բոլոր տեսակների մասով իրացման շրջանառության 115 միլիոն դրամի շեմը (այսուհետ նաև՝ ԱԱՀ-ի շեմ) գերազանցելու հիմքով ԱԱՀ վճարող համարվելու դեպքում ԱԱՀ-ն հաշվարկվում և վճարվում է ԱԱՀ-ի շեմը գերազանցող մասով',
+        after: ': Շրջանառության հարկ վճարող համարվելուց դադարելու հիմքերից որևէ մեկը տեղի ունենալու օրվանից մինչև այդ օրվան հաջորդող 20-րդ օրը ներառյալ հարկ վճարողը հարկային մարմին է ներկայացնում հայտարարություն:',
+      },
+      {
+        id: '254', n: 2, ref: 'Հոդված 254', title: 'Շրջանառության հարկ վճարողները', act: 'Налоговый кодекс', code: 'tax', amended: '05.2022', recent: false,
+        quote: '«…իրացման շրջանառությունը հաշվարկվում է գործունեության բոլոր տեսակների մասով՝ ներառյալ ԱԱՀ-ից ազատված և ԱԱՀ-ով հարկման օբյեկտ չհամարվող գործարքները»',
+        before: '2. Շրջանառության հարկ վճարող համարվելու համար ',
+        mark: 'իրացման շրջանառությունը հաշվարկվում է գործունեության բոլոր տեսակների մասով՝ ներառյալ ԱԱՀ-ից ազատված և ԱԱՀ-ով հարկման օբյեկտ չհամարվող գործարքները',
+        after: ':\n\n3. Հարկ վճարողը դադարում է համարվել շրջանառության հարկ վճարող այն պահից, երբ տվյալ հարկային տարվա ընթացքում իրացման շրջանառությունը գերազանցում է 115 միլիոն դրամը:',
+      },
+      {
+        id: '267', n: 3, ref: 'Հոդված 267', title: 'Միկրոձեռնարկատիրության սուբյեկտները', act: 'Налоговый кодекс', code: 'tax', amended: '11.2021', recent: false,
+        quote: '«…բացառությամբ Օրենսգրքի 254-րդ հոդվածով սահմանված` … շրջանառության հարկ վճարող համարվելու կամ … ԱԱՀ վճարող համարվելու դեպքերի»',
+        before: '1. Սույն հոդվածի 3-րդ մասով սահմանված պայմանը բավարարող ռեզիդենտ առևտրային կազմակերպությունները և անհատ ձեռնարկատերերը միկրոձեռնարկատիրության սուբյեկտներ են համարվում.\n\n1) տվյալ հարկային տարվա հունվարի 1-ից մինչև տվյալ հարկային տարվա ավարտը (բացառությամբ ',
+        mark: 'Օրենսգրքի 254-րդ հոդվածով սահմանված` հարկային տարվա ընթացքում շրջանառության հարկ վճարող համարվելու կամ Օրենսգրքի 59-րդ հոդվածով սահմանված` հարկային տարվա ընթացքում ԱԱՀ վճարող համարվելու դեպքերի',
+        after: '), եթե հարկ վճարողը մինչև տվյալ հարկային տարվա փետրվարի 20-ը ներառյալ հարկային մարմին է ներկայացրել հայտարարություն:',
+      },
+      {
+        id: '64', n: 4, ref: 'Հոդված 64', title: 'ԱԱՀ-ից ազատված գործարքները', act: 'Налоговый кодекс', code: 'tax', amended: '06.2019', recent: false,
+        quote: 'Перенесено из прошлого сообщения — прочитано, но в этом ответе не процитировано.',
+        before: '1. ԱԱՀ-ից ազատվում են հետևյալ գործարքները և գործառնությունները.\n\n',
+        mark: '1) կրթական հաստատությունների կողմից մատուցվող կրթական ծառայությունները, ինչպես նաև ուսումնական տետրերի, մանկական և դպրոցական գրականության իրացումը',
+        after: '.\n\n2) գիտահետազոտական աշխատանքների կատարումը:',
+      },
+    ];
+  }
+
+  marker(id) {
+    const base = 'font: inherit; font-family: var(--sans); font-size: 10.5px; font-weight: 700; line-height: 1; vertical-align: super; margin-left: 3px; padding: 3px 5px; border: 0; border-radius: 5px; cursor: pointer; font-variant-numeric: tabular-nums;';
+    return {
+      style: this.state.focus === id ? base + ' background: var(--accent); color: #fff;' : base + ' background: var(--accent-bg); color: var(--accent);',
+      pick: () => this.setState({ focus: id, open: { ...this.state.open, [id]: true } }),
+    };
+  }
+
+  renderVals() {
+    const rows = this.data();
+    const allOpen = rows.every((d) => !!this.state.open[d.id]);
+    const pillBase = 'font: inherit; font-family: var(--sans); font-size: 13.5px; font-weight: 500; padding: 6px 15px; border: 0; border-radius: 20px; cursor: pointer;';
+
+    const cards = rows.map((d) => {
+      const open = !!this.state.open[d.id];
+      const focused = this.state.focus === d.id;
+      const tint = d.code === 'tax' ? 'var(--tax)' : 'var(--labour)';
+      const tintBg = d.code === 'tax' ? 'var(--tax-bg)' : 'var(--labour-bg)';
+      return {
+        ...d,
+        open,
+        lang: d.id === '64' ? 'ru' : 'hy',
+        chevStyle: 'display: inline-flex; color: var(--muted); flex: 0 0 auto; margin-top: 12px; transition: transform 140ms ease;' + (open ? '' : ' transform: rotate(-90deg);'),
+        wrap: 'border: 1.5px solid ' + (focused ? 'var(--accent)' : 'var(--line)') + '; border-radius: 11px; background: var(--card); overflow: hidden; transition: border-color 140ms ease;',
+        head: 'display: flex; align-items: flex-start; gap: 12px; width: 100%; text-align: left; padding: 14px 16px 10px; border: 0; background: none; color: var(--fg); font: inherit; font-family: var(--sans); cursor: pointer;',
+        num: 'flex: 0 0 auto; font-size: 12px; font-weight: 700; font-variant-numeric: tabular-nums; width: 24px; height: 24px; display: inline-flex; align-items: center; justify-content: center; border-radius: 7px; margin-top: 8px; '
+          + (focused ? 'background: var(--accent); color: #fff;' : 'background: var(--accent-bg); color: var(--accent);'),
+        // Which code a provision comes from is now a colour, not a guess. It
+        // stopped being obvious the day the Labour Code entered the corpus.
+        domain: 'display: inline-flex; align-items: center; gap: 6px; font-size: 11px; font-weight: 600; letter-spacing: 0.04em; text-transform: uppercase; padding: 3px 9px; border-radius: 6px; background: ' + tintBg + '; color: ' + tint + ';',
+        dot: 'width: 7px; height: 7px; border-radius: 2px; background: ' + tint + ';',
+        revStyle: 'font-size: 11px; font-weight: 600; padding: 2px 8px; border-radius: 6px; white-space: nowrap; font-variant-numeric: tabular-nums; '
+          + (d.recent ? 'background: var(--warn-bg); color: var(--warn-fg);' : 'background: var(--bg); color: var(--muted);'),
+        quoteStyle: 'font-family: ' + (d.id === '64' ? 'var(--sans)' : 'var(--law)') + '; font-size: 13.5px; line-height: 1.62; margin: 0 16px 14px 52px; padding-left: 13px; border-left: 3px solid '
+          + (d.id === '64' ? 'var(--line)' : tint) + '; color: ' + (d.id === '64' ? 'var(--muted)' : 'var(--fg)') + ';',
+      };
+    });
+
+    return {
+      cards,
+      m1: this.marker('59'),
+      m2: this.marker('254'),
+      m3: this.marker('267'),
+      expandAll: () => this.setState({ open: allOpen ? {} : rows.reduce((a, d) => ({ ...a, [d.id]: true }), {}) }),
+      expandLabel: allOpen ? 'Свернуть все' : 'Развернуть все',
+      modes: ['Диалог', 'Разовый', 'Поиск'].map((label, i) => {
+        const key = ['chat', 'ask', 'search'][i];
+        return {
+          label,
+          pick: () => this.setState({ mode: key }),
+          style: this.state.mode === key
+            ? pillBase + ' background: #fff; color: var(--field);'
+            : pillBase + ' background: rgba(255,255,255,.10); color: rgba(255,255,255,.86);',
+        };
+      }),
+    };
+  }
+}
+</script>
+</body>
+</html>

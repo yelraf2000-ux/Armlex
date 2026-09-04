@@ -1,0 +1,195 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Prata&family=Lora:ital,wght@0,400;0,500;0,600;1,400&family=Noto+Serif+Armenian:wght@400;600;700&display=swap">
+  <style>
+    body { margin: 0; }
+    .ed {
+      --paper:#F6F2E8; --leaf:#FBF8F1; --ink:#16140F; --ink-2:#4A453A; --ink-3:#7C7466;
+      --rule:#D8D1C0; --rule-2:#BFB6A0; --accent:#A8142B; --mark:#F6DCC8;
+      --display:"Prata", Georgia, "Times New Roman", serif;
+      --body:"Lora", Georgia, "Times New Roman", serif;
+      --law:"Noto Serif Armenian","Sylfaen",Georgia,serif;
+    }
+    .ed * { box-sizing: border-box; }
+    a { color: var(--accent); } a:hover { color: var(--accent); }
+    .hit:hover { background: var(--leaf); }
+    .act:hover { color: var(--accent); border-bottom-color: var(--accent); }
+    mark { background: var(--mark); color: inherit; padding: 0 2px; }
+    .col::-webkit-scrollbar { width: 9px; }
+    .col::-webkit-scrollbar-thumb { background: var(--rule); border-radius: 5px; }
+  </style>
+</helmet>
+
+<div class="ed" style="background: var(--paper); color: var(--ink); font-family: var(--body); font-size: 15px; line-height: 1.6; width: 1440px; height: 980px; display: flex; flex-direction: column; overflow: hidden;">
+
+  <header style="flex: 0 0 auto; padding: 18px 44px 0;">
+    <div style="display: flex; align-items: baseline; gap: 20px;">
+      <span style="font-family: var(--display); font-size: 25px; letter-spacing: 0.01em;">ArmLex</span>
+      <span style="font-size: 12.5px; font-style: italic; color: var(--ink-3);">справочник по налоговому и трудовому законодательству Республики Армения</span>
+      <span style="flex: 1;"></span>
+      <span style="font-size: 12px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--ink-3);">Диалог</span>
+      <span style="font-size: 12px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--ink-3); margin-left: 18px;">Разовый</span>
+      <span style="font-size: 12px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--ink); border-bottom: 2px solid var(--accent); padding-bottom: 3px; margin-left: 18px;">Поиск</span>
+    </div>
+    <div style="display: flex; align-items: baseline; gap: 26px; margin-top: 10px; padding-bottom: 9px; font-size: 11.5px; letter-spacing: 0.14em; text-transform: uppercase; color: var(--ink-3);">
+      <span>Издание сверено с ARLIS 23 · VIII · 2026</span>
+      <span>21 акт</span>
+      <span>1190 фрагментов</span>
+      <span style="flex: 1;"></span>
+      <span style="font-style: italic; text-transform: none; letter-spacing: 0; font-size: 12.5px;">Модель не участвует — только найденные фрагменты</span>
+    </div>
+    <div style="border-top: 2px solid var(--ink); height: 3px; border-bottom: 1px solid var(--ink);"></div>
+  </header>
+
+  <div class="col" style="flex: 1; min-height: 0; overflow-y: auto; padding: 0 44px;">
+    <div style="max-width: 104ch; margin: 0 auto;">
+
+      <!-- The query itself is the headline in this mode. There is no opinion to
+           set above it. -->
+      <div style="padding: 26px 0 0;">
+        <div style="display: flex; gap: 12px; align-items: flex-end;">
+          <div style="flex: 1;">
+            <div style="font-size: 11px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--ink-3); margin-bottom: 8px;">Запрос</div>
+            <input value="порог 115 млн НДС" style="width: 100%; font-family: var(--display); font-size: 24px; line-height: 1.3; padding: 4px 0 10px; border: 0; border-bottom: 2px solid var(--ink); background: none; color: var(--ink); outline: none;">
+          </div>
+          <button style="padding: 12px 22px; font-family: var(--body); font-size: 13px; font-weight: 600; letter-spacing: 0.1em; text-transform: uppercase; cursor: pointer; border: 0; background: var(--ink); color: var(--paper); margin-bottom: 4px;">Искать</button>
+        </div>
+
+        <div style="display: flex; align-items: baseline; gap: 20px; flex-wrap: wrap; margin-top: 14px; padding-bottom: 12px; border-bottom: 1px solid var(--rule);">
+          <span style="font-size: 12.5px; font-style: italic; color: var(--ink-3);">Найдено 4 фрагмента из 1190 · вектор + FTS, слияние RRF</span>
+          <span style="flex: 1;"></span>
+          <sc-for list="{{facets}}" as="f" hint-placeholder-count="3">
+            <button onClick="{{f.pick}}" style="{{f.style}}">{{f.label}} <span style="color: var(--ink-3); font-variant-numeric: tabular-nums;">{{f.n}}</span></button>
+          </sc-for>
+        </div>
+      </div>
+
+      <sc-for list="{{hits}}" as="h" hint-placeholder-count="4">
+        <div style="border-bottom: 1px solid var(--rule);">
+          <button class="hit" onClick="{{h.toggle}}" style="display: flex; align-items: flex-start; gap: 20px; width: 100%; text-align: left; padding: 18px 8px 14px 0; border: 0; background: none; color: var(--ink); font: inherit; font-family: var(--body); cursor: pointer;">
+
+            <!-- Rank and score hang in the gutter, as running heads would. -->
+            <span style="flex: 0 0 62px; padding-top: 3px;">
+              <span style="display: block; font-family: var(--display); font-size: 20px; color: var(--ink-3); line-height: 1;">{{h.rank}}</span>
+              <span style="display: block; font-size: 11px; font-variant-numeric: tabular-nums; color: {{h.scoreTone}}; margin-top: 5px;">{{h.score}}</span>
+            </span>
+
+            <span style="display: flex; flex-direction: column; gap: 6px; min-width: 0; flex: 1;">
+              <span style="display: flex; align-items: baseline; gap: 12px; flex-wrap: wrap;">
+                <span lang="hy" style="font-family: var(--law); font-size: 18px; font-weight: 700;">{{h.ref}}</span>
+                <span lang="hy" style="font-family: var(--law); font-size: 13px; color: var(--ink-2);">{{h.title}}</span>
+                <span style="flex: 1;"></span>
+                <span style="font-size: 11px; letter-spacing: 0.12em; text-transform: uppercase; color: var(--ink-3);">{{h.act}}</span>
+                <span style="font-size: 11px; font-style: italic; color: var(--ink-3);">ред. {{h.amended}}</span>
+              </span>
+
+              <span lang="hy" style="font-family: var(--law); font-size: 14px; line-height: 1.68; color: var(--ink-2); display: block;"><span>{{h.before}}</span><mark>{{h.mark}}</mark><span>{{h.after}}</span></span>
+            </span>
+
+            <span style="{{h.chevStyle}}">
+              <svg width="15" height="15" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M5.5 8l4.5 4.5L14.5 8"></path></svg>
+            </span>
+          </button>
+
+          <sc-if value="{{h.open}}" hint-placeholder-val="{{true}}">
+            <div style="padding: 0 8px 18px 82px;">
+              <div style="display: flex; gap: 26px; flex-wrap: wrap; padding: 0 0 12px; font-size: 11.5px; letter-spacing: 0.12em; text-transform: uppercase; color: var(--ink-3); border-top: 1px solid var(--rule); padding-top: 12px;">
+                <span>Принят <span style="letter-spacing: 0; text-transform: none; font-variant-numeric: tabular-nums; color: var(--ink);">04.10.2016</span></span>
+                <span>Ред. от <span style="letter-spacing: 0; text-transform: none; font-variant-numeric: tabular-nums; color: var(--ink);">{{h.amended}}</span></span>
+                <span>Статус <span style="letter-spacing: 0; text-transform: none; color: var(--ink);">действует</span></span>
+                <span>Ссылается на <span style="letter-spacing: 0; text-transform: none; font-variant-numeric: tabular-nums; color: var(--ink);">{{h.refCount}}</span></span>
+              </div>
+              <div lang="hy" style="font-family: var(--law); font-size: 14.5px; line-height: 1.75; white-space: pre-wrap; overflow-wrap: anywhere; padding: 0 0 14px;">{{h.full}}</div>
+              <div style="display: flex; gap: 18px; flex-wrap: wrap;">
+                <button class="act" style="font-family: var(--body); font-size: 12px; letter-spacing: 0.06em; padding: 0 0 1px; border: 0; border-bottom: 1px solid var(--rule-2); background: none; color: var(--ink-2); cursor: pointer;">Скопировать фрагмент</button>
+                <a class="act" href="#" style="font-family: var(--body); font-size: 12px; letter-spacing: 0.06em; padding: 0 0 1px; border-bottom: 1px solid var(--rule-2); color: var(--ink-2); text-decoration: none;">Открыть в ARLIS</a>
+                <button class="act" style="font-family: var(--body); font-size: 12px; letter-spacing: 0.06em; padding: 0 0 1px; border: 0; border-bottom: 1px solid var(--rule-2); background: none; color: var(--ink-2); cursor: pointer;">Спросить об этой статье</button>
+              </div>
+            </div>
+          </sc-if>
+        </div>
+      </sc-for>
+
+      <div style="padding: 20px 0 40px; font-size: 12.5px; font-style: italic; color: var(--ink-3);">Ниже порога уверенности результатов больше нет. В режиме поиска издание ничего не формулирует — показаны фрагменты как они хранятся, с отметкой совпадения.</div>
+    </div>
+  </div>
+</div>
+</x-dc>
+
+<script data-dc-script data-props='{"$preview":{"width":1440,"height":980}}'>
+class Component extends DCLogic {
+  constructor(props) {
+    super(props);
+    this.state = { open: { '59': true }, facet: 'all' };
+  }
+
+  data() {
+    return [
+      {
+        id: '59', rank: 'I', score: '0.847', ref: 'Հոդված 59', title: 'Ավելացված արժեքի հարկ վճարողները', act: 'Налоговый кодекс', amended: '01.07.2026', refCount: '4',
+        before: '…Ընդ որում, ',
+        mark: 'հարկային տարվա ընթացքում գործունեության բոլոր տեսակների մասով իրացման շրջանառության 115 միլիոն դրամի շեմը (այսուհետ նաև՝ ԱԱՀ-ի շեմ) գերազանցելու հիմքով ԱԱՀ վճարող համարվելու դեպքում ԱԱՀ-ն հաշվարկվում և վճարվում է ԱԱՀ-ի շեմը գերազանցող մասով',
+        after: ': Շրջանառության հարկ վճարող համարվելուց դադարելու հիմքերից որևէ մեկը…',
+        full: '1. Եթե սույն հոդվածի 2-րդ և 3-րդ մասերով այլ բան սահմանված չէ, ապա ԱԱՀ վճարողներ են համարվում սույն հոդվածի 4-րդ մասի 1-ին կետին համապատասխան հարկային մարմնում որպես ԱԱՀ վճարող հաշվառված կազմակերպությունները, անհատ ձեռնարկատերերը և նոտարները՝ հետևյալ դեպքերում և ժամկետներում.\n\n5) հարկային տարվա այն պահից մինչև տվյալ հարկային տարվա ավարտը, որ պահից հարկ վճարողը Օրենսգրքի 13-րդ բաժնի համաձայն, տվյալ հարկային տարում դադարում է համարվել շրջանառության հարկ վճարող: Շրջանառության հարկ վճարող համարվելուց դադարելու հիմքերից որևէ մեկը տեղի ունենալու օրվանից մինչև այդ օրվան հաջորդող 20-րդ օրը ներառյալ հարկ վճարողը հարկային մարմին է ներկայացնում հայտարարություն:',
+      },
+      {
+        id: '254', rank: 'II', score: '0.792', ref: 'Հոդված 254', title: 'Շրջանառության հարկ վճարողները', act: 'Налоговый кодекс', amended: '05.2022', refCount: '2',
+        before: '3. Հարկ վճարողը դադարում է համարվել շրջանառության հարկ վճարող այն պահից, երբ ',
+        mark: 'տվյալ հարկային տարվա ընթացքում գործունեության բոլոր տեսակների մասով իրացման շրջանառությունը գերազանցում է 115 միլիոն դրամը',
+        after: ':',
+        full: '2. Շրջանառության հարկ վճարող համարվելու համար իրացման շրջանառությունը հաշվարկվում է գործունեության բոլոր տեսակների մասով՝ ներառյալ ԱԱՀ-ից ազատված և ԱԱՀ-ով հարկման օբյեկտ չհամարվող գործարքները:\n\n3. Հարկ վճարողը դադարում է համարվել շրջանառության հարկ վճարող այն պահից, երբ տվյալ հարկային տարվա ընթացքում գործունեության բոլոր տեսակների մասով իրացման շրջանառությունը գերազանցում է 115 միլիոն դրամը:',
+      },
+      {
+        id: '267', rank: 'III', score: '0.664', ref: 'Հոդված 267', title: 'Միկրոձեռնարկատիրության սուբյեկտները', act: 'Налоговый кодекс', amended: '11.2021', refCount: '2',
+        before: '1) …(բացառությամբ ',
+        mark: 'Օրենսգրքի 254-րդ հոդվածով սահմանված` հարկային տարվա ընթացքում շրջանառության հարկ վճարող համարվելու կամ Օրենսգրքի 59-րդ հոդվածով սահմանված` հարկային տարվա ընթացքում ԱԱՀ վճարող համարվելու դեպքերի',
+        after: '), եթե հարկ վճարողը մինչև տվյալ հարկային տարվա փետրվարի 20-ը…',
+        full: '1. Սույն հոդվածի 3-րդ մասով սահմանված պայմանը բավարարող ռեզիդենտ առևտրային կազմակերպությունները և անհատ ձեռնարկատերերը միկրոձեռնարկատիրության սուբյեկտներ են համարվում հետևյալ դեպքերում և ժամկետներում.\n\n1) տվյալ հարկային տարվա հունվարի 1-ից մինչև տվյալ հարկային տարվա ավարտը, եթե հարկ վճարողը մինչև տվյալ հարկային տարվա փետրվարի 20-ը ներառյալ հարկային մարմին է ներկայացրել հարկային մարմնի հաստատած ձևով՝ միկրոձեռնարկատիրության սուբյեկտ համարվելու վերաբերյալ հայտարարություն:',
+      },
+      {
+        id: '64', rank: 'IV', score: '0.412', ref: 'Հոդված 64', title: 'ԱԱՀ-ից ազատված գործարքները', act: 'Налоговый кодекс', amended: '06.2019', refCount: '2',
+        before: '1. ',
+        mark: 'ԱԱՀ-ից ազատվում են հետևյալ գործարքները և գործառնությունները',
+        after: '. 1) կրթական հաստատությունների կողմից մատուցվող կրթական ծառայությունները…',
+        full: '1. ԱԱՀ-ից ազատվում են հետևյալ գործարքները և գործառնությունները.\n\n1) կրթական հաստատությունների կողմից մատուցվող կրթական ծառայությունները, ինչպես նաև ուսումնական տետրերի, նոտայի տետրերի, մանկական և դպրոցական գրականության իրացումը.\n\n2) գիտահետազոտական աշխատանքների կատարումը.\n\n3) դպրոցական և նախադպրոցական հաստատություններում սովորողների սննդի իրացումը:',
+      },
+    ];
+  }
+
+  renderVals() {
+    const facetBase = 'font-family: var(--body); font-size: 12px; letter-spacing: 0.06em; padding: 3px 0 2px; margin-left: 18px; border: 0; border-bottom: 1px solid transparent; background: none; cursor: pointer;';
+    const facet = (key, label, n) => ({
+      label, n,
+      pick: () => this.setState({ facet: key }),
+      style: this.state.facet === key
+        ? facetBase + ' color: var(--ink); border-bottom-color: var(--accent);'
+        : facetBase + ' color: var(--ink-3);',
+    });
+
+    return {
+      facets: [facet('all', 'Все', '4'), facet('tax', 'Налоговый', '4'), facet('labour', 'Трудовой', '0')],
+      hits: this.data().map((d) => {
+        const open = !!this.state.open[d.id];
+        return {
+          ...d,
+          open,
+          toggle: () => this.setState({ open: { ...this.state.open, [d.id]: !open } }),
+          chevStyle: 'display: inline-flex; color: var(--ink-3); flex: 0 0 auto; margin-top: 6px; transition: transform 140ms ease;' + (open ? '' : ' transform: rotate(-90deg);'),
+          // Below ~0.5 the reranker is not confident; say so with the figure
+          // rather than hiding the result.
+          scoreTone: Number(d.score) < 0.5 ? 'var(--accent)' : 'var(--ink-3)',
+        };
+      }),
+    };
+  }
+}
+</script>
+</body>
+</html>

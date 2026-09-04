@@ -1,0 +1,180 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Prata&family=Lora:ital,wght@0,400;0,500;0,600;1,400&family=Noto+Serif+Armenian:wght@400;600;700&display=swap">
+  <style>
+    body { margin: 0; }
+    .ed {
+      --paper:#F6F2E8; --leaf:#FBF8F1; --ink:#16140F; --ink-2:#4A453A; --ink-3:#7C7466;
+      --rule:#D8D1C0; --rule-2:#BFB6A0; --accent:#A8142B; --mark:#F6DCC8;
+      --display:"Prata", Georgia, "Times New Roman", serif;
+      --body:"Lora", Georgia, "Times New Roman", serif;
+      --law:"Noto Serif Armenian","Sylfaen",Georgia,serif;
+    }
+    .ed * { box-sizing: border-box; }
+    a { color: var(--accent); } a:hover { color: var(--accent); }
+    .ex:hover { background: var(--leaf); }
+    .ex:hover .exn { color: var(--accent); }
+    .reg:hover { background: var(--paper); }
+    .act:hover { color: var(--accent); border-bottom-color: var(--accent); }
+    .col::-webkit-scrollbar { width: 9px; }
+    .col::-webkit-scrollbar-thumb { background: var(--rule); border-radius: 5px; }
+  </style>
+</helmet>
+
+<div class="ed" style="background: var(--paper); color: var(--ink); font-family: var(--body); font-size: 15px; line-height: 1.6; width: 1440px; height: 980px; display: flex; flex-direction: column; overflow: hidden;">
+
+  <header style="flex: 0 0 auto; padding: 18px 44px 0;">
+    <div style="display: flex; align-items: baseline; gap: 20px;">
+      <span style="font-family: var(--display); font-size: 25px; letter-spacing: 0.01em;">ArmLex</span>
+      <span style="font-size: 12.5px; font-style: italic; color: var(--ink-3);">справочник по налоговому и трудовому законодательству Республики Армения</span>
+      <span style="flex: 1;"></span>
+      <sc-for list="{{modes}}" as="m" hint-placeholder-count="3">
+        <button onClick="{{m.pick}}" style="{{m.style}}">{{m.label}}</button>
+      </sc-for>
+    </div>
+    <div style="display: flex; align-items: baseline; gap: 26px; margin-top: 10px; padding-bottom: 9px; font-size: 11.5px; letter-spacing: 0.14em; text-transform: uppercase; color: var(--ink-3);">
+      <span>Издание сверено с ARLIS 23 · VIII · 2026</span>
+      <span>21 акт</span>
+      <span>1190 фрагментов</span>
+      <span style="flex: 1;"></span>
+      <span style="color: var(--accent);">Не юридическая консультация</span>
+    </div>
+    <div style="border-top: 2px solid var(--ink); height: 3px; border-bottom: 1px solid var(--ink);"></div>
+  </header>
+
+  <div style="display: grid; grid-template-columns: 250px 1px minmax(0, 1fr) 1px minmax(0, 400px); flex: 1; min-height: 0;">
+
+    <!-- The register of past consultations, set as a printed index rather than
+         a sidebar of buttons. -->
+    <nav class="col" style="overflow-y: auto; padding: 22px 20px 20px 44px;">
+      <div style="font-size: 11px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--ink-3); margin-bottom: 6px;">Реестр консультаций</div>
+      <div style="border-top: 1px solid var(--ink); margin-bottom: 4px;"></div>
+      <sc-for list="{{sessions}}" as="s" hint-placeholder-count="5">
+        <button class="reg" style="{{s.style}}">
+          <span style="display: flex; align-items: baseline; gap: 8px; width: 100%;">
+            <span style="font-size: 13.5px; line-height: 1.4; text-align: left; flex: 1;">{{s.q}}</span>
+            <span style="font-size: 11px; font-style: italic; color: var(--ink-3); flex: 0 0 auto;">{{s.when}}</span>
+          </span>
+        </button>
+      </sc-for>
+      <button style="width: 100%; text-align: left; font-family: var(--body); font-size: 12px; letter-spacing: 0.1em; text-transform: uppercase; padding: 12px 0 0; margin-top: 8px; border: 0; border-top: 1px solid var(--rule); background: none; color: var(--accent); cursor: pointer;">Новая консультация</button>
+    </nav>
+
+    <div style="background: var(--rule-2);"></div>
+
+    <section style="display: flex; flex-direction: column; min-width: 0; overflow-y: auto; padding: 0 40px;">
+      <div style="max-width: 60ch; padding: 40px 0 0;">
+
+        <h1 style="font-family: var(--display); font-size: 34px; line-height: 1.28; font-weight: 400; margin: 0 0 16px; letter-spacing: 0.005em;">Задайте вопрос, затем уточняйте.</h1>
+        <p style="margin: 0 0 6px; font-size: 17px; line-height: 1.65; color: var(--ink-2);">Контекст сохраняется между сообщениями, поэтому можно описать ситуацию по частям, а затем попросить вывод по совокупности обсуждённого.</p>
+        <p style="margin: 0 0 30px; font-size: 14.5px; font-style: italic; line-height: 1.6; color: var(--ink-3);">Каждый ответ опирается только на текст найденных статей. Если нормы в корпусе нет, издание скажет об этом прямо, а не подберёт похожую.</p>
+
+        <div style="font-size: 11px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--ink-3); margin-bottom: 6px;">С чего начинают</div>
+        <div style="border-top: 1px solid var(--ink);"></div>
+
+        <!-- Examples set as a table of contents: numbered, ruled, and chosen to
+             show the corpus boundary rather than to flatter the retrieval. -->
+        <sc-for list="{{examples}}" as="e" hint-placeholder-count="5">
+          <button class="ex" onClick="{{e.pick}}" style="display: flex; align-items: baseline; gap: 14px; width: 100%; text-align: left; padding: 13px 8px 13px 0; border: 0; border-bottom: 1px solid var(--rule); background: none; color: var(--ink); font: inherit; font-family: var(--body); cursor: pointer;">
+            <span class="exn" style="flex: 0 0 20px; font-size: 12px; color: var(--ink-3);">{{e.n}}</span>
+            <span style="flex: 1; font-size: 15.5px; line-height: 1.45;" lang="{{e.lang}}">{{e.q}}</span>
+            <span style="font-size: 11px; font-style: italic; color: var(--ink-3); flex: 0 0 auto;">{{e.note}}</span>
+          </button>
+        </sc-for>
+      </div>
+
+      <div style="flex: 1; min-height: 28px;"></div>
+
+      <div style="position: sticky; bottom: 0; display: flex; gap: 12px; align-items: flex-end; padding: 14px 0 20px; background: var(--paper); border-top: 1px solid var(--rule-2); max-width: 60ch;">
+        <textarea rows="1" placeholder="Опишите ситуацию или задайте вопрос…" style="flex: 1; resize: none; min-height: 46px; padding: 12px 13px; font: inherit; font-family: var(--body); font-size: 15px; line-height: 1.5; border: 1px solid var(--rule-2); border-radius: 0; background: var(--leaf); color: var(--ink);">{{draft}}</textarea>
+        <button style="padding: 13px 22px; font-family: var(--body); font-size: 13px; font-weight: 600; letter-spacing: 0.1em; text-transform: uppercase; cursor: pointer; border: 0; background: var(--ink); color: var(--paper);">Отправить</button>
+      </div>
+    </section>
+
+    <div style="background: var(--rule-2);"></div>
+
+    <!-- Dead space in the current empty state becomes the statement of what the
+         corpus actually holds — the thing a professional needs before trusting it. -->
+    <aside class="col" style="overflow-y: auto; min-width: 0; padding: 22px 44px 24px 28px; background: var(--leaf);">
+      <div style="font-family: var(--display); font-size: 17px; margin-bottom: 5px;">Состав издания</div>
+      <div style="border-top: 1px solid var(--ink); margin-bottom: 12px;"></div>
+
+      <sc-for list="{{corpus}}" as="k" hint-placeholder-count="4">
+        <div style="margin-bottom: 16px;">
+          <div style="display: flex; align-items: baseline; gap: 8px;">
+            <span style="font-size: 14px; font-weight: 600;">{{k.name}}</span>
+            <span style="flex: 1; border-bottom: 1px dotted var(--rule-2); transform: translateY(-3px);"></span>
+            <span style="font-size: 12px; font-variant-numeric: tabular-nums; color: var(--ink-3);">{{k.count}}</span>
+          </div>
+          <div style="font-size: 12.5px; font-style: italic; color: var(--ink-3); line-height: 1.5; margin-top: 3px;">{{k.note}}</div>
+        </div>
+      </sc-for>
+
+      <div style="border-top: 1px solid var(--rule); padding-top: 14px; margin-top: 4px;">
+        <div style="font-size: 11px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--ink-3); margin-bottom: 7px;">Вне корпуса</div>
+        <p style="margin: 0; font-size: 12.5px; font-style: italic; line-height: 1.6; color: var(--ink-3);">Судебная практика, гражданское право, разъяснения в форме писем. Вопрос из этих областей получит честный отказ, а не приблизительный ответ.</p>
+      </div>
+    </aside>
+
+  </div>
+</div>
+</x-dc>
+
+<script data-dc-script data-props='{"$preview":{"width":1440,"height":980}}'>
+class Component extends DCLogic {
+  constructor(props) {
+    super(props);
+    this.state = { mode: 'chat', draft: '' };
+  }
+
+  renderVals() {
+    const modeBase = 'font-family: var(--body); font-size: 12px; letter-spacing: 0.1em; text-transform: uppercase; padding: 4px 0 3px; margin-left: 18px; border: 0; border-bottom: 2px solid transparent; background: none; cursor: pointer;';
+    const regBase = 'display: block; width: 100%; text-align: left; padding: 10px 6px 10px 0; border: 0; border-bottom: 1px solid var(--rule); background: none; color: var(--ink); font: inherit; font-family: var(--body); cursor: pointer;';
+
+    return {
+      draft: this.state.draft,
+      modes: ['Диалог', 'Разовый', 'Поиск'].map((label, i) => {
+        const key = ['chat', 'ask', 'search'][i];
+        return {
+          label,
+          pick: () => this.setState({ mode: key }),
+          style: this.state.mode === key
+            ? modeBase + ' color: var(--ink); border-bottom-color: var(--accent);'
+            : modeBase + ' color: var(--ink-3);',
+        };
+      }),
+      // Deliberately spread across the corpus rather than chosen to flatter it:
+      // one clean tax question, one colloquial, one transliterated, one labour.
+      examples: [
+        { n: 'I', q: 'Какая ставка НДС в Армении?', lang: 'ru', note: 'прямая норма' },
+        { n: 'II', q: 'ես բուդկա եմ ուզում բացել', lang: 'hy', note: 'разговорный' },
+        { n: 'III', q: 'es uzum em pokr xanut bacel', lang: 'ru', note: 'латиница' },
+        { n: 'IV', q: 'Какой оборот считается пределом для микропредпринимательства?', lang: 'ru', note: 'порог' },
+        { n: 'V', q: 'Отпускные при увольнении в середине месяца', lang: 'ru', note: 'трудовое' },
+      ].map((e) => ({ ...e, pick: () => this.setState({ draft: e.q }) })),
+      sessions: [
+        { q: 'Оборот вырос до 130 млн — НДС', when: '23 · VIII', style: regBase },
+        { q: 'Микропредприятие: исключённые виды', when: '22 · VIII', style: regBase },
+        { q: 'Аренда у физлица — налог у источника', when: '21 · VIII', style: regBase },
+        { q: 'Отпускные при увольнении', when: '19 · VIII', style: regBase },
+        { q: 'Сроки камеральной проверки', when: '14 · VIII', style: regBase },
+      ],
+      corpus: [
+        { name: 'Налоговый кодекс', count: '902 фр.', note: 'полный текст, ред. 01.07.2026' },
+        { name: 'Трудовой кодекс', count: '288 фр.', note: '288 статей, с 23.08.2026' },
+        { name: 'Решения Правительства', count: '14 актов', note: 'по налоговому администрированию' },
+        { name: 'Приказы КГД', count: '5 актов', note: 'формы и порядок представления' },
+      ],
+    };
+  }
+}
+</script>
+</body>
+</html>

@@ -1,0 +1,225 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Serif+Armenian:wght@400;600;700&family=Source+Serif+4:opsz,wght@8..60,400;8..60,600&display=swap">
+  <style>
+    body { margin: 0; }
+    .app { --bg:#FFFFFF; --card:#FFFFFF; --sunk:#F5F5F4; --fg:#191817; --muted:#75726D;
+           --line:#EAE8E4; --accent:#C41E3A; --accent-bg:#FCEAEE; --warn-fg:#8E1B2E;
+           --warn-bg:#FBE4E8; --mark:#FDE0E6;
+           --sans: ui-sans-serif, system-ui, "Segoe UI", Roboto, "Helvetica Neue", sans-serif;
+           --serif: "Source Serif 4", Georgia, "Times New Roman", serif;
+           --law: "Noto Serif Armenian", "Sylfaen", Georgia, serif; }
+    .app[data-theme="dark"] { --bg:#111110; --card:#191917; --sunk:#222220; --fg:#EAE8E4;
+           --muted:#98948C; --line:#2C2B28; --accent:#FF6B84; --accent-bg:#3A1620;
+           --warn-fg:#FF8FA3; --warn-bg:#3F1722; --mark:#5E2130; }
+    .app * { box-sizing: border-box; }
+    a { color: var(--accent); } a:hover { color: var(--accent); }
+    .cit:hover { background: var(--accent); color: #fff; border-bottom-color: transparent; }
+    .btn:hover { border-color: var(--accent); color: var(--accent); }
+    .ghost:hover { color: var(--fg); }
+    mark { background: var(--mark); color: inherit; padding: 0 1px; border-radius: 2px; }
+    .sheet::-webkit-scrollbar { width: 8px; }
+    .sheet::-webkit-scrollbar-thumb { background: var(--line); border-radius: 4px; }
+  </style>
+</helmet>
+
+<div class="app" data-theme="{{theme}}" style="position: relative; background: var(--bg); color: var(--fg); font-family: var(--sans); font-size: 15px; line-height: 1.5; width: 1440px; height: 980px; overflow: hidden;">
+
+  <!-- Almost no chrome. Provenance is one quiet line; navigation is one button;
+       mode and settings live behind them. The screen is for reading. -->
+  <header style="display: flex; align-items: center; gap: 14px; padding: 0 22px; height: 46px; flex: 0 0 auto;">
+    <button class="ghost" style="display: inline-flex; align-items: center; justify-content: center; padding: 6px 8px; border: 0; border-radius: 5px; background: none; color: var(--muted); cursor: pointer;" title="Консультации">
+      <svg width="17" height="17" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><path d="M3 5.5h14M3 10h14M3 14.5h14"></path></svg>
+    </button>
+    <span style="font-family: var(--serif); font-weight: 600; font-size: 16px; letter-spacing: -0.01em;">ArmLex</span>
+    <span style="flex: 1;"></span>
+    <span style="font-size: 11.5px; color: var(--muted); font-variant-numeric: tabular-nums;">сверено с ARLIS 23.08.2026</span>
+    <div style="display: inline-flex; gap: 2px;">
+      <button class="ghost" onClick="{{themeLight.pick}}" style="{{themeLight.style}}" title="Светлая">
+        <svg width="16" height="16" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="10" cy="10" r="3.4"></circle><path d="M10 1.6v2M10 16.4v2M18.4 10h-2M3.6 10h-2M15.9 4.1l-1.4 1.4M5.5 14.5l-1.4 1.4M15.9 15.9l-1.4-1.4M5.5 5.5L4.1 4.1"></path></svg>
+      </button>
+      <button class="ghost" onClick="{{themeDark.pick}}" style="{{themeDark.style}}" title="Тёмная">
+        <svg width="16" height="16" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M16.5 12.2A7 7 0 0 1 7.8 3.5a7 7 0 1 0 8.7 8.7z"></path></svg>
+      </button>
+    </div>
+  </header>
+
+  <div style="height: 934px; overflow-y: auto; display: flex; justify-content: center; padding: 0 32px;">
+    <div style="width: 100%; max-width: 720px; padding: 26px 0 40px;">
+
+      <div style="font-family: var(--serif); font-size: 25px; line-height: 1.32; font-weight: 600; letter-spacing: -0.012em; margin-bottom: 6px;">Оборот вырос до 130 млн драмов в сентябре. С какого момента я плательщик НДС и с какой суммы считать налог?</div>
+      <div style="font-size: 12px; color: var(--muted); font-variant-numeric: tabular-nums; margin-bottom: 26px;">23.08.2026 · 4 статьи прочитано · искали «превышение порога 115 млн, база исчисления»</div>
+
+      <div style="border-top: 1px solid var(--line); padding-top: 24px; font-family: var(--serif); font-size: 18px; line-height: 1.62;">
+
+        <p style="margin: 0 0 18px;">НДС исчисляется и уплачивается только с части оборота, превышающей 115 млн драмов, — не со всей суммы. Плательщиком НДС вы становитесь с того момента налогового года, с которого перестаёте считаться плательщиком налога с оборота <button class="cit" onClick="{{c59.pick}}" style="{{c59.style}}" lang="hy">Հոդված 59</button>.</p>
+
+        <p style="margin: 0 0 18px;">Оборот 130 млн превышает порог на 15 млн — налог считается с этих 15 млн. Порог берётся по всем видам деятельности вместе, включая освобождённые от НДС операции <button class="cit" onClick="{{c254.pick}}" style="{{c254.style}}" lang="hy">Հոդված 254</button>. Заявление в налоговый орган подаётся в течение 20 дней со дня наступления основания.</p>
+
+        <div style="margin: 22px 0; padding: 14px 16px 15px; border-left: 3px solid var(--warn-fg); background: var(--warn-bg); color: var(--warn-fg); border-radius: 0 5px 5px 0; font-family: var(--sans); font-size: 14px; line-height: 1.55;">
+          <div style="font-size: 10.5px; text-transform: uppercase; letter-spacing: 0.11em; font-weight: 700; margin-bottom: 6px;">Проверьте прежде чем опираться</div>
+          Ст. 59 ч. 2 устанавливает иной порядок для некоммерческих организаций и производителей сельхозпродукции — этот случай в найденных статьях не раскрыт. Двадцатидневный срок не восстанавливается: просрочка не отменяет статуса плательщика, но влечёт ответственность.
+        </div>
+
+        <p style="margin: 0 0 18px;">Смежное, если вы рассматривали микропредпринимательство: переход на НДС в течение года исключает статус субъекта микропредпринимательства на тот же год <button class="cit" onClick="{{c267.pick}}" style="{{c267.style}}" lang="hy">Հոդված 267</button>.</p>
+      </div>
+
+      <!-- The one action that ends the job. Everything else is reading. -->
+      <div style="display: flex; align-items: center; gap: 10px; margin-top: 30px; padding-top: 16px; border-top: 1px solid var(--line);">
+        <button style="display: inline-flex; align-items: center; gap: 8px; font: inherit; font-size: 14px; font-weight: 600; padding: 9px 16px; border: 1px solid var(--accent); border-radius: 6px; background: var(--accent); color: #fff; cursor: pointer;">
+          <svg width="16" height="16" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M11.5 2.5H6.2A1.7 1.7 0 0 0 4.5 4.2v11.6a1.7 1.7 0 0 0 1.7 1.7h7.6a1.7 1.7 0 0 0 1.7-1.7V6.5l-4-4z"></path><path d="M11.5 2.5v4h4M7.5 11h5M7.5 14h3.5"></path></svg>
+          Скопировать памятку
+        </button>
+        <button class="btn" style="font: inherit; font-size: 14px; padding: 9px 14px; border: 1px solid var(--line); border-radius: 6px; background: var(--card); color: var(--fg); cursor: pointer;">Все 4 статьи</button>
+        <span style="flex: 1;"></span>
+        <span style="font-size: 12px; color: var(--muted);">Не юридическая консультация — проверяйте полный текст</span>
+      </div>
+
+      <div style="margin-top: 34px; display: flex; gap: 9px; align-items: flex-end;">
+        <textarea rows="1" placeholder="Уточнить…" style="flex: 1; resize: none; min-height: 46px; padding: 12px 14px; font: inherit; font-size: 15px; line-height: 1.45; border: 1px solid var(--line); border-radius: 8px; background: var(--card); color: var(--fg);"></textarea>
+        <button style="padding: 12px 20px; font: inherit; font-weight: 600; cursor: pointer; border: 1px solid var(--line); border-radius: 8px; background: var(--sunk); color: var(--fg);">Отправить</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- The provision arrives as a sheet over the reading column, and leaves.
+       Nothing occupies screen width permanently to hold something you look at
+       for thirty seconds. -->
+  <sc-if value="{{sheetOpen}}" hint-placeholder-val="{{true}}">
+    <div style="position: absolute; inset: 0;">
+      <button onClick="{{closeSheet}}" style="position: absolute; inset: 0; border: 0; background: rgba(20, 18, 16, 0.32); cursor: pointer;"></button>
+      <aside class="sheet" style="position: absolute; top: 0; right: 0; bottom: 0; width: 560px; background: var(--card); border-left: 1px solid var(--line); box-shadow: -18px 0 44px rgba(20, 18, 16, 0.14); overflow-y: auto; padding: 20px 26px 32px;">
+        <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 16px;">
+          <span style="font-size: 10.5px; text-transform: uppercase; letter-spacing: 0.11em; color: var(--muted); font-weight: 700;">Норма</span>
+          <span style="flex: 1;"></span>
+          <span style="font-size: 11.5px; color: var(--muted);">Esc</span>
+          <button class="ghost" onClick="{{closeSheet}}" style="display: inline-flex; align-items: center; justify-content: center; padding: 5px 7px; border: 0; border-radius: 5px; background: none; color: var(--muted); cursor: pointer;" title="Закрыть">
+            <svg width="16" height="16" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><path d="M5 5l10 10M15 5L5 15"></path></svg>
+          </button>
+        </div>
+
+        <div style="display: flex; align-items: baseline; gap: 9px; flex-wrap: wrap;">
+          <span lang="hy" style="font-family: var(--law); font-size: 23px; font-weight: 700; letter-spacing: -0.015em;">{{sheet.ref}}</span>
+          <span style="display: inline-flex; align-items: center; gap: 4px; font-size: 10.5px; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; padding: 2px 7px 2px 5px; border-radius: 3px; background: var(--accent-bg); color: var(--accent);">
+            <svg width="12" height="12" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="10" cy="10" r="7"></circle><path d="M6.8 10.2l2.2 2.2 4.2-4.6"></path></svg>
+            Действует
+          </span>
+          <span style="{{sheet.revStyle}}">Ред. {{sheet.amended}}</span>
+        </div>
+        <div lang="hy" style="font-family: var(--law); font-size: 14px; color: var(--muted); margin-top: 5px;">{{sheet.title}} · ՀՀ հարկային օրենսգիրք</div>
+
+        <div style="display: flex; gap: 22px; margin: 16px 0; padding: 11px 0; border-block: 1px solid var(--line); font-size: 12px;">
+          <div><div style="color: var(--muted); font-size: 10.5px; text-transform: uppercase; letter-spacing: 0.08em;">Принят</div><div style="font-variant-numeric: tabular-nums; font-weight: 650; margin-top: 2px;">04.10.2016</div></div>
+          <div><div style="color: var(--muted); font-size: 10.5px; text-transform: uppercase; letter-spacing: 0.08em;">Ред. от</div><div style="font-variant-numeric: tabular-nums; font-weight: 650; margin-top: 2px;">{{sheet.amended}}</div></div>
+          <div><div style="color: var(--muted); font-size: 10.5px; text-transform: uppercase; letter-spacing: 0.08em;">Сверено</div><div style="font-variant-numeric: tabular-nums; font-weight: 650; margin-top: 2px;">23.08.2026</div></div>
+        </div>
+
+        <div lang="hy" style="font-family: var(--law); font-size: 15px; line-height: 1.72; white-space: pre-wrap; overflow-wrap: anywhere;"><span>{{sheet.before}}</span><mark>{{sheet.mark}}</mark><span>{{sheet.after}}</span></div>
+
+        <div style="display: flex; gap: 8px; margin: 20px 0 0; flex-wrap: wrap;">
+          <button class="btn" style="font: inherit; font-size: 13px; font-weight: 600; padding: 8px 13px; border: 1px solid var(--line); border-radius: 5px; background: var(--card); color: var(--fg); cursor: pointer;">Скопировать цитату</button>
+          <a class="btn" href="#" style="display: inline-flex; align-items: center; gap: 6px; font-size: 13px; padding: 8px 13px; border: 1px solid var(--line); border-radius: 5px; background: var(--card); color: var(--fg); text-decoration: none;">
+            ARLIS
+            <svg width="14" height="14" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M11 3.5h5.5V9M16.5 3.5L9 11"></path><path d="M14 12v3.2a1.3 1.3 0 0 1-1.3 1.3H4.8a1.3 1.3 0 0 1-1.3-1.3V7.3A1.3 1.3 0 0 1 4.8 6H8"></path></svg>
+          </a>
+        </div>
+
+        <div style="font-size: 10.5px; text-transform: uppercase; letter-spacing: 0.11em; color: var(--muted); font-weight: 700; margin: 24px 0 10px;">Ссылается на</div>
+        <div style="display: flex; flex-wrap: wrap; gap: 6px;">
+          <sc-for list="{{sheet.refs}}" as="r" hint-placeholder-count="3">
+            <button onClick="{{r.pick}}" class="btn" lang="hy" style="font-family: var(--law); font-size: 12.5px; padding: 4px 11px; border: 1px solid var(--line); border-radius: 12px; background: var(--card); color: var(--fg); cursor: pointer;">{{r.ref}}</button>
+          </sc-for>
+        </div>
+      </aside>
+    </div>
+  </sc-if>
+
+</div>
+</x-dc>
+
+<script data-dc-script data-props='{"theme":{"editor":"enum","options":["light","dark"],"default":"light","section":"Theme"},"$preview":{"width":1440,"height":980}}'>
+class Component extends DCLogic {
+  constructor(props) {
+    super(props);
+    this.state = { sheet: null, themeSel: null };
+  }
+
+  data() {
+    return {
+      '59': {
+        ref: 'Հոդված 59', title: 'Ավելացված արժեքի հարկ վճարողները', amended: '01.07.2026', recent: true,
+        before: '1. ԱԱՀ վճարողներ են համարվում … հետևյալ դեպքերում և ժամկետներում.\n\n5) հարկային տարվա այն պահից մինչև տվյալ հարկային տարվա ավարտը, որ պահից հարկ վճարողը Օրենսգրքի 13-րդ բաժնի համաձայն, տվյալ հարկային տարում դադարում է համարվել շրջանառության հարկ վճարող: Ընդ որում, ',
+        mark: 'հարկային տարվա ընթացքում գործունեության բոլոր տեսակների մասով իրացման շրջանառության 115 միլիոն դրամի շեմը (այսուհետ նաև՝ ԱԱՀ-ի շեմ) գերազանցելու հիմքով ԱԱՀ վճարող համարվելու դեպքում ԱԱՀ-ն հաշվարկվում և վճարվում է ԱԱՀ-ի շեմը գերազանցող մասով',
+        after: ': Շրջանառության հարկ վճարող համարվելուց դադարելու հիմքերից որևէ մեկը տեղի ունենալու օրվանից մինչև այդ օրվան հաջորդող 20-րդ օրը ներառյալ հարկ վճարողը հարկային մարմին է ներկայացնում հայտարարություն` նշելով շրջանառության հարկ վճարող համարվելուց դադարելու համապատասխան հիմքը և օրը:',
+        refs: ['254', '267', '64'],
+      },
+      '254': {
+        ref: 'Հոդված 254', title: 'Շրջանառության հարկ վճարողները', amended: '05.2022', recent: false,
+        before: '2. Շրջանառության հարկ վճարող համարվելու համար ',
+        mark: 'իրացման շրջանառությունը հաշվարկվում է գործունեության բոլոր տեսակների մասով՝ ներառյալ ԱԱՀ-ից ազատված և ԱԱՀ-ով հարկման օբյեկտ չհամարվող գործարքները',
+        after: ':\n\n3. Հարկ վճարողը դադարում է համարվել շրջանառության հարկ վճարող այն պահից, երբ տվյալ հարկային տարվա ընթացքում գործունեության բոլոր տեսակների մասով իրացման շրջանառությունը գերազանցում է 115 միլիոն դրամը:',
+        refs: ['59', '267'],
+      },
+      '267': {
+        ref: 'Հոդված 267', title: 'Միկրոձեռնարկատիրության սուբյեկտները', amended: '11.2021', recent: false,
+        before: '1. Սույն հոդվածի 3-րդ մասով սահմանված պայմանը բավարարող ռեզիդենտ առևտրային կազմակերպությունները և անհատ ձեռնարկատերերը միկրոձեռնարկատիրության սուբյեկտներ են համարվում.\n\n1) տվյալ հարկային տարվա հունվարի 1-ից մինչև տվյալ հարկային տարվա ավարտը (բացառությամբ ',
+        mark: 'Օրենսգրքի 254-րդ հոդվածով սահմանված` հարկային տարվա ընթացքում շրջանառության հարկ վճարող համարվելու կամ Օրենսգրքի 59-րդ հոդվածով սահմանված` հարկային տարվա ընթացքում ԱԱՀ վճարող համարվելու դեպքերի',
+        after: '), եթե հարկ վճարողը մինչև տվյալ հարկային տարվա փետրվարի 20-ը ներառյալ հարկային մարմին է ներկայացրել հարկային մարմնի հաստատած ձևով՝ միկրոձեռնարկատիրության սուբյեկտ համարվելու վերաբերյալ հայտարարություն:',
+        refs: ['59', '254'],
+      },
+      '64': {
+        ref: 'Հոդված 64', title: 'ԱԱՀ-ից ազատված գործարքները', amended: '06.2019', recent: false,
+        before: '1. ԱԱՀ-ից ազատվում են հետևյալ գործարքները և գործառնությունները.\n\n',
+        mark: '1) կրթական հաստատությունների կողմից մատուցվող կրթական ծառայությունները, ինչպես նաև ուսումնական տետրերի, մանկական և դպրոցական գրականության իրացումը',
+        after: '.\n\n2) գիտահետազոտական աշխատանքների կատարումը:',
+        refs: ['59'],
+      },
+    };
+  }
+
+  cit(id) {
+    const base = 'font-family: var(--law); font-size: 14.5px; font-weight: 600; padding: 1px 7px 2px; border: 0; border-bottom: 2px solid var(--accent-bg); border-radius: 3px; cursor: pointer; white-space: nowrap;';
+    return {
+      pick: () => this.setState({ sheet: id }),
+      style: this.state.sheet === id
+        ? base + ' background: var(--accent); color: #fff;'
+        : base + ' background: var(--accent-bg); color: var(--accent);',
+    };
+  }
+
+  renderVals() {
+    const theme = this.state.themeSel ?? this.props.theme ?? 'light';
+    const D = this.data();
+    const cur = this.state.sheet ? D[this.state.sheet] : null;
+    const swBase = 'display: inline-flex; align-items: center; justify-content: center; padding: 6px 8px; border: 0; border-radius: 5px; background: none; cursor: pointer;';
+
+    return {
+      theme,
+      sheetOpen: !!cur,
+      sheet: cur
+        ? {
+            ...cur,
+            revStyle: 'font-size: 10.5px; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; padding: 2px 7px; border-radius: 3px; '
+              + (cur.recent ? 'background: var(--warn-bg); color: var(--warn-fg);' : 'background: var(--sunk); color: var(--muted);'),
+            refs: cur.refs.map((id) => ({ ref: D[id].ref, pick: () => this.setState({ sheet: id }) })),
+          }
+        : { ref: '', title: '', amended: '', before: '', mark: '', after: '', refs: [], revStyle: '' },
+      closeSheet: () => this.setState({ sheet: null }),
+      c59: this.cit('59'),
+      c254: this.cit('254'),
+      c267: this.cit('267'),
+      themeLight: { style: swBase + (theme === 'light' ? ' color: var(--fg);' : ' color: var(--muted);'), pick: () => this.setState({ themeSel: 'light' }) },
+      themeDark: { style: swBase + (theme === 'dark' ? ' color: var(--fg);' : ' color: var(--muted);'), pick: () => this.setState({ themeSel: 'dark' }) },
+    };
+  }
+}
+</script>
+</body>
+</html>

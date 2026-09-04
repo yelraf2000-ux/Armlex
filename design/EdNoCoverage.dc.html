@@ -1,0 +1,190 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Prata&family=Lora:ital,wght@0,400;0,500;0,600;1,400&family=Noto+Serif+Armenian:wght@400;600;700&display=swap">
+  <style>
+    body { margin: 0; }
+    .ed {
+      --paper:#F6F2E8; --leaf:#FBF8F1; --ink:#16140F; --ink-2:#4A453A; --ink-3:#7C7466;
+      --rule:#D8D1C0; --rule-2:#BFB6A0; --accent:#A8142B; --accent-bg:#F2E2E2; --mark:#F6DCC8;
+      --display:"Prata", Georgia, "Times New Roman", serif;
+      --body:"Lora", Georgia, "Times New Roman", serif;
+      --law:"Noto Serif Armenian","Sylfaen",Georgia,serif;
+    }
+    .ed * { box-sizing: border-box; }
+    a { color: var(--accent); } a:hover { color: var(--accent); }
+    .entry:hover { background: var(--paper); }
+    .act:hover { color: var(--accent); border-bottom-color: var(--accent); }
+    mark { background: var(--mark); color: inherit; padding: 0 2px; }
+    .col::-webkit-scrollbar { width: 9px; }
+    .col::-webkit-scrollbar-thumb { background: var(--rule); border-radius: 5px; }
+  </style>
+</helmet>
+
+<div class="ed" style="background: var(--paper); color: var(--ink); font-family: var(--body); font-size: 15px; line-height: 1.6; width: 1440px; height: 980px; display: flex; flex-direction: column; overflow: hidden;">
+
+  <header style="flex: 0 0 auto; padding: 18px 44px 0;">
+    <div style="display: flex; align-items: baseline; gap: 20px;">
+      <span style="font-family: var(--display); font-size: 25px; letter-spacing: 0.01em;">ArmLex</span>
+      <span style="font-size: 12.5px; font-style: italic; color: var(--ink-3);">справочник по налоговому и трудовому законодательству Республики Армения</span>
+      <span style="flex: 1;"></span>
+      <span style="font-size: 12px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--ink); border-bottom: 2px solid var(--accent); padding-bottom: 3px;">Диалог</span>
+      <span style="font-size: 12px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--ink-3); margin-left: 18px;">Разовый</span>
+      <span style="font-size: 12px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--ink-3); margin-left: 18px;">Поиск</span>
+    </div>
+    <div style="display: flex; align-items: baseline; gap: 26px; margin-top: 10px; padding-bottom: 9px; font-size: 11.5px; letter-spacing: 0.14em; text-transform: uppercase; color: var(--ink-3);">
+      <span>Издание сверено с ARLIS 23 · VIII · 2026</span>
+      <span>21 акт</span>
+      <span>1190 фрагментов</span>
+      <span style="flex: 1;"></span>
+      <span style="color: var(--accent);">Не юридическая консультация</span>
+    </div>
+    <div style="border-top: 2px solid var(--ink); height: 3px; border-bottom: 1px solid var(--ink);"></div>
+  </header>
+
+  <div style="display: grid; grid-template-columns: minmax(0, 1fr) 1px minmax(0, 540px); flex: 1; min-height: 0;">
+
+    <section style="display: flex; flex-direction: column; min-width: 0; overflow-y: auto; padding: 0 44px;">
+      <div style="max-width: 62ch; padding: 26px 0 0;">
+
+        <div style="font-size: 11px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--ink-3); margin-bottom: 10px;">Вопрос</div>
+        <h1 style="font-family: var(--display); font-size: 27px; line-height: 1.34; font-weight: 400; margin: 0 0 22px;">Налоговая доначислила НДС за прошлый год. Можно ли оспорить это в суде и в какой срок?</h1>
+
+        <div style="border-top: 1px solid var(--rule-2); padding-top: 22px;">
+
+          <!--
+            The `none` case, given the weight it deserves. This is the state that
+            makes the whole tool trustworthy: the corpus does not hold procedural
+            or court material, and saying so plainly is the correct answer — not
+            a paragraph assembled from whatever ranked highest.
+          -->
+          <div style="border: 1px solid var(--accent); background: var(--accent-bg); padding: 20px 24px 18px; margin-bottom: 26px;">
+            <div style="font-size: 11px; letter-spacing: 0.18em; text-transform: uppercase; color: var(--accent); margin-bottom: 10px;">Прямой нормы не найдено</div>
+            <p style="margin: 0 0 12px; font-family: var(--display); font-size: 21px; line-height: 1.42; font-weight: 400;">В корпусе нет положения, отвечающего на этот вопрос.</p>
+            <p style="margin: 0; font-size: 15px; line-height: 1.62; color: var(--ink-2);">Порядок и сроки судебного обжалования решений налогового органа регулируются процессуальным законодательством и административным судопроизводством. Ни то, ни другое в издание не входит — здесь только материальные нормы налогового и трудового права.</p>
+          </div>
+
+          <div style="font-size: 11px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--ink-3); margin-bottom: 8px;">Что можно сделать</div>
+          <ul style="margin: 0 0 26px; padding-left: 20px; line-height: 1.68;">
+            <li style="margin: 6px 0;">Спросить о <em style="font-style: italic;">материальном</em> основании доначисления — по какой статье оно рассчитано и правильна ли база. На это издание отвечает.</li>
+            <li style="margin: 6px 0;">Обратиться к Административному процессуальному кодексу и Закону об основах администрирования — они не входят в корпус, ссылка на ARLIS ниже.</li>
+          </ul>
+
+          <div style="border-top: 1px solid var(--rule-2); padding-top: 18px;">
+            <div style="font-size: 11px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--ink-3); margin-bottom: 8px;">Смежное, но не основание</div>
+            <p style="margin: 0; font-size: 14.5px; font-style: italic; line-height: 1.65; color: var(--ink-2);">Справа — статьи, найденные по предмету (НДС), а не по вопросу (обжалование). Они показаны, чтобы было видно, что именно искалось, и не должны читаться как ответ.</p>
+          </div>
+
+          <div style="margin: 26px 0 0; padding-top: 12px; border-top: 1px solid var(--rule); font-size: 12px; font-style: italic; color: var(--ink-3);">Поиск вёлся по запросу «обжалование доначисления НДС, срок обращения в суд». Лучший результат — 0.41, ниже порога уверенности.</div>
+        </div>
+      </div>
+
+      <div style="flex: 1; min-height: 26px;"></div>
+
+      <div style="position: sticky; bottom: 0; display: flex; gap: 12px; align-items: flex-end; padding: 14px 0 18px; background: var(--paper); border-top: 1px solid var(--rule-2); max-width: 62ch;">
+        <textarea rows="1" placeholder="Переформулируйте вопрос или спросите о материальном основании…" style="flex: 1; resize: none; min-height: 44px; padding: 11px 13px; font: inherit; font-family: var(--body); font-size: 15px; line-height: 1.5; border: 1px solid var(--rule-2); border-radius: 0; background: var(--leaf); color: var(--ink);"></textarea>
+        <button style="padding: 12px 22px; font-family: var(--body); font-size: 13px; font-weight: 600; letter-spacing: 0.1em; text-transform: uppercase; cursor: pointer; border: 0; background: var(--ink); color: var(--paper);">Отправить</button>
+      </div>
+    </section>
+
+    <div style="background: var(--rule-2);"></div>
+
+    <!-- The apparatus keeps its form but changes its claim: these are adjacent
+         provisions, and every entry says so. -->
+    <aside class="col" style="overflow-y: auto; min-width: 0; padding: 26px 40px 24px 32px; background: var(--leaf);">
+      <div style="display: flex; align-items: baseline; gap: 10px; margin-bottom: 5px;">
+        <span style="font-family: var(--display); font-size: 17px; color: var(--ink-2);">Смежные положения</span>
+        <span style="flex: 1;"></span>
+        <span style="font-size: 11px; font-style: italic; color: var(--accent);">не основание ответа</span>
+      </div>
+      <div style="border-top: 1px solid var(--rule-2); margin-bottom: 2px;"></div>
+
+      <sc-for list="{{cards}}" as="c" hint-placeholder-count="3">
+        <div style="{{c.wrap}}">
+          <button class="entry" onClick="{{c.toggle}}" style="display: flex; align-items: flex-start; gap: 12px; width: 100%; text-align: left; padding: 13px 0 7px; border: 0; background: none; color: var(--ink-2); font: inherit; font-family: var(--body); cursor: pointer;">
+            <span style="flex: 0 0 22px; font-size: 12px; color: var(--ink-3); padding-top: 4px;">{{c.n}}</span>
+            <span style="display: flex; flex-direction: column; gap: 3px; align-items: flex-start; min-width: 0; flex: 1;">
+              <span style="display: flex; align-items: baseline; gap: 9px; flex-wrap: wrap;">
+                <span lang="hy" style="font-family: var(--law); font-size: 16px; font-weight: 600; color: var(--ink-2);">{{c.ref}}</span>
+                <span style="font-size: 11px; font-style: italic; color: var(--ink-3);">ред. {{c.amended}}</span>
+              </span>
+              <span lang="hy" style="font-family: var(--law); font-size: 12.5px; color: var(--ink-3); text-align: left;">{{c.title}}</span>
+            </span>
+          </button>
+
+          <div style="padding-left: 34px; margin: 0 0 12px;">
+            <div style="font-size: 12.5px; font-style: italic; line-height: 1.6; color: var(--ink-3);">{{c.why}}</div>
+          </div>
+
+          <sc-if value="{{c.open}}" hint-placeholder-val="{{true}}">
+            <div style="padding-left: 34px;">
+              <div lang="hy" style="font-family: var(--law); font-size: 14.5px; line-height: 1.75; white-space: pre-wrap; overflow-wrap: anywhere; padding: 0 0 12px; color: var(--ink-2);">{{c.text}}</div>
+              <div style="display: flex; gap: 16px; flex-wrap: wrap; padding: 0 0 14px;">
+                <a class="act" href="#" style="font-family: var(--body); font-size: 12px; letter-spacing: 0.06em; padding: 0 0 1px; border: 0; border-bottom: 1px solid var(--rule-2); color: var(--ink-2); text-decoration: none;">Открыть в ARLIS</a>
+              </div>
+            </div>
+          </sc-if>
+        </div>
+      </sc-for>
+
+      <div style="border-top: 1px solid var(--ink); margin-top: 6px; padding-top: 16px;">
+        <div style="font-size: 11px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--ink-3); margin-bottom: 8px;">Вне корпуса</div>
+        <p style="margin: 0 0 12px; font-size: 12.5px; font-style: italic; line-height: 1.6; color: var(--ink-3);">Административный процессуальный кодекс · Закон об основах администрирования и административном производстве · судебная практика.</p>
+        <a class="act" href="#" style="font-family: var(--body); font-size: 12px; letter-spacing: 0.06em; padding: 0 0 1px; border-bottom: 1px solid var(--rule-2); color: var(--ink-2); text-decoration: none;">Искать на ARLIS напрямую</a>
+      </div>
+    </aside>
+
+  </div>
+</div>
+</x-dc>
+
+<script data-dc-script data-props='{"$preview":{"width":1440,"height":980}}'>
+class Component extends DCLogic {
+  constructor(props) {
+    super(props);
+    this.state = { open: {} };
+  }
+
+  data() {
+    return [
+      {
+        id: '59', n: '1', ref: 'Հոդված 59', title: 'Ավելացված արժեքի հարկ վճարողները', amended: '01.07.2026',
+        why: 'Определяет, кто и с какого момента считается плательщиком НДС. Ничего не говорит об обжаловании доначисления.',
+        text: '1. ԱԱՀ վճարողներ են համարվում … հետևյալ դեպքերում և ժամկետներում.\n\n5) հարկային տարվա այն պահից մինչև տվյալ հարկային տարվա ավարտը, որ պահից հարկ վճարողը Օրենսգրքի 13-րդ բաժնի համաձայն, տվյալ հարկային տարում դադարում է համարվել շրջանառության հարկ վճարող:',
+      },
+      {
+        id: '254', n: '2', ref: 'Հոդված 254', title: 'Շրջանառության հարկ վճարողները', amended: '05.2022',
+        why: 'Порядок расчёта оборота реализации — может относиться к основанию доначисления, но не к его оспариванию.',
+        text: '2. Շրջանառության հարկ վճարող համարվելու համար իրացման շրջանառությունը հաշվարկվում է գործունեության բոլոր տեսակների մասով՝ ներառյալ ԱԱՀ-ից ազատված և ԱԱՀ-ով հարկման օբյեկտ չհամարվող գործարքները:',
+      },
+      {
+        id: '64', n: '3', ref: 'Հոդված 64', title: 'ԱԱՀ-ից ազատված գործարքները', amended: '06.2019',
+        why: 'Перечень освобождённых операций. Найдено по слову «НДС», к вопросу отношения не имеет.',
+        text: '1. ԱԱՀ-ից ազատվում են հետևյալ գործարքները և գործառնությունները.\n\n1) կրթական հաստատությունների կողմից մատուցվող կրթական ծառայությունները, ինչպես նաև ուսումնական տետրերի, մանկական և դպրոցական գրականության իրացումը:',
+      },
+    ];
+  }
+
+  renderVals() {
+    return {
+      cards: this.data().map((d) => {
+        const open = !!this.state.open[d.id];
+        return {
+          ...d,
+          open,
+          toggle: () => this.setState({ open: { ...this.state.open, [d.id]: !open } }),
+          wrap: 'border-bottom: 1px solid var(--rule); padding-bottom: 2px;',
+        };
+      }),
+    };
+  }
+}
+</script>
+</body>
+</html>

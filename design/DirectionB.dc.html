@@ -1,0 +1,291 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Serif+Armenian:wght@400;600;700&display=swap">
+  <style>
+    body { margin: 0; }
+    .app { --bg:#F6F7F8; --card:#FFFFFF; --sunk:#EDEFF1; --fg:#17191C; --muted:#666C74;
+           --line:#E0E3E7; --accent:#C41E3A; --accent-bg:#FCEAEE; --warn-fg:#8E1B2E;
+           --warn-bg:#FBE4E8; --mark:#FDE0E6; --ok-fg:#166534; --ok-bg:#DCFCE7;
+           --sans: ui-sans-serif, system-ui, "Segoe UI", Roboto, "Helvetica Neue", sans-serif;
+           --law: "Noto Serif Armenian", "Sylfaen", Georgia, serif; }
+    .app[data-theme="dark"] { --bg:#101215; --card:#181A1E; --sunk:#21242A; --fg:#E7E9EC;
+           --muted:#959BA4; --line:#2C3037; --accent:#FF6B84; --accent-bg:#3A1620;
+           --warn-fg:#FF8FA3; --warn-bg:#3F1722; --mark:#5E2130; --ok-fg:#86EFAC; --ok-bg:#14301F; }
+    .app * { box-sizing: border-box; }
+    a { color: var(--accent); } a:hover { color: var(--accent); }
+    .marker:hover { background: var(--accent); color: #fff; }
+    .btn:hover { border-color: var(--accent); color: var(--accent); }
+    mark { background: var(--mark); color: inherit; padding: 0 1px; border-radius: 2px; }
+    .stack::-webkit-scrollbar { width: 9px; }
+    .stack::-webkit-scrollbar-thumb { background: var(--line); border-radius: 5px; }
+  </style>
+</helmet>
+
+<div class="app" data-theme="{{theme}}" style="background: var(--bg); color: var(--fg); font-family: var(--sans); font-size: 14px; line-height: 1.5; width: 1440px; height: 980px; display: flex; flex-direction: column; overflow: hidden;">
+
+  <header style="display: flex; align-items: center; gap: 16px; padding: 0 18px; height: 44px; border-bottom: 1px solid var(--line); background: var(--card); flex: 0 0 auto;">
+    <button style="display: inline-flex; align-items: center; justify-content: center; padding: 5px 7px; border: 1px solid var(--line); border-radius: 4px; background: var(--card); color: var(--muted); cursor: pointer;" title="Консультации">
+      <svg width="16" height="16" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><path d="M3 5.5h14M3 10h14M3 14.5h14"></path></svg>
+    </button>
+    <span style="font-weight: 700; font-size: 14px; letter-spacing: -0.01em;">ArmLex</span>
+    <span style="font-size: 12px; color: var(--muted); font-variant-numeric: tabular-nums;">21 акт · 1 190 фрагментов · ARLIS 23.08.2026</span>
+    <div style="display: inline-flex; border: 1px solid var(--line); border-radius: 5px; overflow: hidden;">
+      <sc-for list="{{modes}}" as="m" hint-placeholder-count="3">
+        <button onClick="{{m.pick}}" style="{{m.style}}">{{m.label}}</button>
+      </sc-for>
+    </div>
+    <span style="flex: 1;"></span>
+    <span style="font-size: 11.5px; color: var(--warn-fg);">Не юридическая консультация</span>
+    <div style="display: inline-flex; border: 1px solid var(--line); border-radius: 4px; overflow: hidden;">
+      <button onClick="{{themeLight.pick}}" style="{{themeLight.style}}" title="Светлая">
+        <svg width="15" height="15" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="10" cy="10" r="3.4"></circle><path d="M10 1.6v2M10 16.4v2M18.4 10h-2M3.6 10h-2M15.9 4.1l-1.4 1.4M5.5 14.5l-1.4 1.4M15.9 15.9l-1.4-1.4M5.5 5.5L4.1 4.1"></path></svg>
+      </button>
+      <button onClick="{{themeDark.pick}}" style="{{themeDark.style}}" title="Тёмная">
+        <svg width="15" height="15" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M16.5 12.2A7 7 0 0 1 7.8 3.5a7 7 0 1 0 8.7 8.7z"></path></svg>
+      </button>
+    </div>
+  </header>
+
+  <!-- Two columns, not three. The rail collapses to an overlay; the width it
+       used to hold goes to the evidence stack, which is where verification
+       actually happens. -->
+  <div style="display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 620px); flex: 1; min-height: 0;">
+
+    <section style="display: flex; flex-direction: column; overflow-y: auto; min-width: 0; padding: 0 30px;">
+
+      <div style="max-width: 66ch; padding: 24px 0 0;">
+        <div style="font-size: 10.5px; letter-spacing: 0.11em; text-transform: uppercase; color: var(--muted); font-weight: 700; margin-bottom: 6px;">Вопрос</div>
+        <div style="font-size: 16px; line-height: 1.45; font-weight: 500; margin-bottom: 22px;">Оборот вырос до 130 млн драмов в сентябре. С какого момента я плательщик НДС и с какой суммы считать налог?</div>
+
+        <div style="border-top: 1px solid var(--line); padding-top: 18px;">
+          <!--
+            Every legal claim carries a numbered marker bound to a card in the
+            evidence stack. Click a marker and the card it rests on opens and is
+            ringed; nothing else moves. This is the change: the answer stops
+            being prose with a bag of citations underneath it.
+          -->
+          <p style="margin: 0 0 16px; font-size: 16px; line-height: 1.6;">НДС исчисляется и уплачивается <strong style="font-weight: 650;">только с части оборота, превышающей 115 млн драмов</strong><button class="marker" onClick="{{m1.pick}}" style="{{m1.style}}">1</button>, — не со всей суммы. Плательщиком вы становитесь с момента, с которого перестаёте считаться плательщиком налога с оборота<button class="marker" onClick="{{m2.pick}}" style="{{m2.style}}">2</button>.</p>
+
+          <p style="margin: 0 0 12px; line-height: 1.6;">Оборот 130 млн превышает порог на 15 млн — налог считается с этих 15 млн. Порог берётся по всем видам деятельности вместе, включая освобождённые от НДС операции<button class="marker" onClick="{{m2.pick}}" style="{{m2.style}}">2</button>. Заявление в налоговый орган подаётся в течение 20 дней со дня наступления основания<button class="marker" onClick="{{m1.pick}}" style="{{m1.style}}">1</button>.</p>
+
+          <p style="margin: 0 0 12px; line-height: 1.6;">Если вы рассматривали микропредпринимательство: переход на НДС в течение налогового года исключает статус субъекта микропредпринимательства на тот же год<button class="marker" onClick="{{m3.pick}}" style="{{m3.style}}">3</button>.</p>
+
+          <div style="display: flex; gap: 10px; border-left: 3px solid var(--warn-fg); background: var(--warn-bg); color: var(--warn-fg); border-radius: 0 4px 4px 0; padding: 11px 13px; margin: 18px 0; font-size: 13.5px; line-height: 1.5;">
+            <svg width="18" height="18" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="flex: 0 0 auto; margin-top: 1px;"><path d="M10 3.2 2.8 15.6a1.2 1.2 0 0 0 1 1.8h12.4a1.2 1.2 0 0 0 1-1.8L10 3.2z"></path><path d="M10 7.8v3.6M10 14.2h.01"></path></svg>
+            <span><strong style="font-weight: 700;">Проверьте прежде чем опираться.</strong> Ст. 59 ч. 2 устанавливает иной порядок для некоммерческих организаций и производителей сельхозпродукции — этот случай в найденных статьях не раскрыт. Двадцатидневный срок не восстанавливается.</span>
+          </div>
+
+          <div style="display: flex; align-items: center; gap: 10px; font-size: 12px; color: var(--muted); margin-top: 18px; padding-top: 12px; border-top: 1px solid var(--line);">
+            <span>искали: <em style="font-style: normal; color: var(--fg);">превышение порога 115 млн, база исчисления</em></span>
+            <span style="flex: 1;"></span>
+            <span style="font-variant-numeric: tabular-nums;">4 статьи прочитано · 3 процитировано</span>
+          </div>
+        </div>
+      </div>
+
+      <div style="flex: 1; min-height: 24px;"></div>
+
+      <div style="position: sticky; bottom: 0; display: flex; gap: 9px; align-items: flex-end; padding: 12px 0 16px; background: var(--bg); border-top: 1px solid var(--line); max-width: 66ch;">
+        <textarea rows="1" placeholder="Уточняющий вопрос…" style="flex: 1; resize: none; min-height: 42px; padding: 10px 12px; font: inherit; line-height: 1.45; border: 1px solid var(--line); border-radius: 6px; background: var(--card); color: var(--fg);"></textarea>
+        <button style="padding: 10px 18px; font: inherit; font-weight: 600; cursor: pointer; border: 1px solid var(--accent); border-radius: 6px; background: var(--accent); color: #fff;">Отправить</button>
+      </div>
+    </section>
+
+    <!-- Evidence stack: every provision the answer rests on, at once. -->
+    <aside style="border-left: 1px solid var(--line); background: var(--card); display: flex; flex-direction: column; min-width: 0;">
+      <div style="display: flex; align-items: center; gap: 10px; padding: 12px 18px; border-bottom: 1px solid var(--line); flex: 0 0 auto;">
+        <span style="font-size: 10.5px; text-transform: uppercase; letter-spacing: 0.11em; color: var(--muted); font-weight: 700;">Основание · 4 статьи</span>
+        <span style="flex: 1;"></span>
+        <button onClick="{{expandAll}}" class="btn" style="font: inherit; font-size: 12px; padding: 4px 10px; border: 1px solid var(--line); border-radius: 4px; background: var(--card); color: var(--muted); cursor: pointer;">{{expandLabel}}</button>
+      </div>
+
+      <div class="stack" style="overflow-y: auto; padding: 14px 18px 20px; display: flex; flex-direction: column; gap: 12px; flex: 1; min-height: 0;">
+        <sc-for list="{{cards}}" as="c" hint-placeholder-count="4">
+          <div style="{{c.wrap}}">
+            <button onClick="{{c.toggle}}" style="{{c.head}}">
+              <span style="{{c.num}}">{{c.n}}</span>
+              <span style="display: flex; flex-direction: column; gap: 2px; align-items: flex-start; min-width: 0; flex: 1;">
+                <span style="display: flex; align-items: baseline; gap: 7px; flex-wrap: wrap;">
+                  <span lang="hy" style="font-family: var(--law); font-size: 15.5px; font-weight: 700;">{{c.ref}}</span>
+                  <span style="{{c.revStyle}}">ред. {{c.amended}}</span>
+                </span>
+                <span lang="hy" style="font-family: var(--law); font-size: 12px; color: var(--muted); text-align: left;">{{c.title}}</span>
+                <span style="display: flex; align-items: center; gap: 5px; color: var(--muted); font-size: 11px; margin-top: 1px;">
+                  <svg width="12" height="12" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="flex: 0 0 auto;"><path d="M10 5.2C8.6 4.1 6.8 3.5 4.5 3.5H2.8v11h1.7c2.3 0 4.1.6 5.5 1.7 1.4-1.1 3.2-1.7 5.5-1.7h1.7v-11h-1.7c-2.3 0-4.1.6-5.5 1.7z"></path><path d="M10 5.2v11"></path></svg>
+                  <span lang="hy">{{c.act}}</span>
+                </span>
+              </span>
+              <span style="{{c.chevStyle}}">
+                <svg width="15" height="15" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M5.5 8l4.5 4.5L14.5 8"></path></svg>
+              </span>
+            </button>
+
+            <div style="{{c.quoteStyle}}" lang="{{c.lang}}">{{c.quote}}</div>
+
+            <sc-if value="{{c.open}}" hint-placeholder-val="{{true}}">
+              <div>
+                <div lang="hy" style="font-family: var(--law); font-size: 14px; line-height: 1.68; white-space: pre-wrap; overflow-wrap: anywhere; padding: 0 14px 12px; color: var(--fg);"><span>{{c.before}}</span><mark>{{c.mark}}</mark><span>{{c.after}}</span></div>
+                <div style="display: flex; gap: 7px; flex-wrap: wrap; padding: 0 14px 13px;">
+                  <button class="btn" style="display: inline-flex; align-items: center; gap: 5px; font: inherit; font-size: 12px; padding: 5px 10px; border: 1px solid var(--line); border-radius: 4px; background: var(--card); color: var(--fg); cursor: pointer;">
+                    <svg width="13" height="13" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="7" y="7" width="9.5" height="9.5" rx="1.8"></rect><path d="M13 4.5H5.3A1.8 1.8 0 0 0 3.5 6.3V14"></path></svg>
+                    Скопировать цитату
+                  </button>
+                  <a class="btn" href="#" style="display: inline-flex; align-items: center; gap: 5px; font-size: 12px; padding: 5px 10px; border: 1px solid var(--line); border-radius: 4px; background: var(--card); color: var(--fg); text-decoration: none;">
+                    ARLIS
+                    <svg width="12" height="12" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M11 3.5h5.5V9M16.5 3.5L9 11"></path><path d="M14 12v3.2a1.3 1.3 0 0 1-1.3 1.3H4.8a1.3 1.3 0 0 1-1.3-1.3V7.3A1.3 1.3 0 0 1 4.8 6H8"></path></svg>
+                  </a>
+                  <span style="flex: 1;"></span>
+                  <span style="font-size: 11.5px; color: var(--muted); align-self: center;">ссылается на {{c.refCount}}</span>
+                </div>
+              </div>
+            </sc-if>
+          </div>
+        </sc-for>
+      </div>
+
+      <!-- The end of the job, made explicit: conclusion + verified quotes +
+           citations + links, ready to paste into a client memo. -->
+      <div style="border-top: 1px solid var(--line); padding: 12px 18px; display: flex; align-items: center; gap: 10px; flex: 0 0 auto; background: var(--sunk);">
+        <button style="display: inline-flex; align-items: center; gap: 7px; font: inherit; font-size: 13px; font-weight: 600; padding: 8px 14px; border: 1px solid var(--accent); border-radius: 5px; background: var(--accent); color: #fff; cursor: pointer;">
+          <svg width="15" height="15" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M11.5 2.5H6.2A1.7 1.7 0 0 0 4.5 4.2v11.6a1.7 1.7 0 0 0 1.7 1.7h7.6a1.7 1.7 0 0 0 1.7-1.7V6.5l-4-4z"></path><path d="M11.5 2.5v4h4M7.5 11h5M7.5 14h3.5"></path></svg>
+          Собрать памятку
+        </button>
+        <span style="font-size: 12px; color: var(--muted); line-height: 1.4;">вывод, цитаты и ссылки на ARLIS — одним блоком</span>
+      </div>
+    </aside>
+
+  </div>
+</div>
+</x-dc>
+
+<script data-dc-script data-props='{"theme":{"editor":"enum","options":["light","dark"],"default":"light","section":"Theme"},"$preview":{"width":1440,"height":980}}'>
+class Component extends DCLogic {
+  constructor(props) {
+    super(props);
+    this.state = { open: { '59': true }, focus: '59', mode: 'chat', themeSel: null };
+  }
+
+  data() {
+    return [
+      {
+        id: '59', n: 1, ref: 'Հոդված 59', title: 'Ավելացված արժեքի հարկ վճարողները', amended: '01.07.2026', recent: true, refCount: 4,
+        quote: '«…իրացման շրջանառության 115 միլիոն դրամի շեմը … գերազանցելու հիմքով ԱԱՀ վճարող համարվելու դեպքում ԱԱՀ-ն հաշվարկվում և վճարվում է ԱԱՀ-ի շեմը գերազանցող մասով»',
+        before: '1. ԱԱՀ վճարողներ են համարվում … հետևյալ դեպքերում և ժամկետներում.\n\n5) հարկային տարվա այն պահից մինչև տվյալ հարկային տարվա ավարտը, որ պահից հարկ վճարողը Օրենսգրքի 13-րդ բաժնի համաձայն, տվյալ հարկային տարում դադարում է համարվել շրջանառության հարկ վճարող: Ընդ որում, ',
+        mark: 'հարկային տարվա ընթացքում գործունեության բոլոր տեսակների մասով իրացման շրջանառության 115 միլիոն դրամի շեմը (այսուհետ նաև՝ ԱԱՀ-ի շեմ) գերազանցելու հիմքով ԱԱՀ վճարող համարվելու դեպքում ԱԱՀ-ն հաշվարկվում և վճարվում է ԱԱՀ-ի շեմը գերազանցող մասով',
+        after: ': Շրջանառության հարկ վճարող համարվելուց դադարելու հիմքերից որևէ մեկը տեղի ունենալու օրվանից մինչև այդ օրվան հաջորդող 20-րդ օրը ներառյալ հարկ վճարողը հարկային մարմին է ներկայացնում հայտարարություն:',
+      },
+      {
+        id: '254', n: 2, ref: 'Հոդված 254', title: 'Շրջանառության հարկ վճարողները', amended: '05.2022', recent: false, refCount: 2,
+        quote: '«…իրացման շրջանառությունը հաշվարկվում է գործունեության բոլոր տեսակների մասով՝ ներառյալ ԱԱՀ-ից ազատված և ԱԱՀ-ով հարկման օբյեկտ չհամարվող գործարքները»',
+        before: '2. Շրջանառության հարկ վճարող համարվելու համար ',
+        mark: 'իրացման շրջանառությունը հաշվարկվում է գործունեության բոլոր տեսակների մասով՝ ներառյալ ԱԱՀ-ից ազատված և ԱԱՀ-ով հարկման օբյեկտ չհամարվող գործարքները',
+        after: ':\n\n3. Հարկ վճարողը դադարում է համարվել շրջանառության հարկ վճարող այն պահից, երբ տվյալ հարկային տարվա ընթացքում գործունեության բոլոր տեսակների մասով իրացման շրջանառությունը գերազանցում է 115 միլիոն դրամը:',
+      },
+      {
+        id: '267', n: 3, ref: 'Հոդված 267', title: 'Միկրոձեռնարկատիրության սուբյեկտները', amended: '11.2021', recent: false, refCount: 2,
+        quote: '«…բացառությամբ Օրենսգրքի 254-րդ հոդվածով սահմանված` … շրջանառության հարկ վճարող համարվելու կամ … ԱԱՀ վճարող համարվելու դեպքերի»',
+        before: '1. Սույն հոդվածի 3-րդ մասով սահմանված պայմանը բավարարող ռեզիդենտ առևտրային կազմակերպությունները և անհատ ձեռնարկատերերը միկրոձեռնարկատիրության սուբյեկտներ են համարվում.\n\n1) տվյալ հարկային տարվա հունվարի 1-ից մինչև տվյալ հարկային տարվա ավարտը (բացառությամբ ',
+        mark: 'Օրենսգրքի 254-րդ հոդվածով սահմանված` հարկային տարվա ընթացքում շրջանառության հարկ վճարող համարվելու կամ Օրենսգրքի 59-րդ հոդվածով սահմանված` հարկային տարվա ընթացքում ԱԱՀ վճարող համարվելու դեպքերի',
+        after: '), եթե հարկ վճարողը մինչև տվյալ հարկային տարվա փետրվարի 20-ը ներառյալ հարկային մարմին է ներկայացրել հայտարարություն:',
+      },
+      {
+        id: '64', n: 4, ref: 'Հոդված 64', title: 'ԱԱՀ-ից ազատված գործարքները', amended: '06.2019', recent: false, refCount: 2,
+        quote: 'Перенесено из прошлого сообщения — прочитано, но в этом ответе не процитировано.',
+        before: '1. ԱԱՀ-ից ազատվում են հետևյալ գործարքները և գործառնությունները.\n\n',
+        mark: '1) կրթական հաստատությունների կողմից մատուցվող կրթական ծառայությունները, ինչպես նաև ուսումնական տետրերի, մանկական և դպրոցական գրականության իրացումը',
+        after: '.\n\n2) գիտահետազոտական աշխատանքների կատարումը:',
+      },
+    ];
+  }
+
+  markerStyle(id) {
+    const base = 'font: inherit; font-size: 10px; font-weight: 700; line-height: 1; vertical-align: super; margin-left: 2px; padding: 2px 4px; min-width: 15px; border: 0; border-radius: 3px; cursor: pointer; font-variant-numeric: tabular-nums;';
+    return this.state.focus === id
+      ? base + ' background: var(--accent); color: #fff;'
+      : base + ' background: var(--accent-bg); color: var(--accent);';
+  }
+
+  marker(id) {
+    return {
+      style: this.markerStyle(id),
+      pick: () => this.setState({ focus: id, open: { ...this.state.open, [id]: true } }),
+    };
+  }
+
+  seg(active) {
+    const base = 'padding: 5px 13px; font: inherit; font-size: 13px; font-weight: 600; cursor: pointer; border: 0;';
+    return active ? base + ' background: var(--accent); color: #fff;' : base + ' background: var(--card); color: var(--muted);';
+  }
+
+  swIcon(active) {
+    const base = 'display: inline-flex; align-items: center; justify-content: center; padding: 4px 7px; border: 0; cursor: pointer;';
+    return active ? base + ' background: var(--accent); color: #fff;' : base + ' background: var(--card); color: var(--muted);';
+  }
+
+  renderVals() {
+    const theme = this.state.themeSel ?? this.props.theme ?? 'light';
+    const rows = this.data();
+    // Expand-all writes the real per-card map rather than a flag beside it, so
+    // opening the stack and then collapsing one card cannot collapse the rest.
+    const allOpen = rows.every((d) => !!this.state.open[d.id]);
+
+    const cards = rows.map((d) => {
+      const open = !!this.state.open[d.id];
+      const focused = this.state.focus === d.id;
+      return {
+        ...d,
+        open,
+        lang: d.id === '64' ? 'ru' : 'hy',
+        act: 'ՀՀ հարկային օրենսգիրք',
+        // One chevron drawn once, rotated — not two glyphs that can drift apart.
+        chevStyle: 'display: inline-flex; color: var(--muted); flex: 0 0 auto; margin-top: 3px; transition: transform 120ms ease;'
+          + (open ? '' : ' transform: rotate(-90deg);'),
+        toggle: () => this.setState({
+          focus: d.id,
+          open: { ...this.state.open, [d.id]: !open },
+        }),
+        wrap: 'border: 1px solid ' + (focused ? 'var(--accent)' : 'var(--line)')
+          + '; border-radius: 6px; background: var(--card); overflow: hidden;'
+          + (focused ? ' box-shadow: 0 0 0 3px var(--accent-bg);' : ''),
+        head: 'display: flex; align-items: flex-start; gap: 10px; width: 100%; text-align: left; padding: 11px 14px 9px; border: 0; background: none; color: var(--fg); font: inherit; cursor: pointer;',
+        num: 'flex: 0 0 auto; font-size: 11px; font-weight: 700; font-variant-numeric: tabular-nums; width: 19px; height: 19px; display: inline-flex; align-items: center; justify-content: center; border-radius: 4px; margin-top: 3px; '
+          + (focused ? 'background: var(--accent); color: #fff;' : 'background: var(--accent-bg); color: var(--accent);'),
+        revStyle: 'font-size: 10px; font-weight: 700; letter-spacing: 0.05em; text-transform: uppercase; padding: 2px 6px; border-radius: 3px; white-space: nowrap; '
+          + (d.recent ? 'background: var(--warn-bg); color: var(--warn-fg);' : 'background: var(--sunk); color: var(--muted);'),
+        quoteStyle: 'font-family: ' + (d.id === '64' ? 'var(--sans)' : 'var(--law)')
+          + '; font-size: 13.5px; line-height: 1.6; padding: 0 14px 12px; margin-left: 29px; border-left: 2px solid '
+          + (d.id === '64' ? 'var(--line)' : 'var(--accent)')
+          + '; padding-left: 11px; color: ' + (d.id === '64' ? 'var(--muted)' : 'var(--fg)') + ';',
+      };
+    });
+
+    return {
+      theme,
+      cards,
+      m1: this.marker('59'),
+      m2: this.marker('254'),
+      m3: this.marker('267'),
+      expandAll: () => this.setState({
+        open: allOpen ? {} : rows.reduce((acc, d) => ({ ...acc, [d.id]: true }), {}),
+      }),
+      expandLabel: allOpen ? 'Свернуть все' : 'Развернуть все',
+      modes: [
+        { label: 'Диалог', style: this.seg(this.state.mode === 'chat'), pick: () => this.setState({ mode: 'chat' }) },
+        { label: 'Разовый', style: this.seg(this.state.mode === 'ask'), pick: () => this.setState({ mode: 'ask' }) },
+        { label: 'Поиск', style: this.seg(this.state.mode === 'search'), pick: () => this.setState({ mode: 'search' }) },
+      ],
+      themeLight: { style: this.swIcon(theme === 'light'), pick: () => this.setState({ themeSel: 'light' }) },
+      themeDark: { style: this.swIcon(theme === 'dark'), pick: () => this.setState({ themeSel: 'dark' }) },
+    };
+  }
+}
+</script>
+</body>
+</html>

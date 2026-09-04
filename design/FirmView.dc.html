@@ -1,0 +1,123 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans+Armenian:wght@400;500;600;700&family=Prata&display=swap">
+  <style>
+    body { margin: 0; }
+    a { color: #1B7A6B; } a:hover { color: #123A5C; }
+  </style>
+</helmet>
+
+<div style="width: 1000px; height: 720px; background: #F6F0E8; font-family: 'Noto Sans Armenian', system-ui, sans-serif; color: #16140F; box-sizing: border-box; display: flex; flex-direction: column;">
+
+  <!-- MatyanAI's own chrome — our brand here, because this is the firm's console -->
+  <div style="display: flex; align-items: center; justify-content: space-between; padding: 18px 34px; border-bottom: 1px solid #D8D1C0;">
+    <div style="display: flex; align-items: baseline; gap: 14px;">
+      <span style="font-family: 'Prata', Georgia, serif; font-size: 22px; color: #16140F;">MatyanAI</span>
+      <span style="font-size: 12px; color: #6B6355; letter-spacing: 0.06em;">ԲԱԼՅԱՆ ԵՎ ԳՈՐԾԸՆԿԵՐՆԵՐ · 10 օգտատեր</span>
+    </div>
+    <div style="display: flex; align-items: center; gap: 26px; font-size: 13.5px; color: #6B6355;">
+      <span>Հարցեր</span>
+      <span style="color: #A8142B; border-bottom: 2px solid #A8142B; padding-bottom: 3px;">Կայքի վիջեթ</span>
+      <span>Թիմ</span>
+      <span>Հաշիվ</span>
+    </div>
+  </div>
+
+  <div style="padding: 26px 34px; display: flex; flex-direction: column; gap: 22px; flex-grow: 1;">
+
+    <!-- the month, in four numbers -->
+    <div style="display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 14px;">
+      <div style="background: #FBF8F1; border: 1px solid #D8D1C0; border-radius: 6px; padding: 15px 17px; display: flex; flex-direction: column; gap: 5px;">
+        <span style="font-size: 27px; font-weight: 700; color: #16140F; font-variant-numeric: tabular-nums;">312</span>
+        <span style="font-size: 11.5px; color: #6B6355; letter-spacing: 0.04em;">ՀԱՐՑ ԿԱՅՔԻՑ · ՕԳՈՍՏՈՍ</span>
+      </div>
+      <div style="background: #FBF8F1; border: 1px solid #D8D1C0; border-radius: 6px; padding: 15px 17px; display: flex; flex-direction: column; gap: 5px;">
+        <span style="font-size: 27px; font-weight: 700; color: #16140F; font-variant-numeric: tabular-nums;">71%</span>
+        <span style="font-size: 11.5px; color: #6B6355; letter-spacing: 0.04em;">ՊԱՏԱՍԽԱՆՎԵԼ Է ԱՆՄԻՋԱՊԵՍ</span>
+      </div>
+      <div style="background: #FBF8F1; border: 1px solid #A8142B; border-radius: 6px; padding: 15px 17px; display: flex; flex-direction: column; gap: 5px;">
+        <span style="font-size: 27px; font-weight: 700; color: #A8142B; font-variant-numeric: tabular-nums;">38</span>
+        <span style="font-size: 11.5px; color: #6B6355; letter-spacing: 0.04em;">ԱՄՐԱԳՐՎԱԾ ՀԱՆԴԻՊՈՒՄ</span>
+      </div>
+      <div style="background: #FBF8F1; border: 1px solid #D8D1C0; border-radius: 6px; padding: 15px 17px; display: flex; flex-direction: column; gap: 5px;">
+        <span style="font-size: 27px; font-weight: 700; color: #16140F; font-variant-numeric: tabular-nums;">9</span>
+        <span style="font-size: 11.5px; color: #6B6355; letter-spacing: 0.04em;">ՆՈՐ ՀԱՃԱԽՈՐԴ</span>
+      </div>
+    </div>
+
+    <!-- the leads -->
+    <div style="background: #FBF8F1; border: 1px solid #D8D1C0; border-radius: 6px; overflow: hidden; display: flex; flex-direction: column;">
+      <div style="padding: 13px 18px; border-bottom: 1px solid #E6E0D2; display: flex; align-items: center; justify-content: space-between;">
+        <span style="font-size: 13.5px; font-weight: 600;">Վիջեթից եկած դիմումներ</span>
+        <span style="font-size: 11.5px; color: #6B6355;">վերջին 7 օր</span>
+      </div>
+
+      <div style="display: grid; grid-template-columns: 1.9fr 1fr 0.9fr 0.7fr; gap: 0; font-size: 11px; letter-spacing: 0.07em; color: #6B6355; padding: 9px 18px; border-bottom: 1px solid #E6E0D2;">
+        <span>ՀԱՐՑԸ</span><span>ԱՆՁԸ</span><span>ԺԱՄԸ</span><span>ՎԻՃԱԿ</span>
+      </div>
+
+      <div style="display: grid; grid-template-columns: 1.9fr 1fr 0.9fr 0.7fr; gap: 0; align-items: center; font-size: 13px; padding: 12px 18px; border-bottom: 1px solid #E6E0D2;">
+        <span>Հնդկաստանի քաղաքացու աշխատանքի ընդունում</span>
+        <span style="color: #6B6355;">Արմինե Ս.</span>
+        <span style="color: #6B6355; font-variant-numeric: tabular-nums;">Երեկ 21:04</span>
+        <span><span style="background: #F2E2E2; color: #A8142B; font-size: 11.5px; padding: 4px 9px; border-radius: 3px; font-weight: 600;">Ամրագրված</span></span>
+      </div>
+      <div style="display: grid; grid-template-columns: 1.9fr 1fr 0.9fr 0.7fr; gap: 0; align-items: center; font-size: 13px; padding: 12px 18px; border-bottom: 1px solid #E6E0D2;">
+        <span>ՊՈԱԿ-ում բարեկամ հաշվապահ նշանակելը</span>
+        <span style="color: #6B6355;">Գայանե Մ.</span>
+        <span style="color: #6B6355; font-variant-numeric: tabular-nums;">Երեկ 18:22</span>
+        <span><span style="background: #F2E2E2; color: #A8142B; font-size: 11.5px; padding: 4px 9px; border-radius: 3px; font-weight: 600;">Ամրագրված</span></span>
+      </div>
+      <div style="display: grid; grid-template-columns: 1.9fr 1fr 0.9fr 0.7fr; gap: 0; align-items: center; font-size: 13px; padding: 12px 18px; border-bottom: 1px solid #E6E0D2;">
+        <span>Էլեկտրական լիցքավորման կայան · 7% դրույքաչափ</span>
+        <span style="color: #6B6355;">Արմեն Հ.</span>
+        <span style="color: #6B6355; font-variant-numeric: tabular-nums;">26.08 11:40</span>
+        <span><span style="background: #E9EFEC; color: #2F6B60; font-size: 11.5px; padding: 4px 9px; border-radius: 3px; font-weight: 600;">Հաճախորդ</span></span>
+      </div>
+      <div style="display: grid; grid-template-columns: 1.9fr 1fr 0.9fr 0.7fr; gap: 0; align-items: center; font-size: 13px; padding: 12px 18px;">
+        <span>ԱՁ չի ներկայացրել միկրոյի դիմումը</span>
+        <span style="color: #6B6355;">Սավա Ա.</span>
+        <span style="color: #6B6355; font-variant-numeric: tabular-nums;">25.08 09:15</span>
+        <span><span style="background: #E9EFEC; color: #2F6B60; font-size: 11.5px; padding: 4px 9px; border-radius: 3px; font-weight: 600;">Հաճախորդ</span></span>
+      </div>
+    </div>
+
+    <!-- what the widget is answering, so the firm can steer it -->
+    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 14px;">
+      <div style="background: #FBF8F1; border: 1px solid #D8D1C0; border-radius: 6px; padding: 15px 18px; display: flex; flex-direction: column; gap: 11px;">
+        <span style="font-size: 13px; font-weight: 600;">Ամենահաճախ տրվող հարցերը</span>
+        <div style="display: flex; flex-direction: column; gap: 8px; font-size: 12.5px; color: #3E382E;">
+          <div style="display: flex; justify-content: space-between;"><span>Միկրոձեռնարկատիրության պայմաններ</span><span style="color: #6B6355; font-variant-numeric: tabular-nums;">54</span></div>
+          <div style="display: flex; justify-content: space-between;"><span>Հաշվետվությունների ժամկետներ</span><span style="color: #6B6355; font-variant-numeric: tabular-nums;">41</span></div>
+          <div style="display: flex; justify-content: space-between;"><span>Աշխատավարձի հաշվարկ</span><span style="color: #6B6355; font-variant-numeric: tabular-nums;">33</span></div>
+        </div>
+      </div>
+      <div style="background: #FBF8F1; border: 1px solid #D8D1C0; border-radius: 6px; padding: 15px 18px; display: flex; flex-direction: column; gap: 10px;">
+        <span style="font-size: 13px; font-weight: 600;">Վիջեթի կարգավորում</span>
+        <div style="display: flex; align-items: center; justify-content: space-between; font-size: 12.5px; color: #3E382E;">
+          <span>Պատասխանել միայն վստահ դեպքերում</span>
+          <span style="width: 36px; height: 20px; background: #A8142B; border-radius: 10px; position: relative;"><span style="position: absolute; right: 2px; top: 2px; width: 16px; height: 16px; background: #FBF8F1; border-radius: 8px;"></span></span>
+        </div>
+        <div style="display: flex; align-items: center; justify-content: space-between; font-size: 12.5px; color: #3E382E;">
+          <span>Ամրագրման օրացույց</span>
+          <span style="width: 36px; height: 20px; background: #A8142B; border-radius: 10px; position: relative;"><span style="position: absolute; right: 2px; top: 2px; width: 16px; height: 16px; background: #FBF8F1; border-radius: 8px;"></span></span>
+        </div>
+        <div style="display: flex; align-items: center; justify-content: space-between; font-size: 12.5px; color: #6B6355;">
+          <span>Հարցերի սահմանաչափ ամսական</span>
+          <span style="font-variant-numeric: tabular-nums; color: #16140F;">500</span>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+</x-dc>
+</body>
+</html>
