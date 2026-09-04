@@ -1167,3 +1167,28 @@ instead, and a link's unguessability should not depend on which extensions a
 host installs. And scrypt at N=32768 needs `maxmem` raised explicitly, or Node
 rejects it with "Invalid scrypt params", which reads like a bad call rather than
 a memory ceiling.
+
+**2026-09-04** — **Sharing made findable, and the recipient's page built.**
+Two defects in the sharing shipped hours earlier, both found by the owner
+trying to use it.
+
+**The control was invisible.** It was an unlabelled icon revealed by hovering a
+row in the sidebar list; the first person to look for it could not find it. Now
+it is a NAMED button on the first question of the conversation it acts on —
+«Կիսվել», becoming «Հղումը պատճենվեց» once issued. The general rule: a control
+discovered by hovering is a control most people never discover.
+
+**A shared link returned raw JSON.** The API served `/api/shared/:token` and
+nothing rendered it, so the recipient — the whole point of the feature — got a
+wall of escaped text. `Shared.tsx` renders the exchange read-only, checked
+BEFORE the sign-in gate since a recipient by definition may have no account.
+
+Deliberately not the workbench with its controls removed: no composer, no
+session list, no norm panel. A recipient did not come to use a tool, they came
+to read something their accountant sent them, so what they get is the exchange,
+the disclaimer, and one honest way in if they want to ask their own question. A
+withdrawn link and a mistyped one give the same message, because the server must
+not confirm that a token was ever real.
+
+Verified signed OUT entirely: the page renders, `/api/auth/me` reports nobody,
+and the shared endpoint returns the two messages.

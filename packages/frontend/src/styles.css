@@ -1341,3 +1341,65 @@ a { color: var(--accent); }
 @media (prefers-reduced-motion: reduce) {
   .session-share { transition: none; }
 }
+
+/* ── The shared consultation page ───────────────────────────────────────── */
+
+.shared-page { padding-top: 2rem; }
+
+.shared-head {
+  display: flex;
+  align-items: baseline;
+  gap: 1rem;
+  padding-bottom: 0.9rem;
+  border-bottom: 1px solid var(--rule);
+  margin-bottom: 2rem;
+}
+
+.shared-head .brand { text-decoration: none; }
+
+.shared-badge {
+  font-size: 0.78rem;
+  letter-spacing: 0.06em;
+  color: var(--ink-3);
+}
+
+.shared-gone {
+  color: var(--ink-3);
+  font-size: 0.95rem;
+  padding: 3rem 0;
+}
+
+.shared-foot {
+  margin-top: 2.5rem;
+  padding-top: 1.25rem;
+  border-top: 1px solid var(--rule);
+}
+
+.shared-cta {
+  font-size: 0.9rem;
+  color: var(--ink-2);
+  margin-bottom: 1rem;
+}
+
+/*
+ * Share, on the conversation it acts on. Named rather than an icon alone: the
+ * first person to meet the hover-only icon in the sidebar could not find it.
+ */
+.turn-share {
+  background: none;
+  border: none;
+  color: var(--ink-3);
+  font-family: var(--body);
+  font-size: 0.72rem;
+  letter-spacing: 0.04em;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.32rem;
+  padding: 0.15rem 0.35rem;
+  margin-left: 0.7rem;
+  border-radius: 3px;
+}
+
+.turn-share:hover { color: var(--accent); background: var(--accent-bg); }
+.turn-share.on { color: var(--accent); }

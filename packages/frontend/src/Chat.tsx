@@ -117,6 +117,20 @@ function autoGrow(el: HTMLTextAreaElement): void {
   el.style.height = `${Math.min(el.scrollHeight, 200)}px`;
 }
 
+/**
+ * Issue a link for a conversation and put it on the clipboard.
+ *
+ * Returns the link so the caller can show it when the clipboard is refused —
+ * which browsers do, and a share control that silently fails has not shared
+ * anything.
+ */
+async function issueShareLink(sessionId: string): Promise<string | null> {
+  const res = await fetch(`/api/sessions/${sessionId}/share`, { method: 'POST' });
+  if (!res.ok) return null;
+  const { url } = (await res.json()) as { url: string };
+  return `${window.location.origin}${url}`;
+}
+
 export function Chat({ corpusSynced }: { corpusSynced: string | null }) {
   const { t, railOpen } = useSettings();
   const [sessionId, setSessionId] = useState<string | null>(null);
@@ -128,6 +142,22 @@ export function Chat({ corpusSynced }: { corpusSynced: string | null }) {
   const [selectedId, setSelectedId] = useState<string | null>(null);
   /** Bumped when a turn completes, so the session list refetches. */
   const [reloadKey, setReloadKey] = useState(0);
+  /** The share link for this conversation, once one has been issued. */
+  const [shareUrl, setShareUrl] = useState<string | null>(null);
+
+  async function share(): Promise<void> {
+    if (!sessionId) return;
+    const url = shareUrl ?? (await issueShareLink(sessionId));
+    if (!url) return;
+    setShareUrl(url);
+    try {
+      await navigator.clipboard.writeText(url);
+    } catch {
+      // Clipboard access can be refused; the link exists either way, so show it
+      // rather than leaving the click looking like nothing happened.
+      window.prompt(t('share.copied'), url);
+    }
+  }
   const endRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
   /** Whether to keep following the streaming answer; false once the reader scrolls up. */
@@ -448,7 +478,29 @@ export function Chat({ corpusSynced }: { corpusSynced: string | null }) {
         const sources = sourcesOf(turn);
         return (
         <div key={i} className={`turn ${turn.role} measure`}>
-          <div className="turn-role">{turn.role === 'user' ? t('turn.question') : BRAND}</div>
+          <div className="turn-role">
+            {turn.role === 'user' ? t('turn.question') : BRAND}
+            {/*
+              Share sits on the FIRST question of a saved conversation, which is
+              where someone looks for it — the earlier placement was an unlabelled
+              icon revealed by hovering the sidebar list, and the first person to
+              use it could not find it at all. One control, named, in the thread
+              it acts on.
+            */}
+            {turn.role === 'user' && i === 0 && sessionId ? (
+              <button
+                className={`turn-share${shareUrl ? ' on' : ''}`}
+                onClick={() => void share()}
+                title={shareUrl ? t('share.copied') : t('share.share')}
+              >
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                  <path d="M4 12v7a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-7" />
+                  <path d="M12 15V3M8 7l4-4 4 4" />
+                </svg>
+                {shareUrl ? t('share.copied') : t('share.share')}
+              </button>
+            ) : null}
+          </div>
           {turn.coverage && COVERAGE_KEY[turn.coverage] ? (
             <div className={`coverage ${turn.coverage}`}>
               <div className="coverage-body">{t(COVERAGE_KEY[turn.coverage]!)}</div>

@@ -94,6 +94,10 @@ const hy: Dict = {
   'share.copied': 'Հղումը պատճենվեց',
   'share.stop': 'Դադարեցնել կիսվելը',
   'share.shared': 'Կիսված',
+  'share.gone': 'Այս հղումը այլևս գործող չէ։',
+  'share.readOnly': 'Կիսված խորհրդատվություն',
+  'share.ownQuestion': 'Ունե՞ք Ձեր հարցը։',
+  'share.openTool': 'Բացել MatyanAI-ն',
 
   'theme.auto': 'Ավտո',
   'theme.light': 'Լույս',
@@ -192,6 +196,10 @@ const ru: Dict = {
   'share.copied': 'Ссылка скопирована',
   'share.stop': 'Закрыть доступ',
   'share.shared': 'Открыт доступ',
+  'share.gone': 'Эта ссылка больше не действует.',
+  'share.readOnly': 'Консультация по ссылке',
+  'share.ownQuestion': 'Есть свой вопрос?',
+  'share.openTool': 'Открыть MatyanAI',
 
   'theme.auto': 'Авто',
   'theme.light': 'Светлая',
@@ -290,6 +298,10 @@ const en: Dict = {
   'share.copied': 'Link copied',
   'share.stop': 'Stop sharing',
   'share.shared': 'Shared',
+  'share.gone': 'This link is no longer active.',
+  'share.readOnly': 'Shared consultation',
+  'share.ownQuestion': 'Have a question of your own?',
+  'share.openTool': 'Open MatyanAI',
 
   'theme.auto': 'Auto',
   'theme.light': 'Light',

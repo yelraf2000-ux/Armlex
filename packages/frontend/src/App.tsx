@@ -14,6 +14,7 @@ import { Chat } from './Chat.js';
 import { Login, type Account } from './Login.js';
 import { MarkdownView } from './MarkdownView.js';
 import { NormPanel } from './NormPanel.js';
+import { Shared } from './Shared.js';
 import { extractQuotes } from './quotes.js';
 import { RailToggle, SettingsControls, SettingsProvider, useSettings } from './Settings.js';
 
@@ -327,6 +328,14 @@ function Workbench() {
     setHomeKey((k) => k + 1);
     window.scrollTo({ top: 0 });
   }
+
+  /*
+    A shared link is readable by anyone, so it is checked BEFORE the sign-in
+    gate — the whole point of sharing is that the recipient need not have an
+    account. There is no router in this app, so this is a path test.
+  */
+  const shared = /^\/shared\/([0-9a-f]{48})$/.exec(window.location.pathname);
+  if (shared) return <Shared token={shared[1]!} />;
 
   if (authed === null) return <div className="wrap" />;
   if (!authed) {
