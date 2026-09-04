@@ -358,13 +358,22 @@ export async function chat(
   onDelta?: OnDelta,
   onChunks?: OnChunks,
   onStage?: OnStage,
+  /**
+   * Who is asking. A new conversation is stamped with its owner so the session
+   * list can show one person only theirs; omitted for eval harnesses, which
+   * deliberately create ownerless sessions.
+   */
+  userId?: string,
 ): Promise<ChatResult> {
   const tStart = Date.now();
   onStage?.('understanding');
 
   const sessionId =
     sessionIdIn ??
-    (await db()<{ id: string }[]>`INSERT INTO sessions DEFAULT VALUES RETURNING id`)[0]!
+    (
+      await db()<{ id: string }[]>`
+        INSERT INTO sessions (user_id) VALUES (${userId ?? null}) RETURNING id`
+    )[0]!
       .id;
 
   // Both reads are independent — awaiting them in sequence paid two Neon round

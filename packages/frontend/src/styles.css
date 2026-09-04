@@ -1220,3 +1220,124 @@ a { color: var(--accent); }
   .session-item, .example { min-height: 48px; }
   .btn, .cite { padding-top: 8px; padding-bottom: 8px; }
 }
+
+/* ── Accounts ───────────────────────────────────────────────────────────── */
+
+/*
+ * Sign in / Register. Two tabs rather than two screens: the choice between them
+ * is not worth a navigation, and someone who guesses wrong should be one click
+ * from the right one rather than back at the start.
+ */
+.login-tabs {
+  display: flex;
+  border-bottom: 1px solid var(--rule);
+  margin: 0 0 1.25rem;
+}
+
+.login-tabs button {
+  background: none;
+  border: none;
+  border-bottom: 2px solid transparent;
+  color: var(--ink-3);
+  font-family: var(--body);
+  font-size: 0.95rem;
+  padding: 0.55rem 1.1rem;
+  cursor: pointer;
+  margin-bottom: -1px;
+}
+
+.login-tabs button.on {
+  color: var(--accent);
+  border-bottom-color: var(--accent);
+}
+
+.login-or {
+  text-align: center;
+  color: var(--ink-3);
+  font-size: 0.85rem;
+  margin: 0.9rem 0 0.6rem;
+}
+
+/*
+ * A link, not a button: OAuth is a redirect out to Google and back, so styling
+ * it as a form control would promise an in-page action it does not perform.
+ */
+.login-google {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.6rem;
+  padding: 0.7rem 1rem;
+  border: 1px solid var(--rule);
+  border-radius: 4px;
+  background: var(--leaf);
+  color: var(--ink);
+  text-decoration: none;
+  font-size: 0.95rem;
+  min-height: 44px;
+  box-sizing: border-box;
+}
+
+.login-google:hover { border-color: var(--ink-3); }
+
+/* The allowance, where it can be read before it is spent. */
+.masthead-quota {
+  font-size: 0.8rem;
+  color: var(--ink-3);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.masthead-signout {
+  background: none;
+  border: none;
+  color: var(--ink-3);
+  font-family: var(--body);
+  font-size: 0.8rem;
+  cursor: pointer;
+  padding: 0.3rem 0.4rem;
+}
+
+.masthead-signout:hover { color: var(--accent); }
+
+/* ── Sharing ────────────────────────────────────────────────────────────── */
+
+/*
+ * The share control sits BESIDE the conversation, not inside it: the row is
+ * already a button, and a button nested in a button is invalid markup that
+ * swallows its own clicks in about half of browsers.
+ */
+.session-row {
+  display: flex;
+  align-items: stretch;
+}
+
+.session-row .session-item { flex-grow: 1; }
+
+.session-share {
+  flex-shrink: 0;
+  background: none;
+  border: none;
+  color: var(--ink-3);
+  cursor: pointer;
+  padding: 0 0.55rem;
+  display: flex;
+  align-items: center;
+  opacity: 0;
+  transition: opacity 0.12s ease;
+}
+
+/*
+ * Revealed on hover — and permanently once a link exists, because a shared
+ * conversation has to say so without being hovered first.
+ */
+.session-row:hover .session-share,
+.session-share.on,
+.session-share:focus-visible { opacity: 1; }
+
+.session-share.on { color: var(--accent); }
+.session-shared { color: var(--accent); }
+
+@media (prefers-reduced-motion: reduce) {
+  .session-share { transition: none; }
+}

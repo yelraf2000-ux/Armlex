@@ -1,11 +1,21 @@
 /**
  * Dev API. Two endpoints, both thin wrappers over the retrieval seam.
  */
+import { randomBytes } from 'node:crypto';
 import { existsSync } from 'node:fs';
 import { join } from 'node:path';
 import Fastify from 'fastify';
 import fastifyStatic from '@fastify/static';
-import { authEnabled, authStatus, login, requireAuth } from './auth.js';
+import {
+  googleCallback,
+  googleStart,
+  login,
+  logout,
+  me,
+  register,
+  requireAuth,
+} from './auth/routes.js';
+import { monthlyUsage } from './auth/users.js';
 import { retrieve, warmRetrieval, VectorLegUnavailableError } from './retrieval/retrieve.js';
 import { db } from './db/pool.js';
 import { ask, isConfigured } from './answer/ask.js';
@@ -15,36 +25,31 @@ import { DEFAULT_MODEL } from './answer/llm.js';
 const app = Fastify({ logger: { transport: { target: 'pino-pretty' } } });
 
 /**
- * Refuse to start unguarded in production.
+ * Refuse to start unsigned in production.
  *
- * A missing APP_PASSWORD is convenient locally and catastrophic on a public
- * URL: every answer spends real credit, so an open endpoint is a form anyone
- * can spend from. Failing to boot is the only response that cannot be ignored —
- * a warning in a log nobody reads is how this goes wrong quietly.
+ * `APP_PASSWORD` is gone — accounts replaced it — but the reason it existed did
+ * not: every answer spends real credit. Two things now stand in its place, and
+ * both are required rather than recommended. `SESSION_SECRET` signs the cookie
+ * that says who someone is; with it empty, anyone can mint a cookie for any
+ * account. And the per-user monthly allowance (`auth/users.ts`) is what stops
+ * an open signup form from being a bill anyone can run up.
  */
-if (process.env['NODE_ENV'] === 'production') {
-  const missing = [
-    !authEnabled() ? 'APP_PASSWORD' : null,
-    // Required too, not merely recommended: the session cookie is an HMAC of
-    // the password under this secret. With it empty the cookie is derivable by
-    // anyone who knows the password, so revoking access would mean changing the
-    // password itself rather than rotating a secret.
-    !process.env['SESSION_SECRET'] ? 'SESSION_SECRET' : null,
-  ].filter(Boolean);
-
-  if (missing.length > 0) {
-    console.error(
-      `REFUSING TO START: NODE_ENV=production but ${missing.join(' and ')} not set.\n` +
-        'Every answer costs real API credit; an unauthenticated public URL is a\n' +
-        'bill anyone can run up. Set them in the host environment and redeploy.',
-    );
-    process.exit(1);
-  }
+if (process.env['NODE_ENV'] === 'production' && !process.env['SESSION_SECRET']) {
+  console.error(
+    'REFUSING TO START: NODE_ENV=production but SESSION_SECRET is not set.\n' +
+      'It signs the session cookie; without it any visitor can forge a session\n' +
+      'for any account. Set it in the host environment and redeploy.',
+  );
+  process.exit(1);
 }
 
 app.addHook('preHandler', requireAuth);
-app.post('/api/login', login);
-app.get('/api/auth', async () => authStatus());
+app.post('/api/auth/register', register);
+app.post('/api/auth/login', login);
+app.post('/api/auth/logout', logout);
+app.get('/api/auth/me', me);
+app.get('/api/auth/google', googleStart);
+app.get('/api/auth/google/callback', googleCallback);
 
 interface QueryBody {
   query?: unknown;
@@ -103,6 +108,20 @@ app.post<{ Body: ChatBody }>('/api/chat/stream', async (req, reply) => {
     return reply.code(501).send({ error: 'ANTHROPIC_API_KEY is not set' });
   }
 
+  // The allowance, checked before any provider is called. This is what stands
+  // in for the old shared password: registration is open, so without a ceiling
+  // per account the first crawler to find the signup form spends the balance.
+  const usage = await monthlyUsage(req.user!);
+  if (usage.limit !== null && usage.used >= usage.limit) {
+    return reply.code(429).send({
+      error: 'quota_exceeded',
+      usage,
+      detail:
+        `Այս ամսվա ${usage.limit} հարցի սահմանաչափը սպառված է։ / ` +
+        `Исчерпан лимит в ${usage.limit} вопросов на этот месяц.`,
+    });
+  }
+
   const sid = req.body.sessionId;
   const sessionId = typeof sid === 'string' && sid ? sid : undefined;
 
@@ -128,6 +147,7 @@ app.post<{ Body: ChatBody }>('/api/chat/stream', async (req, reply) => {
       // found while the answer is still being written.
       (chunks) => send('chunks', { chunks }),
       (stage) => send('stage', { stage }),
+      req.user!.id,
     );
     // The final event carries everything the streamed deltas could not: which
     // chunks were used, token accounting, and the rejected-quote count.
@@ -231,18 +251,28 @@ app.get<{ Querystring: { articleId?: string } }>('/api/related', async (req, rep
   };
 });
 
-/** Past conversations, newest first, labelled by their opening question. */
-app.get('/api/sessions', async () => {
+/** The signed-in user's own conversations, newest first. */
+app.get('/api/sessions', async (req) => {
   const rows = await db()<
-    { id: string; created_at: string; turns: string; first_message: string | null }[]
+    {
+      id: string;
+      created_at: string;
+      turns: string;
+      first_message: string | null;
+      share_token: string | null;
+    }[]
   >`
-    SELECT s.id, s.created_at::text,
+    SELECT s.id, s.created_at::text, s.share_token,
            count(m.id) FILTER (WHERE m.role = 'user')::text AS turns,
            (SELECT content FROM messages
              WHERE session_id = s.id AND role = 'user'
              ORDER BY id ASC LIMIT 1) AS first_message
     FROM sessions s
     LEFT JOIN messages m ON m.session_id = s.id
+    -- Ownership, not a filter that can be forgotten: a conversation belongs to
+    -- exactly one account, and the 151 ownerless sessions that predate accounts
+    -- match nobody.
+    WHERE s.user_id = ${req.user!.id}
     GROUP BY s.id
     -- A session with no messages is an artefact of a failed turn, not a
     -- conversation; showing it would just be clutter in the list.
@@ -256,22 +286,91 @@ app.get('/api/sessions', async () => {
       createdAt: r.created_at,
       turns: Number(r.turns),
       firstMessage: r.first_message ?? '',
+      shared: Boolean(r.share_token),
     })),
   };
 });
 
-/** Full transcript of one past conversation. */
+/** Full transcript of one of your own conversations. */
 app.get<{ Params: { id: string } }>('/api/sessions/:id', async (req, reply) => {
   const { id } = req.params;
   if (!/^[0-9a-f-]{36}$/i.test(id)) {
     return reply.code(400).send({ error: 'invalid session id' });
   }
+  // 404 rather than 403 for a conversation belonging to someone else: a
+  // distinguishable "exists but not yours" turns this route into an oracle for
+  // which session ids are real.
+  const owned = await db()<{ id: string }[]>`
+    SELECT id FROM sessions WHERE id = ${id} AND user_id = ${req.user!.id} LIMIT 1`;
+  if (!owned[0]) return reply.code(404).send({ error: 'not_found' });
+
   const rows = await db()<{ role: string; content: string }[]>`
     SELECT role, content FROM messages
     WHERE session_id = ${id} AND role IN ('user','assistant')
     ORDER BY id ASC
   `;
   return { sessionId: id, messages: rows };
+});
+
+/**
+ * Share a conversation by link, and withdraw it again.
+ *
+ * The token IS the capability — anyone holding the link can read the
+ * conversation without an account, which is what sharing means. So it is 32
+ * bytes of `randomBytes`, not a guessable id, and revoking sets it back to NULL
+ * so a link already sent stops resolving rather than merely being discouraged.
+ */
+app.post<{ Params: { id: string } }>('/api/sessions/:id/share', async (req, reply) => {
+  const { id } = req.params;
+  if (!/^[0-9a-f-]{36}$/i.test(id)) return reply.code(400).send({ error: 'invalid session id' });
+
+  // Minted in Node, not by Postgres: `gen_random_bytes` lives in pgcrypto,
+  // which this database does not carry — and a link's unguessability should not
+  // depend on which extensions a host happens to install.
+  const fresh = randomBytes(24).toString('hex');
+  const rows = await db()<{ share_token: string }[]>`
+    UPDATE sessions
+       SET share_token = COALESCE(share_token, ${fresh}),
+           shared_at = COALESCE(shared_at, now())
+     WHERE id = ${id} AND user_id = ${req.user!.id}
+    RETURNING share_token`;
+  if (!rows[0]) return reply.code(404).send({ error: 'not_found' });
+
+  return { token: rows[0].share_token, url: `/shared/${rows[0].share_token}` };
+});
+
+app.delete<{ Params: { id: string } }>('/api/sessions/:id/share', async (req, reply) => {
+  const { id } = req.params;
+  if (!/^[0-9a-f-]{36}$/i.test(id)) return reply.code(400).send({ error: 'invalid session id' });
+
+  const rows = await db()<{ id: string }[]>`
+    UPDATE sessions SET share_token = NULL, shared_at = NULL
+     WHERE id = ${id} AND user_id = ${req.user!.id}
+    RETURNING id`;
+  if (!rows[0]) return reply.code(404).send({ error: 'not_found' });
+  return { ok: true };
+});
+
+/**
+ * Read a shared conversation. Public, by design.
+ *
+ * Read-only and read-only-shaped: the transcript, nothing about the owner, and
+ * no way to continue the conversation. A recipient who wants to ask their own
+ * follow-up needs their own account, which is also the point.
+ */
+app.get<{ Params: { token: string } }>('/api/shared/:token', async (req, reply) => {
+  const { token } = req.params;
+  if (!/^[0-9a-f]{48}$/.test(token)) return reply.code(404).send({ error: 'not_found' });
+
+  const session = await db()<{ id: string; created_at: string }[]>`
+    SELECT id, created_at::text FROM sessions WHERE share_token = ${token} LIMIT 1`;
+  if (!session[0]) return reply.code(404).send({ error: 'not_found' });
+
+  const rows = await db()<{ role: string; content: string }[]>`
+    SELECT role, content FROM messages
+    WHERE session_id = ${session[0].id} AND role IN ('user','assistant')
+    ORDER BY id ASC`;
+  return { createdAt: session[0].created_at, messages: rows };
 });
 
 app.post<{ Body: QueryBody }>('/api/search', async (req, reply) => {
@@ -329,7 +428,7 @@ app.post<{ Body: ChatBody }>('/api/chat', async (req, reply) => {
   const sessionId = typeof sid === 'string' && sid ? sid : undefined;
 
   try {
-    return await chat(sessionId, message);
+    return await chat(sessionId, message, undefined, undefined, undefined, req.user!.id);
   } catch (err) {
     const e = err as { status?: number; message?: string };
     req.log.error({ err }, 'chat failed');

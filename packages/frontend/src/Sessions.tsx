@@ -14,6 +14,8 @@ export interface SessionSummary {
   createdAt: string;
   turns: number;
   firstMessage: string;
+  /** A link has been issued for this conversation and has not been withdrawn. */
+  shared?: boolean;
 }
 
 function shortDate(iso: string): string {
@@ -34,6 +36,7 @@ export function Sessions({
 }) {
   const { t } = useSettings();
   const [sessions, setSessions] = useState<SessionSummary[] | null>(null);
+  const [copied, setCopied] = useState<string | null>(null);
 
   useEffect(() => {
     let cancelled = false;
@@ -56,20 +59,63 @@ export function Sessions({
     return <div className="sessions-empty">{t('nav.noCases')}</div>;
   }
 
+  /**
+   * Issue a link, or withdraw one.
+   *
+   * The link is copied to the clipboard on issue, because a share control that
+   * makes you go and find the link has not finished the job.
+   */
+  async function toggleShare(s: SessionSummary): Promise<void> {
+    if (s.shared) {
+      await fetch(`/api/sessions/${s.id}/share`, { method: 'DELETE' });
+      setSessions((list) => (list ?? []).map((x) => (x.id === s.id ? { ...x, shared: false } : x)));
+      return;
+    }
+    const res = await fetch(`/api/sessions/${s.id}/share`, { method: 'POST' });
+    if (!res.ok) return;
+    const { url } = (await res.json()) as { url: string };
+    const full = `${window.location.origin}${url}`;
+    try {
+      await navigator.clipboard.writeText(full);
+      setCopied(s.id);
+      window.setTimeout(() => setCopied(null), 2000);
+    } catch {
+      // Clipboard access can be refused; the link still exists, so show it
+      // rather than leaving the click looking like it failed.
+      window.prompt(t('share.copied'), full);
+    }
+    setSessions((list) => (list ?? []).map((x) => (x.id === s.id ? { ...x, shared: true } : x)));
+  }
+
   return (
     <div className="sessions">
       {sessions.map((s) => (
-        <button
-          key={s.id}
-          className={`session-item${s.id === currentId ? ' active' : ''}`}
-          onClick={() => onOpen(s.id)}
-          title={s.firstMessage}
-        >
-          <span className="session-q">{s.firstMessage || '(без вопроса)'}</span>
-          <span className="session-meta">
-            {shortDate(s.createdAt)} · {s.turns}
-          </span>
-        </button>
+        <div key={s.id} className={`session-row${s.id === currentId ? ' active' : ''}`}>
+          <button className="session-item" onClick={() => onOpen(s.id)} title={s.firstMessage}>
+            <span className="session-q">{s.firstMessage || '—'}</span>
+            <span className="session-meta">
+              {shortDate(s.createdAt)} · {s.turns}
+              {s.shared ? <span className="session-shared"> · {t('share.shared')}</span> : null}
+            </span>
+          </button>
+          <button
+            className={`session-share${s.shared ? ' on' : ''}`}
+            title={s.shared ? t('share.stop') : t('share.share')}
+            aria-label={s.shared ? t('share.stop') : t('share.share')}
+            onClick={() => void toggleShare(s)}
+          >
+            {copied === s.id ? (
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M20 6L9 17l-5-5" />
+              </svg>
+            ) : (
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M4 12v7a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-7" />
+                <path d="M12 15V3M8 7l4-4 4 4" />
+              </svg>
+            )}
+          </button>
+        </div>
       ))}
     </div>
   );

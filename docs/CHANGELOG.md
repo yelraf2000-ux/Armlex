@@ -1121,3 +1121,49 @@ prompt are the wrong target.
 Incidental: Q36's row 20 now comes back DELIVERED and USED, where `OPEN-ITEMS`
 26 records it at rerank rank 11 and undelivered. Worth confirming separately —
 if real, the tie-aware cut or guaranteed vector slots fixed it.
+
+**2026-09-04** — **User accounts replace the shared password.** Registration by
+email + password (scrypt, `node:crypto`, no native dependency) or Google
+sign-in; per-user conversation isolation; conversations shareable by link.
+Migration 004. 16 tests.
+
+**The part that is easy to get wrong, and the reason this is one change and not
+two: the shared gate was never a privacy control, it was a SPENDING control.**
+Every answer costs ~$0.10 of API credit, and opening registration removes the
+only thing standing between a crawler and the balance. So a per-plan monthly
+allowance (free 5 / pro 50 / firm 150) ships in the same commit, checked before
+any provider is called. Usage is COUNTED from `messages` rather than tracked in
+a counter column, so it cannot drift from what actually happened.
+
+Verified end to end against a running server, not just by unit test:
+registration → signed in → allowance falls 5/5 to 4/5 after one question → the
+conversation appears in the owner's list. Then the assertions that matter:
+
+    a second account sees                     0 sessions
+    reading the first user's conversation     404
+    sharing the first user's conversation     404
+    a shared link, read with no account       200, messages only
+    the same link after revoke                404
+
+404 rather than 403 throughout: a distinguishable "exists but not yours" turns
+the route into an oracle for which session ids are real. The share response
+carries `createdAt` and `messages` and nothing about the owner.
+
+**The 204 pre-account conversations are kept, not migrated.** `sessions.user_id`
+is nullable and they match nobody, so they are invisible in the app and still
+readable through `eval/review.ts` — which is the right outcome for both, since
+they are the only record of how the tool behaved before this change.
+
+Google sign-in is DORMANT until `GOOGLE_CLIENT_ID` / `GOOGLE_CLIENT_SECRET` /
+`PUBLIC_ORIGIN` are set: the button does not render and the routes 404, so
+nothing waited on a Google Cloud project. Matching is by email first, then
+subject id, so signing in with Google on an address that already registered with
+a password lands in the existing account rather than a second empty one that
+looks like data loss.
+
+Two implementation notes worth keeping. `gen_random_bytes` is pgcrypto, which
+this database does not carry — share tokens are minted with `node:crypto`
+instead, and a link's unguessability should not depend on which extensions a
+host installs. And scrypt at N=32768 needs `maxmem` raised explicitly, or Node
+rejects it with "Invalid scrypt params", which reads like a bad call rather than
+a memory ceiling.

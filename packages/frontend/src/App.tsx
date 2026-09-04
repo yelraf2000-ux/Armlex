@@ -6,12 +6,12 @@
  *   Ask    — one-shot grounded answer, no memory.
  *   Chat   — multi-turn with contextualisation and carried-over chunks.
  */
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import type { Chunk } from './types.js';
 import { ChunkCard } from './ChunkCard.js';
 import { BRAND } from './brand.js';
 import { Chat } from './Chat.js';
-import { Login } from './Login.js';
+import { Login, type Account } from './Login.js';
 import { MarkdownView } from './MarkdownView.js';
 import { NormPanel } from './NormPanel.js';
 import { extractQuotes } from './quotes.js';
@@ -276,31 +276,31 @@ function Workbench() {
   /** Bumped to remount the active mode, which is how "go home" clears it. */
   const [homeKey, setHomeKey] = useState(0);
   const [corpus, setCorpus] = useState<CorpusInfo | null>(null);
-  /** null = not yet known; the gate is off entirely in local development. */
+  /** null = not yet known. */
+  const [account, setAccount] = useState<Account | null>(null);
   const [authed, setAuthed] = useState<boolean | null>(null);
 
-  // Ask whether a password is required at all, then whether we already hold a
-  // valid cookie. /api/corpus is a cheap authenticated call, so its status
-  // answers the second question without a dedicated endpoint.
-  useEffect(() => {
-    void (async () => {
-      try {
-        const res = await fetch('/api/auth');
-        // Fail CLOSED. Any answer that isn't a clear "no password needed" is
-        // treated as "password needed", so a malformed or errored response
-        // shows the login screen instead of a workbench where every request
-        // 401s — which is exactly what happened when /api/auth was itself
-        // gated and `authRequired` came back undefined.
-        if (!res.ok) return setAuthed(false);
-        const data = (await res.json()) as { authRequired?: boolean };
-        if (data.authRequired === false) return setAuthed(true);
-        const probe = await fetch('/api/corpus');
-        setAuthed(probe.status !== 401);
-      } catch {
+  /** Who is signed in, and how much of this month's allowance is left. */
+  const loadAccount = useCallback(async (): Promise<void> => {
+    try {
+      const res = await fetch('/api/auth/me');
+      // Fail CLOSED. Anything that isn't a clear "here is your account" shows
+      // the sign-in screen rather than a workbench where every request 401s.
+      if (!res.ok) {
         setAuthed(false);
+        return;
       }
-    })();
+      const data = (await res.json()) as Account & { user: Account['user'] | null };
+      setAccount(data);
+      setAuthed(Boolean(data.user));
+    } catch {
+      setAuthed(false);
+    }
   }, []);
+
+  useEffect(() => {
+    void loadAccount();
+  }, [loadAccount]);
 
   // Corpus provenance for the banner. A legal tool that doesn't say how current
   // it is invites the reader to assume it is current. Waits for auth, since the
@@ -332,7 +332,12 @@ function Workbench() {
   if (!authed) {
     return (
       <div className="wrap">
-        <Login onSuccess={() => setAuthed(true)} />
+        <Login
+          googleEnabled={account?.google}
+          onSuccess={() => {
+            void loadAccount();
+          }}
+        />
       </div>
     );
   }
@@ -378,6 +383,28 @@ function Workbench() {
           ) : null}
 
           <span className="spacer" />
+          {/*
+            The allowance, where the person can see it before they spend it.
+            Shown only on a capped plan — an "unlimited" counter is furniture,
+            and the same reasoning kept the coverage badge off confident answers.
+          */}
+          {account?.usage && account.usage.limit !== null ? (
+            <span className="masthead-quota" title={t('auth.quotaLeft')}>
+              <span className="num">{account.usage.remaining}</span> / {account.usage.limit}
+            </span>
+          ) : null}
+          <button
+            className="masthead-signout"
+            onClick={() => {
+              void (async () => {
+                await fetch('/api/auth/logout', { method: 'POST' });
+                setAccount(null);
+                setAuthed(false);
+              })();
+            }}
+          >
+            {t('auth.signOut')}
+          </button>
           <SettingsControls />
           {/*
             One mode, so no switcher: a lone tab is a control that cannot do
