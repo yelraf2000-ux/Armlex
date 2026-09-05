@@ -41,6 +41,9 @@ const PUBLIC_PATHS = new Set([
   // is not unprotected — it carries a per-address rate limit and the cheap
   // model — but the protection is its own, not the session's.
   '/api/preview',
+  // The payment provider has no session. This one is verified by HMAC signature
+  // instead, which is a stronger check than a cookie: see billing/routes.ts.
+  '/api/billing/webhook',
 ]);
 
 /** A shape the UI can render, with no hash or provider id in it. */

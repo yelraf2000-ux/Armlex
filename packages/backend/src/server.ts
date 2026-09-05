@@ -18,6 +18,7 @@ import {
 import { monthlyUsage } from './auth/users.js';
 import { generatePreview, hashIp } from './answer/preview.js';
 import { checkRate } from './answer/rateLimit.js';
+import { startCheckout, webhook } from './billing/routes.js';
 import { retrieve, warmRetrieval, VectorLegUnavailableError } from './retrieval/retrieve.js';
 import { db } from './db/pool.js';
 import { ask, isConfigured } from './answer/ask.js';
@@ -53,6 +54,25 @@ if (process.env['NODE_ENV'] === 'production' && !process.env['SESSION_SECRET']) 
   process.exit(1);
 }
 
+/**
+ * Keep the raw body for the billing webhook.
+ *
+ * Its signature is an HMAC of the bytes the provider sent. Re-serialising the
+ * parsed JSON changes key order and whitespace, the signature stops matching,
+ * and the failure reads like a provider bug rather than ours — which is the
+ * classic way webhook verification is shipped broken. So this parser hands the
+ * route both the parsed body and the exact string it arrived as.
+ */
+app.addContentTypeParser('application/json', { parseAs: 'string' }, (req, body, done) => {
+  (req as typeof req & { rawBody?: string }).rawBody = body as string;
+  try {
+    done(null, JSON.parse(body as string));
+  } catch {
+    // An unparseable body is a client error, not a crash.
+    done(null, {});
+  }
+});
+
 app.addHook('preHandler', requireAuth);
 app.post('/api/auth/register', register);
 app.post('/api/auth/login', login);
@@ -60,6 +80,10 @@ app.post('/api/auth/logout', logout);
 app.get('/api/auth/me', me);
 app.get('/api/auth/google', googleStart);
 app.get('/api/auth/google/callback', googleCallback);
+
+// Billing. The checkout needs a session; the webhook is verified by signature.
+app.get('/api/billing/checkout', startCheckout);
+app.post('/api/billing/webhook', webhook);
 
 /**
  * A real answer for a visitor with no account, partly withheld.
