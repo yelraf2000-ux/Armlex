@@ -12,7 +12,7 @@
  *
  *   GOOGLE_CLIENT_ID
  *   GOOGLE_CLIENT_SECRET
- *   PUBLIC_ORIGIN   e.g. https://armlex.onrender.com  (redirect URI is derived)
+ *   PUBLIC_ORIGIN   e.g. https://matyanai.am  (redirect URI is derived)
  *
  * The redirect URI registered in Google Cloud must be exactly
  * `<PUBLIC_ORIGIN>/api/auth/google/callback`.

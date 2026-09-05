@@ -17,7 +17,7 @@ what we intend. This file and its siblings are the state — what is true.
 
 ## Status at a glance (end of 2026-08-24)
 
-**Live:** https://armlex.onrender.com — `/api/version` reports the deployed
+**Live:** https://matyanai.am — `/api/version` reports the deployed
 commit. Corpus lives in shared Neon (live immediately); code needs push +
 Render rebuild.
 
