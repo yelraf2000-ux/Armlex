@@ -219,6 +219,19 @@ export function Login({
             ))}
           </div>
 
+          {/*
+            Placed under the size selector rather than above the form: this is
+            where the question actually occurs to someone, and a paragraph of
+            reassurance before they have started typing is friction answering a
+            doubt they do not have yet.
+
+            Says what the answers are FOR, not that they improve an
+            "experience". This audience verifies things for a living, and the
+            vague version of this sentence is the one they have learned to skim
+            past.
+          */}
+          <p className="login-why">{t('auth.whyWeAsk')}</p>
+
           <button
             onClick={() => {
               setError(null);

@@ -85,6 +85,8 @@ const hy: Dict = {
   'auth.companySize': 'Ընկերության չափը',
   'auth.next': 'Շարունակել',
   'auth.backStep': '← Հետ',
+  'auth.whyWeAsk':
+    'Այս տվյալները օգտագործում ենք միայն Ձեզ համապատասխան փաթեթը առաջարկելու և պատասխանները Ձեր գործունեությանը հարմարեցնելու համար։ Երրորդ անձանց չենք փոխանցում։',
   'auth.createAccount': 'Ստեղծել հաշիվ',
   'auth.or': 'կամ',
   'auth.google': 'Շարունակել Google-ով',
@@ -204,6 +206,8 @@ const ru: Dict = {
   'auth.companySize': 'Размер компании',
   'auth.next': 'Продолжить',
   'auth.backStep': '← Назад',
+  'auth.whyWeAsk':
+    'Эти данные нужны только чтобы предложить вам подходящий тариф и адаптировать ответы под вашу работу. Третьим лицам не передаём.',
   'auth.createAccount': 'Создать аккаунт',
   'auth.or': 'или',
   'auth.google': 'Продолжить с Google',
@@ -323,6 +327,8 @@ const en: Dict = {
   'auth.companySize': 'Company size',
   'auth.next': 'Continue',
   'auth.backStep': '← Back',
+  'auth.whyWeAsk':
+    'We use this only to suggest the right plan and keep answers relevant to your work. Never shared with anyone else.',
   'auth.createAccount': 'Create account',
   'auth.or': 'or',
   'auth.google': 'Continue with Google',

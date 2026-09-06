@@ -1701,3 +1701,15 @@ a { color: var(--accent); }
 }
 
 .login-row .linkish:hover { color: var(--accent); }
+
+/*
+ * Why we ask. Quiet, small, and directly under the field that prompts the
+ * question — reassurance is only reassuring if it arrives where the doubt is.
+ */
+.login-why {
+  font-size: 0.78rem;
+  line-height: 1.55;
+  color: var(--ink-3);
+  margin: 0.85rem 0 0;
+  text-wrap: pretty;
+}
