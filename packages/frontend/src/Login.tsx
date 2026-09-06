@@ -20,7 +20,7 @@ export interface Account {
   google?: boolean;
 }
 
-type Tab = 'signin' | 'register';
+export type Tab = 'signin' | 'register';
 
 export function Login({
   onSuccess,

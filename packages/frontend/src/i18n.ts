@@ -107,6 +107,7 @@ const hy: Dict = {
   'preview.unlock': 'Գրանցվել և տեսնել ամբողջը',
   'preview.free': 'Անվճար · ամսական 5 հարց',
   'preview.back': '← Վերադառնալ հարցին',
+  'preview.backHome': '← Վերադառնալ',
   'preview.failed': 'Չհաջողվեց ստանալ պատասխանը։',
   'preview.resuming': 'Պատրաստում եմ Ձեր ամբողջական պատասխանը…',
 
@@ -220,6 +221,7 @@ const ru: Dict = {
   'preview.unlock': 'Зарегистрироваться и увидеть всё',
   'preview.free': 'Бесплатно · 5 вопросов в месяц',
   'preview.back': '← Вернуться к вопросу',
+  'preview.backHome': '← Назад',
   'preview.failed': 'Не удалось получить ответ.',
   'preview.resuming': 'Готовлю ваш полный ответ…',
 
@@ -333,6 +335,7 @@ const en: Dict = {
   'preview.unlock': 'Register and see it all',
   'preview.free': 'Free · 5 questions a month',
   'preview.back': '← Back to your question',
+  'preview.backHome': '← Back',
   'preview.failed': 'Could not get an answer.',
   'preview.resuming': 'Preparing your full answer…',
 

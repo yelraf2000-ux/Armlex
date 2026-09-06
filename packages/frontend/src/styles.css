@@ -1560,3 +1560,52 @@ a { color: var(--accent); }
   width: 17rem;
   max-width: 40vw;
 }
+
+/* ── Both doors, before anything is asked ───────────────────────────────── */
+
+/*
+ * Sign in / Register in the landing header. A returning user arrived to USE the
+ * tool; making them type a question first, or hunt for a link under a blurred
+ * answer, is a toll on exactly the person most likely to be paying.
+ *
+ * Register carries the accent, Sign in does not: the page is aimed at people
+ * who do not have an account yet, and two equally weighted buttons make the
+ * visitor choose before they know which one they are.
+ */
+.landing-top {
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0 0 1.25rem;
+}
+
+.landing-signin,
+.landing-signup {
+  font-family: var(--body);
+  font-size: 0.85rem;
+  cursor: pointer;
+  border-radius: 4px;
+  padding: 0.5rem 0.95rem;
+  min-height: 38px;
+}
+
+.landing-signin {
+  background: none;
+  border: none;
+  color: var(--ink-2);
+}
+
+.landing-signin:hover { color: var(--accent); }
+
+.landing-signup {
+  background: none;
+  border: 1px solid var(--accent);
+  color: var(--accent);
+}
+
+.landing-signup:hover { background: var(--accent-bg); }
+
+@media (max-width: 560px) {
+  .landing-top { padding-bottom: 0.75rem; }
+}

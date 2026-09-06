@@ -1242,3 +1242,25 @@ only backwards landed a whole paragraph short. And the clipboard fallback used
 `window.prompt`, which is blocked outright in embedded contexts and threw,
 making a refused clipboard look like a broken button; the link is now rendered
 inline and selectable, so copying is a convenience rather than the mechanism.
+
+**2026-09-05** — **Sign in / Register in the landing header.** The teaser page
+gave a visitor exactly one way to reach an account: ask a question, wait for the
+answer, then press the button under the blurred half. That is a toll on the
+person most likely to be paying — someone who already has an account arrived to
+USE the tool, not to be marketed at.
+
+Both doors now sit top-right, before anything is asked, and each opens the form
+on the tab it names. Register carries the accent and Sign in does not: the page
+is aimed at people without an account, and two equally weighted buttons make a
+visitor choose before they know which one they are.
+
+Two details that came out of building it. The preview state lives in `Landing`
+rather than in the form, so going back from the sign-in screen restores the
+answer the visitor was reading — and the back label changes accordingly
+(«Վերադառնալ հարցին» when there is a preview to return to, «Վերադառնալ» when
+there is not). And running out of free previews now opens the form on Register
+rather than Sign in, since an account is precisely the answer to that error.
+
+Verified signed out, end to end: Մուտք opens sign-in with no name field,
+Գրանցում opens register with one, and signing in from the header lands in the
+workbench without a question ever being asked.

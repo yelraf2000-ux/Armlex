@@ -12,7 +12,7 @@
  */
 import { useState } from 'react';
 import { BRAND } from './brand.js';
-import { Login } from './Login.js';
+import { Login, type Tab } from './Login.js';
 import { MarkdownView } from './MarkdownView.js';
 import { useSettings } from './Settings.js';
 
@@ -46,7 +46,14 @@ export function Landing({
   const [busy, setBusy] = useState(false);
   const [preview, setPreview] = useState<PreviewResult | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const [showAuth, setShowAuth] = useState(false);
+  /**
+   * Which form to show, if any.
+   *
+   * A returning user should never have to ask a question to find the way back
+   * in — so the header carries both doors, and the tab that opens matches the
+   * one they pressed.
+   */
+  const [showAuth, setShowAuth] = useState<Tab | null>(null);
 
   async function ask(q: string): Promise<void> {
     const text = q.trim();
@@ -65,7 +72,7 @@ export function Landing({
         setError(body.detail ?? t('preview.failed'));
         // Out of free previews is the one error that should still lead
         // somewhere: registering is exactly the answer to it.
-        if (res.status === 429) setShowAuth(true);
+        if (res.status === 429) setShowAuth('register');
         return;
       }
       setPreview(body);
@@ -81,10 +88,14 @@ export function Landing({
   if (showAuth) {
     return (
       <div className="wrap">
-        <Login googleEnabled={googleEnabled} onSuccess={onAuthed} initialTab="register" />
+        <Login googleEnabled={googleEnabled} onSuccess={onAuthed} initialTab={showAuth} />
         <div className="measure landing-back">
-          <button className="linkish" onClick={() => setShowAuth(false)}>
-            {t('preview.back')}
+          <button className="linkish" onClick={() => setShowAuth(null)}>
+            {/*
+              Going back must not lose the preview they were reading — the state
+              is held here, not in the form, so returning restores it intact.
+            */}
+            {preview ? t('preview.back') : t('preview.backHome')}
           </button>
         </div>
       </div>
@@ -93,6 +104,21 @@ export function Landing({
 
   return (
     <div className="wrap landing">
+      {/*
+        Both doors, top right, before anything is asked. Someone who already has
+        an account arrived to USE the tool, and making them type a question
+        first — or hunt for a link under a blurred answer — is a toll on the
+        person most likely to be a paying customer.
+      */}
+      <div className="landing-top">
+        <button className="landing-signin" onClick={() => setShowAuth('signin')}>
+          {t('auth.signIn')}
+        </button>
+        <button className="landing-signup" onClick={() => setShowAuth('register')}>
+          {t('auth.register')}
+        </button>
+      </div>
+
       <div className="login-head">
         <h1 className="login-title">{BRAND}</h1>
         <div className="login-sub">{t('masthead.sub')}</div>
@@ -163,7 +189,7 @@ export function Landing({
                     </span>
                   ) : null}
                 </div>
-                <button className="preview-cta-button" onClick={() => setShowAuth(true)}>
+                <button className="preview-cta-button" onClick={() => setShowAuth('register')}>
                   {t('preview.unlock')}
                 </button>
                 <div className="preview-cta-note">{t('preview.free')}</div>
