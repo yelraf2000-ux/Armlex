@@ -13,6 +13,7 @@ import {
   logout,
   me,
   register,
+  saveProfile,
   requireAuth,
 } from './auth/routes.js';
 import { monthlyUsage } from './auth/users.js';
@@ -78,6 +79,7 @@ app.post('/api/auth/register', register);
 app.post('/api/auth/login', login);
 app.post('/api/auth/logout', logout);
 app.get('/api/auth/me', me);
+app.post('/api/auth/profile', saveProfile);
 app.get('/api/auth/google', googleStart);
 app.get('/api/auth/google/callback', googleCallback);
 

@@ -10,6 +10,7 @@ import { clearCookie, readCookie, setCookie, verify } from './cookie.js';
 import { MIN_PASSWORD, verifyPassword } from './password.js';
 import {
   createWithPassword,
+  fillProfile,
   findByEmail,
   findById,
   monthlyUsage,
@@ -47,8 +48,22 @@ const PUBLIC_PATHS = new Set([
 ]);
 
 /** A shape the UI can render, with no hash or provider id in it. */
-function publicUser(user: User): { id: string; email: string; name: string | null; plan: string } {
-  return { id: user.id, email: user.email, name: user.name, plan: user.plan };
+function publicUser(user: User): {
+  id: string;
+  email: string;
+  name: string | null;
+  plan: string;
+  companyName: string | null;
+  companySize: string | null;
+} {
+  return {
+    id: user.id,
+    email: user.email,
+    name: user.name,
+    plan: user.plan,
+    companyName: user.company_name,
+    companySize: user.company_size,
+  };
 }
 
 declare module 'fastify' {
@@ -82,10 +97,16 @@ export async function requireAuth(req: FastifyRequest, reply: FastifyReply): Pro
 const slow = (): Promise<void> => new Promise((r) => setTimeout(r, 400));
 
 export async function register(req: FastifyRequest, reply: FastifyReply): Promise<void> {
-  const body = req.body as { email?: unknown; password?: unknown; name?: unknown } | undefined;
+  const body = req.body as
+    | { email?: unknown; password?: unknown; name?: unknown; companyName?: unknown; companySize?: unknown }
+    | undefined;
   const email = typeof body?.email === 'string' ? normaliseEmail(body.email) : '';
   const password = typeof body?.password === 'string' ? body.password : '';
   const name = typeof body?.name === 'string' && body.name.trim() ? body.name.trim() : null;
+  const companyName =
+    typeof body?.companyName === 'string' && body.companyName.trim()
+      ? body.companyName.trim()
+      : null;
 
   if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
     return reply.code(400).send({ error: 'invalid_email' });
@@ -101,7 +122,10 @@ export async function register(req: FastifyRequest, reply: FastifyReply): Promis
     return reply.code(409).send({ error: 'email_taken' });
   }
 
-  const user = await createWithPassword(email, password, name);
+  const user = await createWithPassword(email, password, name, {
+    companyName,
+    companySize: body?.companySize,
+  });
 
   // If they arrived from a preview, record which one. Conversion is the number
   // that decides whether the teaser is worth what it costs to run.
@@ -135,6 +159,32 @@ export async function login(req: FastifyRequest, reply: FastifyReply): Promise<v
 
 export async function logout(_req: FastifyRequest, reply: FastifyReply): Promise<void> {
   return reply.header('Set-Cookie', clearCookie()).send({ ok: true });
+}
+
+/**
+ * Attach a company profile to an account that has none.
+ *
+ * Exists because Google sign-up leaves the page. The answers given before that
+ * redirect cannot travel with the registration call — the browser holds them
+ * and posts them here once the account is back. Also the repair path for the
+ * accounts created before this form existed.
+ *
+ * Fills empty fields only (`fillProfile`), so a stale value the browser was
+ * still holding can never overwrite something the person has since corrected.
+ */
+export async function saveProfile(req: FastifyRequest, reply: FastifyReply): Promise<void> {
+  const body = req.body as { companyName?: unknown; companySize?: unknown } | undefined;
+  const companyName =
+    typeof body?.companyName === 'string' && body.companyName.trim()
+      ? body.companyName.trim()
+      : null;
+
+  const updated = await fillProfile(req.user!.id, {
+    companyName,
+    companySize: body?.companySize,
+  });
+  if (!updated) return reply.code(404).send({ error: 'not_found' });
+  return reply.send({ user: publicUser(updated) });
 }
 
 /** Who am I, and how much of this month's allowance is left? */

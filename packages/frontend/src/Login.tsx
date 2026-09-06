@@ -14,13 +14,32 @@ import { BRAND } from './brand.js';
 import { useSettings } from './Settings.js';
 
 export interface Account {
-  user: { id: string; email: string; name: string | null; plan: string } | null;
+  user: {
+    id: string;
+    email: string;
+    name: string | null;
+    plan: string;
+    companyName: string | null;
+    companySize: string | null;
+  } | null;
   usage?: { used: number; limit: number | null; remaining: number | null };
   /** False when the server has no Google credentials — then the button is not offered. */
   google?: boolean;
 }
 
 export type Tab = 'signin' | 'register';
+
+/** The sizes the form offers — mirrors the CHECK constraint on the column. */
+export const COMPANY_SIZES = ['1-5', '5-10', '10-30', '30+'] as const;
+
+/** Held across the Google redirect, which leaves the page and loses component state. */
+export const PENDING_PROFILE = 'matyan.pendingProfile';
+
+interface Profile {
+  fullName: string;
+  companyName: string;
+  companySize: string;
+}
 
 export function Login({
   onSuccess,
@@ -38,9 +57,31 @@ export function Login({
   const [tab, setTab] = useState<Tab>(initialTab ?? 'signin');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [name, setName] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
+
+  /**
+   * Registration is two steps: who you are, then how to sign in.
+   *
+   * The profile comes first because it is the easier half — a name and a
+   * company are typed without deciding anything, while choosing a password is
+   * the moment a person hesitates. Putting the easy half first means the
+   * hesitation happens after they have already invested something.
+   *
+   * It is also the only moment anyone will answer "how big is your firm", and
+   * that answer maps a signup straight onto a pricing tier.
+   */
+  const [step, setStep] = useState<1 | 2>(1);
+  const [profile, setProfile] = useState<Profile>({
+    fullName: '',
+    companyName: '',
+    companySize: '',
+  });
+
+  const profileComplete =
+    profile.fullName.trim() !== '' &&
+    profile.companyName.trim() !== '' &&
+    profile.companySize !== '';
 
   /** Server error codes are stable; the message the user reads is translated. */
   function messageFor(code: string, status: number): string {
@@ -69,7 +110,15 @@ export function Login({
         body: JSON.stringify(
           tab === 'signin'
             ? { email: email.trim(), password }
-            : { email: email.trim(), password, name: name.trim() || undefined },
+            : {
+                email: email.trim(),
+                password,
+                name: profile.fullName.trim() || undefined,
+                companyName: profile.companyName.trim() || undefined,
+                companySize: profile.companySize || undefined,
+                // Attributes the signup to the teaser that produced it.
+                previewId: sessionStorage.getItem('matyan.pendingPreview') ?? undefined,
+              },
         ),
       });
       if (res.ok) {
@@ -121,20 +170,70 @@ export function Login({
 
       <p className="login-note">{tab === 'signin' ? t('auth.signInNote') : t('auth.registerNote')}</p>
 
-      <div className="login-row">
-        {tab === 'register' ? (
-          <>
-            <label htmlFor="armlex-name">{t('auth.name')}</label>
-            <input
-              id="armlex-name"
-              type="text"
-              autoComplete="name"
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-            />
-          </>
-        ) : null}
+      {/* Step 1 of registration: who you are and how big your firm is. */}
+      {tab === 'register' && step === 1 ? (
+        <div className="login-row">
+          <label htmlFor="armlex-name">
+            {t('auth.fullName')} <span className="req">*</span>
+          </label>
+          <input
+            id="armlex-name"
+            type="text"
+            autoComplete="name"
+            autoFocus
+            value={profile.fullName}
+            onChange={(e) => setProfile((p) => ({ ...p, fullName: e.target.value }))}
+          />
 
+          <label htmlFor="armlex-company">
+            {t('auth.companyName')} <span className="req">*</span>
+          </label>
+          <input
+            id="armlex-company"
+            type="text"
+            autoComplete="organization"
+            value={profile.companyName}
+            onChange={(e) => setProfile((p) => ({ ...p, companyName: e.target.value }))}
+          />
+
+          <span className="login-label">
+            {t('auth.companySize')} <span className="req">*</span>
+          </span>
+          {/*
+            Buttons rather than a <select>: four options is few enough to show
+            at once, and a dropdown hides the range someone is choosing between
+            until they open it.
+          */}
+          <div className="size-options" role="radiogroup" aria-label={t('auth.companySize')}>
+            {COMPANY_SIZES.map((size) => (
+              <button
+                key={size}
+                type="button"
+                role="radio"
+                aria-checked={profile.companySize === size}
+                className={profile.companySize === size ? 'size-option on' : 'size-option'}
+                onClick={() => setProfile((p) => ({ ...p, companySize: size }))}
+              >
+                {size === '30+' ? '30+' : size}
+              </button>
+            ))}
+          </div>
+
+          <button
+            onClick={() => {
+              setError(null);
+              setStep(2);
+            }}
+            disabled={!profileComplete}
+          >
+            {t('auth.next')}
+          </button>
+        </div>
+      ) : null}
+
+      {/* Step 2, and the whole of sign-in: the credentials. */}
+      {tab === 'register' && step === 1 ? null : (
+      <div className="login-row">
         <label htmlFor="armlex-email">{t('auth.email')}</label>
         <input
           id="armlex-email"
@@ -166,11 +265,30 @@ export function Login({
           {busy ? '…' : tab === 'signin' ? t('login.enter') : t('auth.createAccount')}
         </button>
 
+        {tab === 'register' ? (
+          <button className="linkish" onClick={() => setStep(1)}>
+            {t('auth.backStep')}
+          </button>
+        ) : null}
+
         {googleEnabled ? (
           <>
             <div className="login-or">{t('auth.or')}</div>
-            {/* A link, not a fetch: OAuth is a browser redirect to Google and back. */}
-            <a className="login-google" href="/api/auth/google">
+            {/*
+              A link, not a fetch: OAuth is a browser redirect to Google and
+              back. The profile is stashed first, because that redirect destroys
+              component state — `App` posts it to /api/auth/profile once the
+              account exists on the other side.
+            */}
+            <a
+              className="login-google"
+              href="/api/auth/google"
+              onClick={() => {
+                if (tab === 'register' && profileComplete) {
+                  sessionStorage.setItem(PENDING_PROFILE, JSON.stringify(profile));
+                }
+              }}
+            >
               <svg width="17" height="17" viewBox="0 0 18 18" aria-hidden="true">
                 <path fill="#4285F4" d="M17.6 9.2c0-.64-.06-1.25-.16-1.84H9v3.48h4.84a4.14 4.14 0 0 1-1.8 2.72v2.26h2.92c1.7-1.57 2.68-3.88 2.68-6.62z" />
                 <path fill="#34A853" d="M9 18c2.43 0 4.47-.8 5.96-2.18l-2.92-2.26c-.8.54-1.84.86-3.04.86-2.34 0-4.32-1.58-5.03-3.7H.94v2.33A9 9 0 0 0 9 18z" />
@@ -182,6 +300,8 @@ export function Login({
           </>
         ) : null}
       </div>
+
+      )}
 
       <div className="login-disclaimer">{t('corpus.disclaimer')}</div>
     </div>

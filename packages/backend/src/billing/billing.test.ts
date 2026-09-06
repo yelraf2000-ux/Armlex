@@ -132,6 +132,8 @@ describe('effectivePlan', () => {
     password_hash: null,
     google_sub: null,
     plan_expires_at: null,
+    company_name: null,
+    company_size: null,
     ...over,
   });
 

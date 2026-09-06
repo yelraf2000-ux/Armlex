@@ -12,7 +12,7 @@ import { ChunkCard } from './ChunkCard.js';
 import { BRAND } from './brand.js';
 import { Chat } from './Chat.js';
 import { Landing } from './Landing.js';
-import { type Account } from './Login.js';
+import { type Account, PENDING_PROFILE } from './Login.js';
 import { MarkdownView } from './MarkdownView.js';
 import { NormPanel } from './NormPanel.js';
 import { Shared } from './Shared.js';
@@ -293,6 +293,31 @@ function Workbench() {
         return;
       }
       const data = (await res.json()) as Account & { user: Account['user'] | null };
+
+      /*
+        Someone who signed up through Google answered the profile questions
+        BEFORE being redirected away, so those answers could not ride along in
+        the registration call. The browser kept them; post them now that the
+        account exists. Cleared first, so a failure cannot retry forever.
+      */
+      if (data.user && !data.user.companyName) {
+        const stashed = sessionStorage.getItem(PENDING_PROFILE);
+        if (stashed) {
+          sessionStorage.removeItem(PENDING_PROFILE);
+          try {
+            const p = JSON.parse(stashed) as { companyName?: string; companySize?: string };
+            await fetch('/api/auth/profile', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify(p),
+            });
+          } catch {
+            // A profile that fails to attach is a lost lead, not a broken
+            // signup — never block the person from reaching the tool.
+          }
+        }
+      }
+
       setAccount(data);
       setAuthed(Boolean(data.user));
     } catch {

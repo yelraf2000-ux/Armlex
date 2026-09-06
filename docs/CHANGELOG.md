@@ -1264,3 +1264,35 @@ rather than Sign in, since an account is precisely the answer to that error.
 Verified signed out, end to end: Մուտք opens sign-in with no name field,
 Գրանցում opens register with one, and signing in from the header lands in the
 workbench without a question ever being asked.
+
+**2026-09-05** — **Registration is two steps: who you are, then how to sign in.**
+Full name, company name and company size (1-5 / 5-10 / 10-30 / 30+), all
+required, then Continue to the credentials. Migration 007.
+
+**Company size is the point.** It maps a signup straight onto a pricing tier —
+Team 2-9, Firm 10-24, Enterprise 25+ — so the sales list sorts itself without a
+conversation, and the mix answers whether the B2B thesis is meeting reality or
+whether every signup is a sole practitioner. Stored as the bucket the person
+picked rather than a number they would have invented.
+
+**Profile before credentials, deliberately.** It is the easier half: a name and
+a company are typed without deciding anything, while choosing a password is
+where a person hesitates. The hesitation then happens after they have already
+invested something. It is also the only moment anyone will answer a question
+about their firm.
+
+Google needed its own path: that redirect leaves the page and destroys the
+component state, so the answers are stashed in `sessionStorage` before the jump
+and posted to `/api/auth/profile` once the account exists on the other side.
+`fillProfile` writes only into EMPTY columns, so a stale stash can never
+overwrite something since corrected.
+
+Two bugs found by looking at the rendered page rather than the diff. The step-2
+block used the `hidden` attribute, which **loses to `display: flex`** from the
+stylesheet — the email field was visible underneath step one; it is a
+conditional render now. And the four size buttons inherited `.login-row button`,
+which styles every descendant as a full-width dark primary action, so a choice
+between four options rendered as four submit buttons.
+
+Verified end to end: Continue stays disabled until all three are answered, and a
+real registration persisted `name`, `company_name` and `company_size = 10-30`.

@@ -1609,3 +1609,95 @@ a { color: var(--accent); }
 @media (max-width: 560px) {
   .landing-top { padding-bottom: 0.75rem; }
 }
+
+/* ── Registration, step one ─────────────────────────────────────────────── */
+
+.login-label {
+  font-family: var(--body);
+  font-size: 0.78rem;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--ink-3);
+}
+
+/* Marks a required field without the shouting red asterisk of a 2004 form. */
+.req { color: var(--accent); }
+
+/*
+ * Four buttons rather than a <select>. The options are the thing being chosen
+ * between, and a dropdown hides them until opened — which for a question the
+ * visitor has no reason to care about is one interaction too many.
+ */
+.size-options {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 0.4rem;
+}
+
+.size-option {
+  font-family: var(--body);
+  font-size: 0.9rem;
+  padding: 0.7rem 0.4rem;
+  min-height: 44px;
+  border: 1px solid var(--rule);
+  border-radius: 4px;
+  background: var(--leaf);
+  color: var(--ink-2);
+  cursor: pointer;
+  font-variant-numeric: tabular-nums;
+}
+
+.size-option:hover { border-color: var(--rule-2); }
+
+.size-option.on {
+  border-color: var(--accent);
+  background: var(--accent-bg);
+  color: var(--accent);
+}
+
+@media (max-width: 480px) {
+  .size-options { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+
+/*
+ * The size choices are inside `.login-row`, whose generic `button` rule styles
+ * every descendant as a full-width primary action. These four are a choice
+ * between options, not four submit buttons — so they opt out of it explicitly
+ * rather than relying on source order.
+ */
+.login-row .size-option {
+  width: auto;
+  margin-top: 0;
+  padding: 0.7rem 0.4rem;
+  font-size: 0.9rem;
+  font-weight: 400;
+  letter-spacing: 0;
+  text-transform: none;
+  border: 1px solid var(--rule);
+  border-radius: 4px;
+  background: var(--leaf);
+  color: var(--ink-2);
+}
+
+.login-row .size-option:hover { border-color: var(--rule-2); }
+
+.login-row .size-option.on {
+  border-color: var(--accent);
+  background: var(--accent-bg);
+  color: var(--accent);
+}
+
+/* Same exemption for the "back a step" link. */
+.login-row .linkish {
+  width: auto;
+  margin-top: 0.8rem;
+  padding: 0;
+  background: none;
+  font-size: 0.82rem;
+  font-weight: 400;
+  letter-spacing: 0;
+  text-transform: none;
+  color: var(--ink-3);
+}
+
+.login-row .linkish:hover { color: var(--accent); }
