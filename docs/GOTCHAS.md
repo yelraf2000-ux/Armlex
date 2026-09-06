@@ -458,3 +458,20 @@ negative answer is actionable — someone plans around it.
 
 `OPEN-ITEMS` 24 is the same bug in the eval harness (`score.ts` renders a wiped
 index as a plausible 0.0% table). Same shape, same fix: fail loudly.
+
+## Deleting a conversation is a quota refund unless you bank the count
+
+`monthlyUsage` counts `messages` joined to `sessions`. Both cascade from
+`sessions`, so a hard delete un-asks the questions: ask five, delete the
+conversation, ask five more, forever — an unbounded free tier.
+
+The fix is **not** a soft delete. People paste client facts into this tool, and
+"delete" that keeps the text is the wrong promise to make them.
+
+`DELETE /api/sessions/:id` therefore banks the count into `usage_ledger`
+(`user_id`, `month`, `questions`) *before* the rows go, grouped by the month
+each question was asked in — a September deletion must not consume August's
+allowance. `monthlyUsage` adds the current month's ledger row to what is still
+on disk.
+
+Anything else that deletes message rows has the same obligation.

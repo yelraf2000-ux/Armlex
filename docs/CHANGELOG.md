@@ -1380,3 +1380,40 @@ Verified in the browser at 375px and desktop: two fields on Register and one on
 Sign in, both eyes toggle both fields, nothing complains at `c` or `corr`, the
 warning appears at `correct-hosre` and at an overrun, and a long password stops
 short of the icon.
+
+**2026-09-06** — **Conversation rows get a ⋮ menu: pin, rename, share, delete.**
+Hover a row in the register, click the dots, act on it.
+
+Rename needed no schema — `sessions.title` has existed unused since migration
+004. Pin is `pinned_at timestamptz` rather than a boolean, so several pinned
+conversations have an order among themselves; the list sorts
+`pinned_at DESC NULLS LAST, created_at DESC`.
+
+**Delete forced a decision about the meter.** `monthlyUsage` counts rows in
+`messages` joined to `sessions`, and both cascade — so a plain delete refunds
+the month's questions: ask five, delete, ask five more, forever. A soft delete
+would fix the count and break the promise, since people paste client facts in
+here and "delete" has to mean the text is gone. So the content is destroyed and
+the COUNT is banked: `usage_ledger(user_id, month, questions)`, written before
+the delete, grouped by the month each question was asked in. Verified: three
+questions, delete one conversation, usage still reads 3/5 with 2 rows on disk
+and 1 in the ledger. Written up in `GOTCHAS.md`.
+
+Delete asks first, in place, in the menu — no modal, because there is no undo
+to offer and a modal for one list row is heavier than the act. Deleting the
+conversation being read clears the reader (`onDeleted` → `reset`), or the
+transcript sits on screen with nothing behind it.
+
+The dots stay visible while their own menu is open — otherwise moving the
+pointer onto the menu takes it off the row and the button that opened it
+disappears underneath. Outside click and Escape both close.
+
+Share moves into the menu; the named share button on the first question of a
+conversation stays where it is. That one is the discoverable path — a control
+found by hovering is a control most people never find — and the menu is for
+someone already managing their list.
+
+Verified in the browser against a seeded account: menu reads
+Ամրացնել / Վերանվանել / Կիսվել / Ջնջել, pin reorders and persists, rename
+prefills from the first question and persists, share flips to «Դադարեցնել
+կիսվելը» and marks the row, delete asks before acting and the allowance holds.

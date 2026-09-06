@@ -446,7 +446,14 @@ export function Chat({ corpusSynced }: { corpusSynced: string | null }) {
           {t('nav.newCase')}
         </button>
         <div className="register-rule" />
-        <Sessions currentId={sessionId} onOpen={(id) => void openSession(id)} reloadKey={reloadKey} />
+        <Sessions
+          currentId={sessionId}
+          onOpen={(id) => void openSession(id)}
+          reloadKey={reloadKey}
+          // Deleting the conversation being read has to clear the reader too,
+          // or the transcript stays on screen with nothing behind it.
+          onDeleted={reset}
+        />
       </nav>
       ) : null}
 

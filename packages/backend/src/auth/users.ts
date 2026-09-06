@@ -208,12 +208,26 @@ export async function monthlyUsage(user: User): Promise<Usage> {
     `null` stays `null`: there is nothing to add to no limit.
   */
   const limit = base === null ? null : base + (user.bonus_questions ?? 0);
+  /*
+    Questions still on disk, PLUS questions whose conversation has been deleted.
+
+    Counting only what is on disk would make delete a refund button: ask five,
+    delete the conversation, ask five more, for as long as you like. The
+    deletion route banks the count in `usage_ledger` on its way out, and this
+    is where it is spent.
+  */
   const rows = await db()<{ n: number }[]>`
-    SELECT count(*)::int AS n
-      FROM messages m JOIN sessions s ON s.id = m.session_id
-     WHERE s.user_id = ${user.id}
-       AND m.role = 'user'
-       AND m.created_at >= date_trunc('month', now())`;
-  const used = rows[0]?.n ?? 0;
+    SELECT (
+      SELECT count(*)
+        FROM messages m JOIN sessions s ON s.id = m.session_id
+       WHERE s.user_id = ${user.id}
+         AND m.role = 'user'
+         AND m.created_at >= date_trunc('month', now())
+    ) + COALESCE((
+      SELECT questions FROM usage_ledger
+       WHERE user_id = ${user.id}
+         AND month = date_trunc('month', now())::date
+    ), 0) AS n`;
+  const used = Number(rows[0]?.n ?? 0);
   return { used, limit, remaining: limit === null ? null : Math.max(0, limit - used) };
 }

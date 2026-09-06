@@ -335,9 +335,11 @@ app.get('/api/sessions', async (req) => {
       turns: string;
       first_message: string | null;
       share_token: string | null;
+      title: string | null;
+      pinned_at: string | null;
     }[]
   >`
-    SELECT s.id, s.created_at::text, s.share_token,
+    SELECT s.id, s.created_at::text, s.share_token, s.title, s.pinned_at,
            count(m.id) FILTER (WHERE m.role = 'user')::text AS turns,
            (SELECT content FROM messages
              WHERE session_id = s.id AND role = 'user'
@@ -352,7 +354,9 @@ app.get('/api/sessions', async (req) => {
     -- A session with no messages is an artefact of a failed turn, not a
     -- conversation; showing it would just be clutter in the list.
     HAVING count(m.id) > 0
-    ORDER BY s.created_at DESC
+    -- Pinned first, then newest. NULLS LAST puts the unpinned below rather
+    -- than above, which is what "pin" means everywhere else.
+    ORDER BY s.pinned_at DESC NULLS LAST, s.created_at DESC
     LIMIT 40
   `;
   return {
@@ -362,6 +366,8 @@ app.get('/api/sessions', async (req) => {
       turns: Number(r.turns),
       firstMessage: r.first_message ?? '',
       shared: Boolean(r.share_token),
+      title: r.title,
+      pinned: Boolean(r.pinned_at),
     })),
   };
 });
@@ -385,6 +391,81 @@ app.get<{ Params: { id: string } }>('/api/sessions/:id', async (req, reply) => {
     ORDER BY id ASC
   `;
   return { sessionId: id, messages: rows };
+});
+
+/**
+ * Rename a conversation, or pin it.
+ *
+ * Both are small enough to share one route: each is a single nullable column on
+ * a row the caller already owns, and `WHERE user_id` is the only authorisation
+ * either needs. Absent fields are left alone, so pinning never rewrites a title.
+ */
+app.patch<{ Params: { id: string } }>('/api/sessions/:id', async (req, reply) => {
+  const { id } = req.params;
+  if (!/^[0-9a-f-]{36}$/i.test(id)) return reply.code(400).send({ error: 'invalid session id' });
+
+  const body = req.body as { title?: unknown; pinned?: unknown } | undefined;
+
+  if (body?.title !== undefined) {
+    // A trimmed-to-nothing title clears back to NULL rather than storing an
+    // empty string, so the list falls back to the first question instead of
+    // showing a blank row.
+    const raw = typeof body.title === 'string' ? body.title.trim() : '';
+    const title = raw ? raw.slice(0, 120) : null;
+    const rows = await db()<{ id: string }[]>`
+      UPDATE sessions SET title = ${title}
+       WHERE id = ${id} AND user_id = ${req.user!.id}
+      RETURNING id`;
+    if (!rows[0]) return reply.code(404).send({ error: 'not_found' });
+  }
+
+  if (body?.pinned !== undefined) {
+    const rows = await db()<{ id: string }[]>`
+      UPDATE sessions SET pinned_at = ${body.pinned ? new Date() : null}
+       WHERE id = ${id} AND user_id = ${req.user!.id}
+      RETURNING id`;
+    if (!rows[0]) return reply.code(404).send({ error: 'not_found' });
+  }
+
+  return { ok: true };
+});
+
+/**
+ * Delete a conversation, for good.
+ *
+ * The messages and the retrieved-chunk cache go with it by cascade. That is the
+ * promise the word "delete" makes, and for a tool people paste client facts
+ * into it is the right one — a soft delete that keeps the text would not be.
+ *
+ * But the month's allowance is counted from `messages`, so a plain delete
+ * un-asks the questions: ask five, delete, ask five more, forever. The count is
+ * therefore moved into `usage_ledger` BEFORE the rows go, in the same
+ * transaction-shaped order — if the delete then fails, the worst case is a user
+ * charged for questions they still have, which is the safe direction to fail.
+ */
+app.delete<{ Params: { id: string } }>('/api/sessions/:id', async (req, reply) => {
+  const { id } = req.params;
+  if (!/^[0-9a-f-]{36}$/i.test(id)) return reply.code(400).send({ error: 'invalid session id' });
+
+  const owned = await db()<{ id: string }[]>`
+    SELECT id FROM sessions WHERE id = ${id} AND user_id = ${req.user!.id} LIMIT 1`;
+  if (!owned[0]) return reply.code(404).send({ error: 'not_found' });
+
+  // Grouped by the month the question was ASKED in — deleting a September
+  // conversation must not consume August's allowance.
+  await db()`
+    INSERT INTO usage_ledger (user_id, month, questions)
+    SELECT s.user_id,
+           date_trunc('month', m.created_at)::date,
+           count(*)::int
+      FROM messages m JOIN sessions s ON s.id = m.session_id
+     WHERE s.id = ${id} AND m.role = 'user' AND s.user_id IS NOT NULL
+     GROUP BY 1, 2
+    ON CONFLICT (user_id, month)
+      DO UPDATE SET questions = usage_ledger.questions + EXCLUDED.questions`;
+
+  await db()`DELETE FROM sessions WHERE id = ${id} AND user_id = ${req.user!.id}`;
+  return { ok: true };
 });
 
 /**
