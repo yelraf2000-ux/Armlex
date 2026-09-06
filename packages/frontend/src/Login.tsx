@@ -41,6 +41,21 @@ interface Profile {
   companySize: string;
 }
 
+/** Kept in step with the server; the form promises these numbers to the user. */
+export const MAX_INVITES = 4;
+export const BONUS_FOR_INVITING = 10;
+export const BONUS_PER_ACCEPTED = 5;
+
+interface Invite {
+  name: string;
+  email: string;
+}
+
+const EMPTY_INVITES: Invite[] = Array.from({ length: MAX_INVITES }, () => ({
+  name: '',
+  email: '',
+}));
+
 export function Login({
   onSuccess,
   googleEnabled,
@@ -71,12 +86,22 @@ export function Login({
    * It is also the only moment anyone will answer "how big is your firm", and
    * that answer maps a signup straight onto a pricing tier.
    */
-  const [step, setStep] = useState<1 | 2>(1);
+  const [step, setStep] = useState<1 | 2 | 3>(1);
   const [profile, setProfile] = useState<Profile>({
     fullName: '',
     companyName: '',
     companySize: '',
   });
+
+  /**
+   * Step 2: colleagues to invite. Optional, and visibly so.
+   *
+   * Four empty rows rather than an "add another" button — the offer is worth
+   * more when the ceiling is visible, and a person deciding whether to bother
+   * can see the whole cost of bothering at once.
+   */
+  const [invites, setInvites] = useState<Invite[]>(EMPTY_INVITES);
+  const filledInvites = invites.filter((i) => i.email.trim() !== '');
 
   const profileComplete =
     profile.fullName.trim() !== '' &&
@@ -116,6 +141,10 @@ export function Login({
                 name: profile.fullName.trim() || undefined,
                 companyName: profile.companyName.trim() || undefined,
                 companySize: profile.companySize || undefined,
+                invites: filledInvites.map((i) => ({
+                  email: i.email.trim(),
+                  name: i.name.trim() || undefined,
+                })),
                 // Attributes the signup to the teaser that produced it.
                 previewId: sessionStorage.getItem('matyan.pendingPreview') ?? undefined,
               },
@@ -244,8 +273,67 @@ export function Login({
         </div>
       ) : null}
 
+      {/* Step 2: invite colleagues. Optional, and the skip is a real button. */}
+      {tab === 'register' && step === 2 ? (
+        <div className="login-row">
+          <p className="invite-offer">
+            {t('auth.inviteOffer')
+              .replace('{n}', String(BONUS_FOR_INVITING))
+              .replace('{m}', String(BONUS_PER_ACCEPTED))}
+          </p>
+
+          <div className="invite-rows">
+            {invites.map((invite, i) => (
+              <div className="invite-row" key={i}>
+                <input
+                  type="text"
+                  aria-label={`${t('auth.fullName')} ${i + 1}`}
+                  placeholder={t('auth.fullName')}
+                  value={invite.name}
+                  onChange={(e) =>
+                    setInvites((list) =>
+                      list.map((x, j) => (j === i ? { ...x, name: e.target.value } : x)),
+                    )
+                  }
+                />
+                <input
+                  type="email"
+                  aria-label={`${t('auth.email')} ${i + 1}`}
+                  placeholder={t('auth.email')}
+                  value={invite.email}
+                  onChange={(e) =>
+                    setInvites((list) =>
+                      list.map((x, j) => (j === i ? { ...x, email: e.target.value } : x)),
+                    )
+                  }
+                />
+              </div>
+            ))}
+          </div>
+
+          {/*
+            Says what will actually happen. The +5 lands when the colleague
+            registers, not when the address is typed — promising it up front
+            would be a number the product then has to take back.
+          */}
+          <p className="login-why">
+            {t('auth.inviteNote').replace('{m}', String(BONUS_PER_ACCEPTED))}
+          </p>
+
+          <button onClick={() => setStep(3)}>
+            {filledInvites.length > 0
+              ? t('auth.next')
+              : t('auth.skip')}
+          </button>
+
+          <button className="linkish" onClick={() => setStep(1)}>
+            {t('auth.backStep')}
+          </button>
+        </div>
+      ) : null}
+
       {/* Step 2, and the whole of sign-in: the credentials. */}
-      {tab === 'register' && step === 1 ? null : (
+      {tab === 'register' && step !== 3 ? null : (
       <div className="login-row">
         <label htmlFor="armlex-email">{t('auth.email')}</label>
         <input
@@ -279,7 +367,7 @@ export function Login({
         </button>
 
         {tab === 'register' ? (
-          <button className="linkish" onClick={() => setStep(1)}>
+          <button className="linkish" onClick={() => setStep(2)}>
             {t('auth.backStep')}
           </button>
         ) : null}

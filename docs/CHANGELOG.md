@@ -1296,3 +1296,38 @@ between four options rendered as four submit buttons.
 
 Verified end to end: Continue stays disabled until all three are answered, and a
 real registration persisted `name`, `company_name` and `company_size = 10-30`.
+
+**2026-09-05** — **Invite colleagues, step 2 of registration.** Up to four
+(name + address), skippable, then the credentials. Migration 008.
+
+**The two rewards are paid at different moments, and that is the whole design.**
++10 lands for completing the step with at least one invitation; **+5 lands only
+when that address actually registers.** Paying the per-invite bonus on SEND
+would be free money — four throwaway addresses would mint 20 questions, each of
+which costs real API credit. The +10 is safe up front because it is capped at
+once per account, which bounds exposure to 30 questions per signup even if
+every invitation converts.
+
+Three guards, verified against the database rather than reasoned about:
+
+    +10 on sending                        10
+    a colleague registers                 15
+    the same claim replayed               15   (not 20)
+    self-invitation claimed               15
+
+The replay guard is one UPDATE with `accepted_user_id IS NULL` in its subquery,
+so two simultaneous registrations of one address cannot both pay. Self-invite is
+excluded in the same statement — inviting your own address and registering it
+again would otherwise be a loop that prints questions.
+
+Bonus questions recur monthly on top of the plan rather than draining as a
+one-off pot: a balance that silently empties is discovered only once it is gone,
+and the amounts are small enough that the generous reading is affordable.
+
+**Nothing sends an email.** There is no mail provider wired up, so an invitation
+is a record and a claim on a bonus — the inviter passes the link on themselves,
+and a colleague who registers with that address settles it. `invitations.ts` is
+where sending hooks in when mail exists.
+
+Malformed entries are dropped rather than failing the registration: a typo in
+the fourth invitation must not cost someone their account. 8 tests.

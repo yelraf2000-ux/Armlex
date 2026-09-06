@@ -24,6 +24,7 @@ export interface User {
   plan_expires_at: string | null;
   company_name: string | null;
   company_size: string | null;
+  bonus_questions: number;
 }
 
 export interface CompanyProfile {
@@ -68,7 +69,7 @@ export function normaliseEmail(raw: string): string {
 export async function findByEmail(email: string): Promise<User | null> {
   const rows = await db()<User[]>`
     SELECT id, email, name, plan, password_hash, google_sub, plan_expires_at,
-           company_name, company_size
+           company_name, company_size, bonus_questions
       FROM users WHERE email = ${normaliseEmail(email)} LIMIT 1`;
   return rows[0] ?? null;
 }
@@ -76,7 +77,7 @@ export async function findByEmail(email: string): Promise<User | null> {
 export async function findById(id: string): Promise<User | null> {
   const rows = await db()<User[]>`
     SELECT id, email, name, plan, password_hash, google_sub, plan_expires_at,
-           company_name, company_size
+           company_name, company_size, bonus_questions
       FROM users WHERE id = ${id} LIMIT 1`;
   return rows[0] ?? null;
 }
@@ -93,7 +94,7 @@ export async function createWithPassword(
     VALUES (${normaliseEmail(email)}, ${name}, ${hash},
             ${profile.companyName ?? null}, ${validSize(profile.companySize)})
     RETURNING id, email, name, plan, password_hash, google_sub, plan_expires_at,
-              company_name, company_size`;
+              company_name, company_size, bonus_questions`;
   return rows[0]!;
 }
 
@@ -116,7 +117,7 @@ export async function fillProfile(id: string, profile: CompanyProfile): Promise<
            company_size = COALESCE(company_size, ${validSize(profile.companySize)})
      WHERE id = ${id}
     RETURNING id, email, name, plan, password_hash, google_sub, plan_expires_at,
-              company_name, company_size`;
+              company_name, company_size, bonus_questions`;
   return rows[0] ?? null;
 }
 
@@ -139,7 +140,7 @@ export async function upsertGoogleUser(
 
   const bySub = await db()<User[]>`
     SELECT id, email, name, plan, password_hash, google_sub, plan_expires_at,
-           company_name, company_size
+           company_name, company_size, bonus_questions
       FROM users WHERE google_sub = ${sub} LIMIT 1`;
   if (bySub[0]) return bySub[0];
 
@@ -150,14 +151,14 @@ export async function upsertGoogleUser(
          SET google_sub = ${sub},
              name = COALESCE(name, ${name})
        WHERE id = ${existing.id}
-      RETURNING id, email, name, plan, password_hash, google_sub, plan_expires_at, company_name, company_size`;
+      RETURNING id, email, name, plan, password_hash, google_sub, plan_expires_at, company_name, company_size, bonus_questions`;
     return rows[0]!;
   }
 
   const rows = await db()<User[]>`
     INSERT INTO users (email, name, google_sub)
     VALUES (${address}, ${name}, ${sub})
-    RETURNING id, email, name, plan, password_hash, google_sub, plan_expires_at, company_name, company_size`;
+    RETURNING id, email, name, plan, password_hash, google_sub, plan_expires_at, company_name, company_size, bonus_questions`;
   return rows[0]!;
 }
 
@@ -196,7 +197,17 @@ export function effectivePlan(user: User): string {
  * against them, which is the fair reading of "questions asked".
  */
 export async function monthlyUsage(user: User): Promise<Usage> {
-  const limit = ALLOWANCE[effectivePlan(user)] ?? null;
+  const base = ALLOWANCE[effectivePlan(user)] ?? null;
+  /*
+    Bonus questions from invitations sit on top of the plan, and recur monthly
+    rather than being spent once. That is the generous reading, chosen because
+    the alternative — a one-off pot that silently drains — is the kind of thing
+    a user discovers only when it is gone, and the amounts are small enough
+    (10 + 5 per referral) that the cost is bounded by design.
+
+    `null` stays `null`: there is nothing to add to no limit.
+  */
+  const limit = base === null ? null : base + (user.bonus_questions ?? 0);
   const rows = await db()<{ n: number }[]>`
     SELECT count(*)::int AS n
       FROM messages m JOIN sessions s ON s.id = m.session_id

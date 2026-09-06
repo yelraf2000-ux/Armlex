@@ -134,6 +134,7 @@ describe('effectivePlan', () => {
     plan_expires_at: null,
     company_name: null,
     company_size: null,
+    bonus_questions: 0,
     ...over,
   });
 

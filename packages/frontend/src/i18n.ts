@@ -85,6 +85,11 @@ const hy: Dict = {
   'auth.companySize': 'Ընկերության չափը',
   'auth.next': 'Շարունակել',
   'auth.backStep': '← Հետ',
+  'auth.inviteOffer':
+    'Հրավիրեք գործընկերներին և ստացեք +{n} հարց։ Յուրաքանչյուր գրանցվողի համար՝ ևս +{m}։',
+  'auth.inviteNote':
+    'Ըստ ցանկության։ +{m} հարցը ավելանում է այն պահին, երբ գործընկերը գրանցվում է։ Հասցեները չենք փոխանցում երրորդ անձանց։',
+  'auth.skip': 'Բաց թողնել',
   'auth.whyWeAsk':
     'Այս տվյալները օգտագործում ենք միայն Ձեզ համապատասխան փաթեթը առաջարկելու և պատասխանները Ձեր գործունեությանը հարմարեցնելու համար։ Երրորդ անձանց չենք փոխանցում։',
   'auth.createAccount': 'Ստեղծել հաշիվ',
@@ -206,6 +211,11 @@ const ru: Dict = {
   'auth.companySize': 'Размер компании',
   'auth.next': 'Продолжить',
   'auth.backStep': '← Назад',
+  'auth.inviteOffer':
+    'Пригласите коллег и получите +{n} вопросов. За каждого зарегистрировавшегося — ещё +{m}.',
+  'auth.inviteNote':
+    'По желанию. +{m} начисляются в момент регистрации коллеги. Адреса третьим лицам не передаём.',
+  'auth.skip': 'Пропустить',
   'auth.whyWeAsk':
     'Эти данные нужны только чтобы предложить вам подходящий тариф и адаптировать ответы под вашу работу. Третьим лицам не передаём.',
   'auth.createAccount': 'Создать аккаунт',
@@ -327,6 +337,11 @@ const en: Dict = {
   'auth.companySize': 'Company size',
   'auth.next': 'Continue',
   'auth.backStep': '← Back',
+  'auth.inviteOffer':
+    'Invite colleagues and get +{n} questions. Another +{m} for each one who registers.',
+  'auth.inviteNote':
+    'Optional. The +{m} arrives when your colleague registers. Addresses are never shared with anyone else.',
+  'auth.skip': 'Skip',
   'auth.whyWeAsk':
     'We use this only to suggest the right plan and keep answers relevant to your work. Never shared with anyone else.',
   'auth.createAccount': 'Create account',

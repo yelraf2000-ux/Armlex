@@ -1713,3 +1713,48 @@ a { color: var(--accent); }
   margin: 0.85rem 0 0;
   text-wrap: pretty;
 }
+
+/* ── Inviting colleagues ────────────────────────────────────────────────── */
+
+.invite-offer {
+  font-size: 0.92rem;
+  line-height: 1.55;
+  color: var(--ink);
+  margin: 0 0 0.2rem;
+  text-wrap: pretty;
+}
+
+.invite-rows {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+/*
+ * Name and address side by side, name narrower: the address is the field that
+ * matters and the one people paste, so it gets the room.
+ */
+.invite-row {
+  display: grid;
+  grid-template-columns: minmax(0, 2fr) minmax(0, 3fr);
+  gap: 0.5rem;
+}
+
+.login-row .invite-row input {
+  margin: 0;
+  font-size: 0.9rem;
+  padding: 0.6rem 0.7rem;
+  border: 1px solid var(--rule);
+  border-bottom: 1px solid var(--rule);
+  border-radius: 4px;
+  background: var(--glow);
+}
+
+.login-row .invite-row input:focus {
+  outline: none;
+  border-color: var(--accent);
+}
+
+@media (max-width: 480px) {
+  .invite-row { grid-template-columns: minmax(0, 1fr); }
+}

@@ -21,6 +21,7 @@ import {
 } from './users.js';
 import { authorizeUrl, exchangeCode, googleEnabled, issueState, verifyState } from './google.js';
 import { markConverted } from '../answer/preview.js';
+import { claimInvitation, parseInvites, recordInvites } from './invitations.js';
 
 /**
  * Paths reachable without a session.
@@ -132,9 +133,24 @@ export async function register(req: FastifyRequest, reply: FastifyReply): Promis
   const previewId = (req.body as { previewId?: unknown })?.previewId;
   if (typeof previewId === 'string') await markConverted(previewId, user.id);
 
+  // Somebody may have invited THIS address; if so, pay them for it.
+  await claimInvitation(user.id, email);
+
+  // And this account may itself be inviting others.
+  const invites = parseInvites((req.body as { invites?: unknown })?.invites);
+  const bonus = await recordInvites(user.id, invites);
+
+  // Re-read: both of the above may have changed the allowance, and the UI
+  // should be told the number that is true rather than the one it expected.
+  const fresh = (await findById(user.id)) ?? user;
   return reply
-    .header('Set-Cookie', setCookie(user.id))
-    .send({ user: publicUser(user), usage: await monthlyUsage(user) });
+    .header('Set-Cookie', setCookie(fresh.id))
+    .send({
+      user: publicUser(fresh),
+      usage: await monthlyUsage(fresh),
+      invitesRecorded: invites.length,
+      bonusQuestions: bonus,
+    });
 }
 
 export async function login(req: FastifyRequest, reply: FastifyReply): Promise<void> {
@@ -219,7 +235,11 @@ export async function googleCallback(req: FastifyRequest, reply: FastifyReply): 
   // would let a stranger attach to an existing password account by email.
   if (!identity.emailVerified) return reply.redirect('/?auth=unverified');
 
+  const before = await findByEmail(identity.email);
   const user = await upsertGoogleUser(identity.sub, identity.email, identity.name);
+  // Only a genuinely NEW account settles an invitation — otherwise every later
+  // Google sign-in would pay the inviter again.
+  if (!before) await claimInvitation(user.id, identity.email);
   await touchLastSeen(user.id);
   return reply.header('Set-Cookie', setCookie(user.id)).redirect('/');
 }
