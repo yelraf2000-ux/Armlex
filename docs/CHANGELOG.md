@@ -1349,3 +1349,34 @@ fields sideways.
 Verified in the browser: one row at start, nothing shown for a partial address,
 `+5` for a valid one, three clicks to reach four rows, add button gone at the
 cap.
+
+**2026-09-05** — **Credentials step gains a confirmation field and a reveal
+toggle.** A password box that cannot be read back is why people mistype one and
+then cannot tell why the form rejects them; the confirm field catches the typo,
+the eye shows what the typo WAS.
+
+One toggle governs both fields. The confirm box exists to be compared against
+the first, and revealing half of a comparison is half a check.
+
+**The mismatch warning fires on divergence, not on inequality.** The obvious
+`confirm !== password` is true from the first keystroke, so it marks every
+half-typed entry as wrong and trains people to ignore the message by the time it
+means something. A confirmation still a *prefix* of the password is unfinished,
+not mistaken. `!password.startsWith(confirm)` is the earliest moment the warning
+is honest, and covers the overrun case for free.
+
+Two CSS notes worth keeping:
+
+- `.login-row button` is (0,1,1). A reset written as a bare `.password-eye`
+  class is (0,1,0) and loses — its `padding: 0` never applied, the inherited
+  15px/20px padding squeezed the 32px button, and the icon inside computed to
+  **zero width**. Every declaration for the eye now sits on the two-class
+  selector. This is the second control in this form to be eaten by that rule
+  (`.size-option` was the first).
+- The icon needs `flex: none`, or it is the flex item that gets consumed when
+  the button is short of room.
+
+Verified in the browser at 375px and desktop: two fields on Register and one on
+Sign in, both eyes toggle both fields, nothing complains at `c` or `corr`, the
+warning appears at `correct-hosre` and at an overrun, and a long password stops
+short of the icon.

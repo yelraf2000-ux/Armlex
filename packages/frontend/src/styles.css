@@ -1123,6 +1123,56 @@ a { color: var(--accent); }
   color: var(--ink);
 }
 .login-row input:focus { outline: none; border-bottom-color: var(--accent); }
+
+/*
+ * Password field with a reveal toggle.
+ *
+ * The eye sits INSIDE the field's underline rather than beside it, so the
+ * column of inputs keeps one edge; a control hung off the right would make the
+ * password row the only one that is narrower than the rest.
+ */
+.password-box { position: relative; }
+.password-box input {
+  /* Room for the eye, so a long password never runs underneath it. */
+  padding-right: 34px;
+}
+/*
+ * Every declaration lives on the two-class selector, not on `.password-eye`
+ * alone: `.login-row button` is (0,1,1) and beats a bare class, so a reset
+ * written at (0,1,0) silently loses. It did — the inherited 15px/20px padding
+ * squeezed the 32px button until the icon inside it computed to zero width.
+ */
+.password-box { position: relative; }
+.password-box input {
+  /* Room for the eye, so a long password never runs underneath it. */
+  padding-right: 38px;
+}
+.login-row .password-eye,
+.password-eye {
+  position: absolute;
+  right: 0;
+  /* Aligned to the text, not the box: the input's bottom padding is part of
+     the underline, and centring on the box would sit the eye visibly low. */
+  top: 1px;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  width: 34px;
+  height: 32px;
+  padding: 0;
+  margin: 0;
+  border: 0;
+  border-radius: 0;
+  background: none;
+  color: var(--ink-3);
+  text-transform: none;
+  letter-spacing: normal;
+  cursor: pointer;
+}
+.login-row .password-eye:hover,
+.password-eye:hover { color: var(--ink); }
+/* The icon is a fixed size; without this it is the flex item that gets eaten. */
+.password-eye svg { flex: none; }
 .login-row button {
   width: 100%;
   margin-top: 26px;

@@ -64,6 +64,82 @@ const ONE_INVITE: Invite[] = [{ name: '', email: '' }];
 /** Same shape the server accepts; used only to decide when to show the reward. */
 const LOOKS_LIKE_EMAIL = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
+/**
+ * The password field, with a reveal toggle.
+ *
+ * A password box that cannot be read back is the reason people mistype one and
+ * then cannot tell why the form rejects them — and the confirm field below only
+ * catches the typo, it never shows what the typo WAS. The eye does.
+ *
+ * One toggle governs both fields deliberately: the confirm box exists to be
+ * compared against the first, and revealing half of a comparison is half a
+ * check.
+ */
+function PasswordBox({
+  id,
+  value,
+  onChange,
+  onEnter,
+  label,
+  autoComplete,
+  reveal,
+  onToggle,
+  revealLabel,
+}: {
+  id: string;
+  value: string;
+  onChange: (v: string) => void;
+  onEnter: () => void;
+  label: string;
+  autoComplete: string;
+  reveal: boolean;
+  onToggle: () => void;
+  revealLabel: string;
+}) {
+  return (
+    <>
+      <label htmlFor={id}>{label}</label>
+      <div className="password-box">
+        <input
+          id={id}
+          type={reveal ? 'text' : 'password'}
+          autoComplete={autoComplete}
+          value={value}
+          onChange={(e) => onChange(e.target.value)}
+          onKeyDown={(e) => {
+            if (e.key === 'Enter') onEnter();
+          }}
+        />
+        {/*
+          type="button" matters: inside a form this would otherwise submit, and
+          pressing the eye would send a half-typed password.
+        */}
+        <button
+          type="button"
+          className="password-eye"
+          onClick={onToggle}
+          aria-label={revealLabel}
+          aria-pressed={reveal}
+          tabIndex={-1}
+        >
+          <svg width="19" height="19" viewBox="0 0 20 20" aria-hidden="true">
+            <path
+              d="M1.8 10S5 4.8 10 4.8 18.2 10 18.2 10 15 15.2 10 15.2 1.8 10 1.8 10z"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="1.4"
+            />
+            <circle cx="10" cy="10" r="2.4" fill="none" stroke="currentColor" strokeWidth="1.4" />
+            {reveal ? (
+              <path d="M3.4 3.4 16.6 16.6" fill="none" stroke="currentColor" strokeWidth="1.4" />
+            ) : null}
+          </svg>
+        </button>
+      </div>
+    </>
+  );
+}
+
 export function Login({
   onSuccess,
   googleEnabled,
@@ -80,11 +156,14 @@ export function Login({
   const [tab, setTab] = useState<Tab>(initialTab ?? 'signin');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [confirm, setConfirm] = useState('');
+  const [reveal, setReveal] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
 
   /**
-   * Registration is two steps: who you are, then how to sign in.
+   * Registration is three steps: who you are, who you would invite, then how
+   * to sign in.
    *
    * The profile comes first because it is the easier half — a name and a
    * company are typed without deciding anything, while choosing a password is
@@ -103,13 +182,25 @@ export function Login({
 
   /**
    * Step 2: colleagues to invite. Optional, and visibly so.
-   *
-   * Four empty rows rather than an "add another" button — the offer is worth
-   * more when the ceiling is visible, and a person deciding whether to bother
-   * can see the whole cost of bothering at once.
    */
   const [invites, setInvites] = useState<Invite[]>(ONE_INVITE);
   const filledInvites = invites.filter((i) => LOOKS_LIKE_EMAIL.test(i.email.trim()));
+
+  /**
+   * Complain when a typed character DIVERGES, not merely when the second field
+   * is shorter than the first.
+   *
+   * `confirm !== password` is true from the very first keystroke, so it marks
+   * every half-typed entry as wrong and trains people to ignore the message by
+   * the time it means something. A confirmation that is still a prefix of the
+   * password is unfinished, not mistaken; one that is not a prefix cannot
+   * become correct by typing more, and saying so at that moment is the earliest
+   * the warning is honest. (A longer-than-password entry is not a prefix
+   * either, so this covers the overrun case too.)
+   */
+  const mismatch = tab === 'register' && confirm !== '' && !password.startsWith(confirm);
+  const credentialsReady =
+    email.trim() !== '' && password !== '' && (tab === 'signin' || confirm === password);
 
   const profileComplete =
     profile.fullName.trim() !== '' &&
@@ -133,7 +224,7 @@ export function Login({
   }
 
   async function submit(): Promise<void> {
-    if (busy || !email.trim() || !password) return;
+    if (busy || !credentialsReady) return;
     setBusy(true);
     setError(null);
     try {
@@ -160,6 +251,7 @@ export function Login({
       });
       if (res.ok) {
         setPassword('');
+        setConfirm('');
         onSuccess();
         return;
       }
@@ -357,7 +449,7 @@ export function Login({
         </div>
       ) : null}
 
-      {/* Step 2, and the whole of sign-in: the credentials. */}
+      {/* Step 3, and the whole of sign-in: the credentials. */}
       {tab === 'register' && step !== 3 ? null : (
       <div className="login-row">
         <label htmlFor="armlex-email">{t('auth.email')}</label>
@@ -373,21 +465,36 @@ export function Login({
           }}
         />
 
-        <label htmlFor="armlex-password">{t('login.password')}</label>
-        <input
+        <PasswordBox
           id="armlex-password"
-          type="password"
+          label={t('login.password')}
           autoComplete={tab === 'signin' ? 'current-password' : 'new-password'}
           value={password}
-          onChange={(e) => setPassword(e.target.value)}
-          onKeyDown={(e) => {
-            if (e.key === 'Enter') void submit();
-          }}
+          onChange={setPassword}
+          onEnter={() => void submit()}
+          reveal={reveal}
+          onToggle={() => setReveal((r) => !r)}
+          revealLabel={reveal ? t('auth.hidePassword') : t('auth.showPassword')}
         />
 
+        {tab === 'register' ? (
+          <PasswordBox
+            id="armlex-password-confirm"
+            label={t('auth.confirmPassword')}
+            autoComplete="new-password"
+            value={confirm}
+            onChange={setConfirm}
+            onEnter={() => void submit()}
+            reveal={reveal}
+            onToggle={() => setReveal((r) => !r)}
+            revealLabel={reveal ? t('auth.hidePassword') : t('auth.showPassword')}
+          />
+        ) : null}
+
+        {mismatch ? <div className="error">{t('auth.passwordMismatch')}</div> : null}
         {error ? <div className="error">{error}</div> : null}
 
-        <button onClick={() => void submit()} disabled={busy || !email.trim() || !password}>
+        <button onClick={() => void submit()} disabled={busy || !credentialsReady}>
           {busy ? '…' : tab === 'signin' ? t('login.enter') : t('auth.createAccount')}
         </button>
 
