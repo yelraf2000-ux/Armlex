@@ -1736,8 +1736,10 @@ a { color: var(--accent); }
  */
 .invite-row {
   display: grid;
-  grid-template-columns: minmax(0, 2fr) minmax(0, 3fr);
+  /* name · address · the reward it would earn */
+  grid-template-columns: minmax(0, 2fr) minmax(0, 3fr) 2.2rem;
   gap: 0.5rem;
+  align-items: center;
 }
 
 .login-row .invite-row input {
@@ -1755,6 +1757,40 @@ a { color: var(--accent); }
   border-color: var(--accent);
 }
 
+/*
+ * The reward, beside the address that would earn it. Reserved width even when
+ * empty, so typing an address does not shove the fields sideways.
+ */
+.invite-bonus {
+  font-family: var(--body);
+  font-size: 0.82rem;
+  font-variant-numeric: tabular-nums;
+  color: var(--accent);
+  text-align: right;
+}
+
+/*
+ * Adding a row is a quiet affordance, not a call to action: the primary action
+ * on this step is continuing, and an optional extra should not out-shout it.
+ */
+.login-row .invite-add {
+  width: auto;
+  align-self: flex-start;
+  margin-top: 0.6rem;
+  padding: 0.35rem 0;
+  background: none;
+  border: 0;
+  color: var(--ink-3);
+  font-family: var(--body);
+  font-size: 0.85rem;
+  font-weight: 400;
+  letter-spacing: 0;
+  text-transform: none;
+}
+
+.login-row .invite-add:hover { color: var(--accent); }
+
 @media (max-width: 480px) {
-  .invite-row { grid-template-columns: minmax(0, 1fr); }
+  .invite-row { grid-template-columns: minmax(0, 1fr) 2.2rem; }
+  .invite-row input:first-child { grid-column: 1 / -1; }
 }

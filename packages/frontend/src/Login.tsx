@@ -51,10 +51,18 @@ interface Invite {
   email: string;
 }
 
-const EMPTY_INVITES: Invite[] = Array.from({ length: MAX_INVITES }, () => ({
-  name: '',
-  email: '',
-}));
+/**
+ * Starts at ONE row, not four.
+ *
+ * Four empty boxes read as four things being asked for, and an optional step
+ * that looks like work gets skipped. One row with a way to add another asks for
+ * as little as the offer allows, and the reward appears beside an address the
+ * moment it could be earned.
+ */
+const ONE_INVITE: Invite[] = [{ name: '', email: '' }];
+
+/** Same shape the server accepts; used only to decide when to show the reward. */
+const LOOKS_LIKE_EMAIL = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 export function Login({
   onSuccess,
@@ -100,8 +108,8 @@ export function Login({
    * more when the ceiling is visible, and a person deciding whether to bother
    * can see the whole cost of bothering at once.
    */
-  const [invites, setInvites] = useState<Invite[]>(EMPTY_INVITES);
-  const filledInvites = invites.filter((i) => i.email.trim() !== '');
+  const [invites, setInvites] = useState<Invite[]>(ONE_INVITE);
+  const filledInvites = invites.filter((i) => LOOKS_LIKE_EMAIL.test(i.email.trim()));
 
   const profileComplete =
     profile.fullName.trim() !== '' &&
@@ -307,9 +315,26 @@ export function Login({
                     )
                   }
                 />
+                {/*
+                  The reward appears beside the address that would earn it, the
+                  moment it could be earned. A total at the bottom would say the
+                  same thing while making the reader do the attribution.
+                */}
+                <span className="invite-bonus" aria-hidden={!LOOKS_LIKE_EMAIL.test(invite.email.trim())}>
+                  {LOOKS_LIKE_EMAIL.test(invite.email.trim()) ? `+${BONUS_PER_ACCEPTED}` : ''}
+                </span>
               </div>
             ))}
           </div>
+
+          {invites.length < MAX_INVITES ? (
+            <button
+              className="invite-add"
+              onClick={() => setInvites((list) => [...list, { name: '', email: '' }])}
+            >
+              + {t('auth.inviteAnother')}
+            </button>
+          ) : null}
 
           {/*
             Says what will actually happen. The +5 lands when the colleague

@@ -1331,3 +1331,21 @@ where sending hooks in when mail exists.
 
 Malformed entries are dropped rather than failing the registration: a typo in
 the fourth invitation must not cost someone their account. 8 tests.
+
+**2026-09-05** — **The invite step opens with one row, not four.** Four empty
+boxes read as four things being demanded, and an optional step that looks like
+work gets skipped. Now: one row, a quiet «+ Ավելացնել ևս մեկը» beneath it, and
+the button disappears at the cap of four.
+
+**«+5» appears beside an address the moment it could earn it** — next to the
+field that earns it rather than as a total underneath, which would say the same
+thing while making the reader do the attribution. A partial address (`anahit@`)
+shows nothing; the check is the same pattern the server accepts, so the form
+never promises a reward the backend would refuse.
+
+The column is reserved even when empty, so typing an address does not shove the
+fields sideways.
+
+Verified in the browser: one row at start, nothing shown for a partial address,
+`+5` for a valid one, three clicks to reach four rows, add button gone at the
+cap.
