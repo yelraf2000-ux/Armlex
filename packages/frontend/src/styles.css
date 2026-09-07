@@ -1330,25 +1330,242 @@ a { color: var(--accent); }
 
 .login-google:hover { border-color: var(--ink-3); }
 
-/* The allowance, where it can be read before it is spent. */
-.masthead-quota {
-  font-size: 0.8rem;
-  color: var(--ink-3);
-  font-variant-numeric: tabular-nums;
+/* ── The account control ────────────────────────────────────────────────── */
+
+/*
+ * Two mounts, one visible.
+ *
+ * It belongs at the foot of the register. But the register is display:none
+ * below 1200px, so a control living only there would take sign-out off the page
+ * entirely. The masthead mount is that fallback and nothing more.
+ *
+ * The 1200px below MUST stay equal to the breakpoint that hides `.rail`. It was
+ * written as 1100 first, which left a 100px band where the register was already
+ * gone and the fallback had not yet appeared — no way to sign out at all. The
+ * swap is in CSS rather than a JS width check for the same reason: two sources
+ * of truth for one number is how that gap opened.
+ */
+.account { position: relative; }
+
+.account-rail {
+  margin-top: 14px;
+  padding-top: 12px;
+  border-top: 1px solid var(--rule-2);
+}
+.account-masthead { display: none; }
+
+@media (max-width: 1200px) {
+  .account-rail { display: none; }
+  .account-masthead { display: block; }
+}
+
+.account-button {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  padding: 7px 6px;
+  border: 0;
+  border-radius: 8px;
+  background: none;
+  color: var(--ink);
+  font: inherit;
+  font-family: var(--body);
+  font-size: 13px;
+  text-align: left;
+  cursor: pointer;
+}
+.account-button:hover { background: var(--leaf); }
+
+/* The masthead mount is a band of small print; the name would shout there. */
+.account-masthead .account-button { padding: 0.3rem 0.4rem; font-size: 0.8rem; }
+
+.account-initial {
+  flex: 0 0 auto;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  background: var(--ink);
+  color: var(--paper);
+  font-size: 11px;
+  font-weight: 600;
+}
+.account-masthead .account-initial { width: 21px; height: 21px; font-size: 10px; }
+
+.account-name {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
   white-space: nowrap;
 }
 
-.masthead-signout {
-  background: none;
-  border: none;
-  color: var(--ink-3);
-  font-family: var(--body);
-  font-size: 0.8rem;
-  cursor: pointer;
-  padding: 0.3rem 0.4rem;
+/*
+ * Opens UPWARD from the register foot, because there is nothing below it to
+ * open into; downward from the masthead for the same reason reversed.
+ */
+.account-pop {
+  position: absolute;
+  left: 0;
+  bottom: calc(100% + 6px);
+  z-index: 50;
+  width: 236px;
+  padding: 6px;
+  border: 1px solid var(--rule-2);
+  border-radius: 11px;
+  background: var(--paper);
+  box-shadow: 0 12px 32px rgb(0 0 0 / 15%);
+}
+.account-masthead .account-pop {
+  top: calc(100% + 6px);
+  bottom: auto;
+  left: auto;
+  right: 0;
 }
 
-.masthead-signout:hover { color: var(--accent); }
+.account-who {
+  padding: 8px 9px 10px;
+  border-bottom: 1px solid var(--rule);
+  margin-bottom: 5px;
+}
+.account-who-name {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--ink);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.account-who-mail {
+  font-size: 11px;
+  color: var(--ink-3);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.account-quota { padding: 4px 9px 9px; }
+.account-quota-line {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+  font-size: 11px;
+  color: var(--ink-3);
+  margin-bottom: 5px;
+}
+.account-quota-line .num {
+  color: var(--ink);
+  font-variant-numeric: tabular-nums;
+}
+.account-bar {
+  height: 3px;
+  border-radius: 2px;
+  background: var(--rule-2);
+  overflow: hidden;
+}
+.account-bar-fill {
+  height: 100%;
+  background: var(--accent);
+}
+
+.account-pop > button {
+  display: block;
+  width: 100%;
+  padding: 8px 9px;
+  border: 0;
+  border-radius: 7px;
+  background: none;
+  color: var(--ink);
+  font: inherit;
+  font-family: var(--body);
+  font-size: 13px;
+  text-align: left;
+  cursor: pointer;
+}
+.account-pop > button:hover { background: var(--leaf); }
+.account-upgrade { color: var(--accent); font-weight: 600; }
+
+.account-note {
+  margin: 2px 9px 6px;
+  font-size: 11px;
+  font-style: italic;
+  color: var(--ink-3);
+  line-height: 1.35;
+}
+
+.account-rule {
+  height: 1px;
+  margin: 5px 4px;
+  background: var(--rule);
+}
+
+/* Editing happens inside the popup — a dialog for one field is a whole screen
+   borrowed to change a name. */
+.account-panel { padding: 4px 9px 8px; }
+.account-panel label,
+.account-panel-label {
+  display: block;
+  font-size: 10px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--ink-3);
+  margin: 6px 0 5px;
+}
+.account-panel input {
+  width: 100%;
+  font-family: var(--body);
+  font-size: 13px;
+  padding: 6px 2px 7px;
+  border: 0;
+  border-bottom: 1px solid var(--ink);
+  border-radius: 0;
+  background: none;
+  color: var(--ink);
+}
+.account-panel input:focus { outline: none; border-bottom-color: var(--accent); }
+
+.account-panel .size-options { display: flex; flex-wrap: wrap; gap: 5px; }
+.account-panel .size-option {
+  flex: 0 0 auto;
+  padding: 4px 8px;
+  font-size: 11px;
+  border: 1px solid var(--rule-2);
+  border-radius: 6px;
+  background: none;
+  color: var(--ink-2);
+  font-family: var(--body);
+  cursor: pointer;
+}
+.account-panel .size-option.on {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+.account-panel-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 6px;
+  margin-top: 12px;
+}
+.account-panel-actions button {
+  padding: 5px 11px;
+  font-size: 11.5px;
+  font-family: var(--body);
+  border: 1px solid var(--rule-2);
+  border-radius: 7px;
+  background: none;
+  color: var(--ink-2);
+  cursor: pointer;
+}
+.account-panel-actions button.primary {
+  border-color: var(--ink);
+  background: var(--ink);
+  color: var(--paper);
+}
+.account-panel-actions button:disabled { opacity: 0.5; cursor: default; }
 
 /* ── Sharing ────────────────────────────────────────────────────────────── */
 

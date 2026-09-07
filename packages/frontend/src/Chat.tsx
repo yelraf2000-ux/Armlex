@@ -14,6 +14,8 @@ import type { Entry } from './NormPanel.js';
 import { MarkdownView } from './MarkdownView.js';
 import { extractQuotes } from './quotes.js';
 import { Sessions } from './Sessions.js';
+import { AccountMenu } from './AccountMenu.js';
+import type { Account } from './Login.js';
 import { useSettings } from './Settings.js';
 import { PENDING_PREVIEW, PENDING_QUESTION } from './Landing.js';
 
@@ -132,7 +134,17 @@ async function issueShareLink(sessionId: string): Promise<string | null> {
   return `${window.location.origin}${url}`;
 }
 
-export function Chat({ corpusSynced }: { corpusSynced: string | null }) {
+export function Chat({
+  corpusSynced,
+  account,
+  onAccountChanged,
+  onSignOut,
+}: {
+  corpusSynced: string | null;
+  account?: Account | null;
+  onAccountChanged?: ((next: Account) => void) | undefined;
+  onSignOut?: (() => void) | undefined;
+}) {
   const { t, railOpen } = useSettings();
   const [sessionId, setSessionId] = useState<string | null>(null);
   const [turns, setTurns] = useState<Turn[]>([]);
@@ -454,6 +466,19 @@ export function Chat({ corpusSynced }: { corpusSynced: string | null }) {
           // or the transcript stays on screen with nothing behind it.
           onDeleted={reset}
         />
+        {/*
+          The foot of the register. Below 1200px this whole column is
+          display:none and the masthead carries the same control instead — CSS
+          shows exactly one, so sign-out is never off the page.
+        */}
+        {account?.user && onAccountChanged && onSignOut ? (
+          <AccountMenu
+            account={account}
+            placement="rail"
+            onChanged={onAccountChanged}
+            onSignOut={onSignOut}
+          />
+        ) : null}
       </nav>
       ) : null}
 

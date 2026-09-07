@@ -13,6 +13,7 @@ import { BRAND } from './brand.js';
 import { Chat } from './Chat.js';
 import { Landing } from './Landing.js';
 import { type Account, PENDING_PROFILE } from './Login.js';
+import { AccountMenu } from './AccountMenu.js';
 import { MarkdownView } from './MarkdownView.js';
 import { NormPanel } from './NormPanel.js';
 import { Shared } from './Shared.js';
@@ -280,6 +281,16 @@ function Workbench() {
   const [corpus, setCorpus] = useState<CorpusInfo | null>(null);
   /** null = not yet known. */
   const [account, setAccount] = useState<Account | null>(null);
+
+  /** Shared by both mounts of the account control (register foot, and masthead
+   *  at phone widths where the register does not exist). */
+  const signOut = useCallback((): void => {
+    void (async () => {
+      await fetch('/api/auth/logout', { method: 'POST' });
+      setAccount(null);
+      setAuthed(false);
+    })();
+  }, []);
   const [authed, setAuthed] = useState<boolean | null>(null);
 
   /** Who is signed in, and how much of this month's allowance is left. */
@@ -417,27 +428,23 @@ function Workbench() {
 
           <span className="spacer" />
           {/*
-            The allowance, where the person can see it before they spend it.
-            Shown only on a capped plan — an "unlimited" counter is furniture,
-            and the same reasoning kept the coverage badge off confident answers.
+            The allowance and the way out used to stand here permanently. They
+            now live at the foot of the register, where a signature belongs —
+            this band is for what qualifies an answer, not for account
+            furniture.
+
+            This mount is the narrow-screen fallback ONLY: below 1200px the
+            register is display:none, and an account control living solely in it
+            would take sign-out off the page. CSS shows exactly one of the two.
           */}
-          {account?.usage && account.usage.limit !== null ? (
-            <span className="masthead-quota" title={t('auth.quotaLeft')}>
-              <span className="num">{account.usage.remaining}</span> / {account.usage.limit}
-            </span>
+          {account?.user ? (
+            <AccountMenu
+              account={account}
+              placement="masthead"
+              onChanged={setAccount}
+              onSignOut={signOut}
+            />
           ) : null}
-          <button
-            className="masthead-signout"
-            onClick={() => {
-              void (async () => {
-                await fetch('/api/auth/logout', { method: 'POST' });
-                setAccount(null);
-                setAuthed(false);
-              })();
-            }}
-          >
-            {t('auth.signOut')}
-          </button>
           <SettingsControls />
           {/*
             One mode, so no switcher: a lone tab is a control that cannot do
@@ -463,7 +470,15 @@ function Workbench() {
         <div className="masthead-rule" />
       </header>
 
-      {mode === 'chat' ? <Chat key={homeKey} corpusSynced={synced} /> : null}
+      {mode === 'chat' ? (
+        <Chat
+          key={homeKey}
+          corpusSynced={synced}
+          account={account}
+          onAccountChanged={setAccount}
+          onSignOut={signOut}
+        />
+      ) : null}
       {mode === 'ask' ? <AskMode key={homeKey} corpusSynced={synced} /> : null}
       {mode === 'search' ? <SearchMode key={homeKey} /> : null}
 

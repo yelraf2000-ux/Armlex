@@ -14,6 +14,7 @@ import {
   me,
   register,
   saveProfile,
+  updateMe,
   requireAuth,
 } from './auth/routes.js';
 import { monthlyUsage } from './auth/users.js';
@@ -80,6 +81,9 @@ app.post('/api/auth/login', login);
 app.post('/api/auth/logout', logout);
 app.get('/api/auth/me', me);
 app.post('/api/auth/profile', saveProfile);
+// NOT `/api/auth/me`: the guard matches on path and `GET /api/auth/me` has to
+// stay public, so a mutation sharing that path would be public too.
+app.patch('/api/account', updateMe);
 app.get('/api/auth/google', googleStart);
 app.get('/api/auth/google/callback', googleCallback);
 

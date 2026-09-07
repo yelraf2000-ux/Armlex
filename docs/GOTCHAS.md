@@ -475,3 +475,22 @@ allowance. `monthlyUsage` adds the current month's ledger row to what is still
 on disk.
 
 Anything else that deletes message rows has the same obligation.
+
+## The auth guard matched a PREFIX, and exempted routes written later
+
+`requireAuth` skipped anything under `/api/auth/`. That prefix existed for
+sign-in, register and `GET /api/auth/me` — all genuinely public. Every route
+added under it afterwards inherited the exemption silently:
+
+- `POST /api/auth/profile` (`saveProfile`) reads `req.user!.id` on a request the
+  guard waved through. It has thrown **500 on every call since it was written**.
+  Nobody noticed because Google sign-in — its only caller — is dormant.
+- `PATCH /api/auth/me` did the same the moment it was added.
+
+The list is now explicit, one path at a time. A prefix grants access to paths
+that do not exist yet, which fails in the unsafe direction; a list fails in the
+safe one.
+
+**The guard matches on PATH, not method.** `GET /api/auth/me` must stay public,
+so any mutation sharing that path would be public too. Changing the account
+therefore lives at `PATCH /api/account`, not `PATCH /api/auth/me`.

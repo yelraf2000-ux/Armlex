@@ -16,6 +16,7 @@ import {
   monthlyUsage,
   normaliseEmail,
   touchLastSeen,
+  updateProfile,
   upsertGoogleUser,
   type User,
 } from './users.js';
@@ -26,16 +27,37 @@ import { claimInvitation, parseInvites, recordInvites } from './invitations.js';
 /**
  * Paths reachable without a session.
  *
- * `/api/auth/me` must be here for the same reason `/api/auth` was before it:
- * it is how the UI asks whether anyone is signed in, before it can know. A
- * gated answer to "am I signed in?" is a loop.
+ * Listed ONE BY ONE, not by `/api/auth/` prefix. The prefix was the earlier
+ * rule and it silently exempted every route added under it afterwards:
+ * `/api/auth/profile` and `PATCH /api/auth/me` both read `req.user!.id` on a
+ * request the guard had waved through, so both threw 500 on every call. A
+ * prefix that grants public access to paths that do not exist yet fails in the
+ * unsafe direction; an explicit list fails in the safe one.
  *
- * `/api/shared/` is public by design — that is what sharing a conversation
- * means. The token in the URL is the capability.
+ * `GET /api/auth/me` is here because it is how the UI asks whether anyone is
+ * signed in, before it can know. A gated answer to "am I signed in?" is a loop.
+ * It reads the cookie itself and returns `{ user: null }` when there is none.
+ *
+ * This list is matched against the PATH ALONE, so a path that appears here is
+ * public for every method. That is why changing the account lives at
+ * `PATCH /api/account` rather than `PATCH /api/auth/me` — sharing the path
+ * would have shared the exemption.
+ *
+ * Sign-out stays public so a stale or unrecognised cookie can always be
+ * cleared; a sign-out that requires being signed in is a trap.
+ *
+ * `/api/shared/` stays a prefix — the token in the URL is the capability, and
+ * that is what sharing a conversation means.
  */
-const PUBLIC_PREFIXES = ['/api/auth/', '/api/shared/'];
+const PUBLIC_PREFIXES = ['/api/shared/'];
 const PUBLIC_PATHS = new Set([
   '/api/auth',
+  '/api/auth/register',
+  '/api/auth/login',
+  '/api/auth/logout',
+  '/api/auth/me',
+  '/api/auth/google',
+  '/api/auth/google/callback',
   '/api/health',
   '/api/version',
   '/health',
@@ -201,6 +223,29 @@ export async function saveProfile(req: FastifyRequest, reply: FastifyReply): Pro
   });
   if (!updated) return reply.code(404).send({ error: 'not_found' });
   return reply.send({ user: publicUser(updated) });
+}
+
+/**
+ * Change the name on the account, or the workspace it belongs to.
+ *
+ * Separate from `saveProfile` above: that one fills blanks after a Google
+ * redirect and must not overwrite, this one exists precisely to overwrite.
+ */
+export async function updateMe(req: FastifyRequest, reply: FastifyReply): Promise<void> {
+  const body = req.body as
+    | { name?: unknown; companyName?: unknown; companySize?: unknown }
+    | undefined;
+
+  const fields: { name?: string; companyName?: string; companySize?: unknown } = {};
+  if (typeof body?.name === 'string' && body.name.trim()) fields.name = body.name.trim().slice(0, 120);
+  if (typeof body?.companyName === 'string' && body.companyName.trim()) {
+    fields.companyName = body.companyName.trim().slice(0, 120);
+  }
+  if (body?.companySize !== undefined) fields.companySize = body.companySize;
+
+  const updated = await updateProfile(req.user!.id, fields);
+  if (!updated) return reply.code(404).send({ error: 'not_found' });
+  return reply.send({ user: publicUser(updated), usage: await monthlyUsage(updated) });
 }
 
 /** Who am I, and how much of this month's allowance is left? */

@@ -122,6 +122,37 @@ export async function fillProfile(id: string, profile: CompanyProfile): Promise<
 }
 
 /**
+ * Change what the account says about itself.
+ *
+ * Distinct from `fillProfile`, which only ever fills blanks — that is the right
+ * behaviour for a value the browser was holding across a redirect, and the
+ * wrong one here, where the whole point is to correct something already set.
+ *
+ * Every field is optional, so the profile dialog can send a name without
+ * touching the company and the workspace panel can do the reverse. An omitted
+ * OR EMPTY field is left alone rather than cleared: full name and company were
+ * required at registration, and a save that blanks them would quietly undo a
+ * thing the form insisted on.
+ */
+export async function updateProfile(
+  id: string,
+  fields: { name?: string | null; companyName?: string | null; companySize?: unknown },
+): Promise<User | null> {
+  const rows = await db()<User[]>`
+    UPDATE users
+       SET name = COALESCE(${fields.name === undefined ? null : fields.name}, name),
+           company_name = COALESCE(
+             ${fields.companyName === undefined ? null : fields.companyName}, company_name),
+           company_size = COALESCE(
+             ${fields.companySize === undefined ? null : validSize(fields.companySize)},
+             company_size)
+     WHERE id = ${id}
+    RETURNING id, email, name, plan, password_hash, google_sub, plan_expires_at,
+              company_name, company_size, bonus_questions`;
+  return rows[0] ?? null;
+}
+
+/**
  * Sign in or register through Google.
  *
  * Matching is by EMAIL first, then subject id. Someone who registered with a

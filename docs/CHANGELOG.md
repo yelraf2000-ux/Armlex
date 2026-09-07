@@ -1417,3 +1417,45 @@ Verified in the browser against a seeded account: menu reads
 Ամրացնել / Վերանվանել / Կիսվել / Ջնջել, pin reorders and persists, rename
 prefills from the first question and persists, share flips to «Դադարեցնել
 կիսվելը» and marks the row, delete asks before acting and the allowance holds.
+
+**2026-09-07** — **Account control at the foot of the register.** Name, plan
+usage, Profile, Workspace, Upgrade, and sign-out, in a popup that opens upward
+from the bottom-left. The masthead counter and sign-out button are gone.
+
+The masthead is for what qualifies an answer — the corpus and the date it was
+checked against ARLIS. An allowance counter and a sign-out button standing there
+permanently were furniture in the one band that should carry nothing but
+provenance. The allowance is still visible before it is spent, which was the
+point of showing it; it is now one click away instead of occupying the running
+head of every screen, and it reads `used / limit` with a bar rather than a bare
+remainder.
+
+**Two mounts, one visible.** The register is `display: none` below 1200px, so a
+control living only there takes sign-out off the page. The masthead mount is the
+narrow-screen fallback and nothing else. I first wrote the swap at 1100px and
+opened a 100px band with no account control at all — the number must equal the
+breakpoint that hides `.rail`, and the swap is in CSS precisely so there is one
+source of truth for it.
+
+**Two real bugs fell out of this.** `requireAuth` exempted the whole
+`/api/auth/` prefix, so `POST /api/auth/profile` has thrown 500 on every call
+since it was written — it reads `req.user!.id` on a request the guard waved
+through, and only Google sign-in calls it, which is dormant. The prefix is now an
+explicit list. And because the guard matches on path rather than method,
+changing the account had to move to `PATCH /api/account`: sharing a path with the
+public `GET /api/auth/me` would have shared its exemption. Both in `GOTCHAS.md`.
+
+`updateProfile` is deliberately not `fillProfile`. That one only fills blanks,
+which is right for a value carried across a Google redirect and wrong here,
+where the point is to correct something already set. An empty field is left
+alone rather than cleared — full name and company were required at registration,
+and a save that blanks them would quietly undo what the form insisted on.
+
+Upgrade calls the checkout and says «Վճարումները դեռ միացված չեն։» when the
+provider keys are absent, rather than sending someone to a checkout that cannot
+take their money.
+
+Verified in the browser: exactly one control at 1280px, 1150px and 420px; the
+popup shows the name un-clickable above the address; `3 / 5` with a 60% bar;
+Profile renames and the button and header follow; Workspace saves company and
+size; Upgrade explains itself; Escape, outside click and sign-out all behave.
