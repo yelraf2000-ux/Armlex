@@ -1,0 +1,39 @@
+# Postgres for the Hetzner box. Matched to NEON, not to the root
+# docker-compose.yml, because Neon holds the data this restores from:
+#
+#   version    Neon runs PostgreSQL 18.6. pg_dump refuses to read a server
+#              newer than itself, so a pg16 image cannot take the dump at all.
+#   collation  Neon is C.UTF-8 under the builtin provider. The root compose
+#              asks for ICU hy-AM, so production has never actually used it —
+#              and restoring into a different collation would change index
+#              ordering and text comparison.
+services:
+  db:
+    image: pgvector/pgvector:pg18
+    container_name: armlex-db
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: armlex
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: armlex
+      POSTGRES_INITDB_ARGS: "--encoding=UTF8 --locale=C.UTF-8"
+    # Bound to loopback, NOT 0.0.0.0. Docker writes its own iptables rules and
+    # bypasses ufw entirely, so a published port stays reachable from the
+    # internet even with a host firewall configured. The Hetzner cloud firewall
+    # would still catch it, but relying on one layer for this is how databases
+    # end up public.
+    ports:
+      - "127.0.0.1:5432:5432"
+    volumes:
+      - armlex_pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U armlex -d armlex"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+    # HNSW index builds and larger sorts spill to shared memory; the 64MB
+    # default is enough to fail a reindex on a corpus this size.
+    shm_size: 256mb
+
+volumes:
+  armlex_pgdata:

@@ -1,0 +1,13 @@
+# Automatic HTTPS: Caddy fetches and renews the Let's Encrypt certificate on its
+# own, which is why there is no certbot and no renewal cron anywhere here.
+matyanai.am, www.matyanai.am {
+	encode zstd gzip
+
+	reverse_proxy 127.0.0.1:3001 {
+		# Answers stream token by token. Caddy buffers proxied responses by
+		# default, which would hold a whole answer until generation finished —
+		# a 40-second question would render as a frozen page rather than a
+		# live one.
+		flush_interval -1
+	}
+}

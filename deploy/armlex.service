@@ -1,0 +1,25 @@
+[Unit]
+Description=ArmLex API and web
+# Postgres runs under Docker on this host, so the app cannot usefully start
+# before the daemon is up.
+After=network-online.target docker.service
+Requires=docker.service
+
+[Service]
+Type=simple
+# `npm start` runs tsx against packages/backend/src/server.ts, and the static
+# frontend path is resolved from process.cwd() — so the working directory has
+# to be the repo root, not the backend package.
+WorkingDirectory=/opt/armlex
+Environment=NODE_ENV=production
+# No EnvironmentFile: config.ts loads /opt/armlex/.env through dotenv itself,
+# and systemd's parser handles quoting differently enough to corrupt values
+# that dotenv reads correctly.
+ExecStart=/usr/bin/npm start
+Restart=always
+RestartSec=5
+StandardOutput=journal
+StandardError=journal
+
+[Install]
+WantedBy=multi-user.target
