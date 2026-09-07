@@ -1,0 +1,9 @@
+# Anything that a Linux box executes or parses must keep LF endings. Checked
+# out on Windows these would otherwise become CRLF, and a stray \r turns a
+# shell script into "bad interpreter: /bin/bash^M" and a systemd unit into a
+# service that will not start — both with errors that name the wrong cause.
+*.sh            text eol=lf
+*.service       text eol=lf
+Caddyfile       text eol=lf
+*.yml           text eol=lf
+*.yaml          text eol=lf
