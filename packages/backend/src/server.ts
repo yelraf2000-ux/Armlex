@@ -15,6 +15,12 @@ import {
   register,
   saveProfile,
   updateMe,
+  getWorkspace,
+  getWorkspaceUsage,
+  postWorkspaceInvite,
+  deleteWorkspaceInvite,
+  deleteWorkspaceMember,
+  patchWorkspace,
   requireAuth,
 } from './auth/routes.js';
 import { monthlyUsage } from './auth/users.js';
@@ -84,6 +90,15 @@ app.post('/api/auth/profile', saveProfile);
 // NOT `/api/auth/me`: the guard matches on path and `GET /api/auth/me` has to
 // stay public, so a mutation sharing that path would be public too.
 app.patch('/api/account', updateMe);
+
+// The workspace. Every mutation re-checks admin server-side; the UI hiding a
+// button is presentation, not authorisation.
+app.get('/api/workspace', getWorkspace);
+app.get('/api/workspace/usage', getWorkspaceUsage);
+app.patch('/api/workspace', patchWorkspace);
+app.post('/api/workspace/invites', postWorkspaceInvite);
+app.delete('/api/workspace/invites/:id', deleteWorkspaceInvite);
+app.delete('/api/workspace/members/:id', deleteWorkspaceMember);
 app.get('/api/auth/google', googleStart);
 app.get('/api/auth/google/callback', googleCallback);
 

@@ -115,4 +115,25 @@ export async function claimInvitation(newUserId: string, email: string): Promise
   await db()`
     UPDATE users SET bonus_questions = bonus_questions + ${BONUS_PER_ACCEPTED}
      WHERE id = ${inviter}`;
+
+  /*
+    And join the inviter's firm.
+
+    This is what makes the invitation more than a referral bonus: the colleague
+    who accepts appears in the admin's workspace, and their questions count
+    against the firm's total. Done here rather than at registration because this
+    is the only place that knows an invitation was actually claimed — the
+    registration route calls it before it knows whether one existed.
+
+    Guarded on the inviter actually having a workspace: if the backfill missed
+    them, leaving the new account in its own workspace is a better failure than
+    setting it to NULL.
+  */
+  await db()`
+    UPDATE users u
+       SET workspace_id = inviter.workspace_id
+      FROM users inviter
+     WHERE u.id = ${newUserId}
+       AND inviter.id = ${inviter}
+       AND inviter.workspace_id IS NOT NULL`;
 }

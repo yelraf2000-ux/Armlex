@@ -135,6 +135,7 @@ describe('effectivePlan', () => {
     company_name: null,
     company_size: null,
     bonus_questions: 0,
+    workspace_id: null,
     ...over,
   });
 

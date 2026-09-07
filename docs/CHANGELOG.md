@@ -1459,3 +1459,52 @@ Verified in the browser: exactly one control at 1280px, 1150px and 420px; the
 popup shows the name un-clickable above the address; `3 / 5` with a 60% bar;
 Profile renames and the button and header follow; Workspace saves company and
 size; Upgrade explains itself; Escape, outside click and sign-out all behave.
+
+**2026-09-07** — **Workspaces: a firm, its people, and what it has spent.** The
+Workspace item in the account menu now opens a page with two sections —
+Անդամներ and Օգտագործում — instead of an inline company-details panel.
+
+Members lists accounts with name, address and role; Invitees lists people who
+were invited and have not registered, marked «Սպասում է». They are deliberately
+two tables. Someone who has not registered has no account, no usage and no role,
+so putting them in one table means three empty cells and calling it a member.
+
+**Role is derived, never stored.** `workspaces.owner_id` is the admin; everyone
+else is a member. That is exactly "if I was not invited I am admin, if I was
+invited I am a user", without a role column that can drift out of agreement with
+ownership — and the first thing to disagree in a permissions model is the thing
+that gets exploited.
+
+Usage totals the firm: per member `used / limit`, and a total that is the sum of
+the members' ceilings (e.g. `6 / 25`). One member on an uncapped plan makes the
+firm's ceiling meaningless, so it reports no ceiling rather than a number that
+quietly excludes them. `allowanceFor` is now shared with `monthlyUsage` — two
+implementations of "how many questions may this person ask" is how a firm's
+total comes to disagree with the sum of its parts on screen.
+
+Three decisions worth keeping:
+
+- **Removing a colleague does not delete them.** They keep their account, their
+  conversations and their allowance, and become the admin of a workspace of
+  their own. An admin who can destroy a colleague's work is not what "remove
+  from workspace" says.
+- **The spent invitation is deleted on removal, not un-accepted.** Something has
+  to happen to it — left accepted it holds the `UNIQUE (inviter_id, email)` slot
+  and re-inviting silently does nothing. Clearing `accepted_user_id` was the
+  first fix and it was worse: the removed person reappeared one table lower as
+  a pending invitee, so removal read as half-failed. Caught in the browser.
+- **Inviting from this page pays no +10.** That award is "once, for completing
+  the invitation step"; paying it per invitation here would turn a referral
+  scheme into a printing press. The +5 on acceptance still applies and still
+  needs a real registration.
+
+Every mutation re-checks admin server-side. The UI hides what a member may not
+use, and hiding is presentation, not authorisation — verified by calling invite
+and remove as a member and getting 403 from both.
+
+Verified end to end: admin registers with two invitations, one accepts and lands
+in the admin's workspace as a member, the pending one shows as an invitee,
+inviting a third works, inviting them twice says so, revoking and removing both
+work and ask first, the removed member keeps 2 sessions and 2 questions and owns
+a fresh workspace, re-inviting the same address then succeeds, and usage reads
+6 / 25 broken down as 4 / 20 and 2 / 5.

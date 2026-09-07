@@ -23,6 +23,16 @@ import {
 import { authorizeUrl, exchangeCode, googleEnabled, issueState, verifyState } from './google.js';
 import { markConverted } from '../answer/preview.js';
 import { claimInvitation, parseInvites, recordInvites } from './invitations.js';
+import {
+  inviteToWorkspace,
+  isAdmin,
+  readUsage,
+  readWorkspace,
+  removeMember,
+  renameWorkspace,
+  revokeInvite,
+  workspaceIdFor,
+} from './workspace.js';
 
 /**
  * Paths reachable without a session.
@@ -165,6 +175,10 @@ export async function register(req: FastifyRequest, reply: FastifyReply): Promis
   // Re-read: both of the above may have changed the allowance, and the UI
   // should be told the number that is true rather than the one it expected.
   const fresh = (await findById(user.id)) ?? user;
+  // An account that joined a colleague's firm already has a workspace; one that
+  // did not becomes the admin of its own. AFTER the claim, so an invited user
+  // does not first own a workspace and then abandon it.
+  await workspaceIdFor(fresh);
   return reply
     .header('Set-Cookie', setCookie(fresh.id))
     .send({
@@ -248,6 +262,92 @@ export async function updateMe(req: FastifyRequest, reply: FastifyReply): Promis
   return reply.send({ user: publicUser(updated), usage: await monthlyUsage(updated) });
 }
 
+/**
+ * The workspace page.
+ *
+ * Two reads and four writes, and every write re-checks admin against the
+ * database rather than trusting the `role` the UI was handed. The UI hides
+ * controls a member may not use; hiding is presentation, and presentation is
+ * not authorisation.
+ */
+export async function getWorkspace(req: FastifyRequest, reply: FastifyReply): Promise<void> {
+  return reply.send(await readWorkspace(req.user!));
+}
+
+export async function getWorkspaceUsage(req: FastifyRequest, reply: FastifyReply): Promise<void> {
+  return reply.send(await readUsage(req.user!));
+}
+
+/** Guard shared by every mutation below. */
+async function requireAdmin(req: FastifyRequest, reply: FastifyReply): Promise<string | null> {
+  const workspaceId = await workspaceIdFor(req.user!);
+  if (!(await isAdmin(req.user!.id, workspaceId))) {
+    await reply.code(403).send({ error: 'not_admin' });
+    return null;
+  }
+  return workspaceId;
+}
+
+export async function postWorkspaceInvite(
+  req: FastifyRequest,
+  reply: FastifyReply,
+): Promise<void> {
+  if (!(await requireAdmin(req, reply))) return;
+
+  const body = req.body as { email?: unknown; name?: unknown } | undefined;
+  const result = await inviteToWorkspace(req.user!, {
+    email: body?.email,
+    name: body?.name,
+  });
+  if (!result.ok) return reply.code(400).send({ error: result.reason });
+  return reply.send(await readWorkspace(req.user!));
+}
+
+export async function deleteWorkspaceInvite(
+  req: FastifyRequest<{ Params: { id: string } }>,
+  reply: FastifyReply,
+): Promise<void> {
+  const workspaceId = await requireAdmin(req, reply);
+  if (!workspaceId) return;
+
+  if (!/^[0-9a-f-]{36}$/i.test(req.params.id)) {
+    return reply.code(400).send({ error: 'invalid_id' });
+  }
+  if (!(await revokeInvite(workspaceId, req.params.id))) {
+    return reply.code(404).send({ error: 'not_found' });
+  }
+  return reply.send(await readWorkspace(req.user!));
+}
+
+export async function deleteWorkspaceMember(
+  req: FastifyRequest<{ Params: { id: string } }>,
+  reply: FastifyReply,
+): Promise<void> {
+  const workspaceId = await requireAdmin(req, reply);
+  if (!workspaceId) return;
+
+  if (!/^[0-9a-f-]{36}$/i.test(req.params.id)) {
+    return reply.code(400).send({ error: 'invalid_id' });
+  }
+  // Also the answer when the target IS the admin: removing the owner would
+  // leave a workspace nobody can administer, and nothing here can appoint a
+  // replacement yet.
+  if (!(await removeMember(workspaceId, req.params.id))) {
+    return reply.code(404).send({ error: 'not_found' });
+  }
+  return reply.send(await readWorkspace(req.user!));
+}
+
+export async function patchWorkspace(req: FastifyRequest, reply: FastifyReply): Promise<void> {
+  const workspaceId = await requireAdmin(req, reply);
+  if (!workspaceId) return;
+
+  const name = (req.body as { name?: unknown })?.name;
+  if (typeof name !== 'string') return reply.code(400).send({ error: 'invalid_name' });
+  await renameWorkspace(workspaceId, name);
+  return reply.send(await readWorkspace(req.user!));
+}
+
 /** Who am I, and how much of this month's allowance is left? */
 export async function me(req: FastifyRequest, reply: FastifyReply): Promise<void> {
   const userId = verify(readCookie(req.headers.cookie));
@@ -285,6 +385,7 @@ export async function googleCallback(req: FastifyRequest, reply: FastifyReply): 
   // Only a genuinely NEW account settles an invitation — otherwise every later
   // Google sign-in would pay the inviter again.
   if (!before) await claimInvitation(user.id, identity.email);
+  await workspaceIdFor((await findById(user.id)) ?? user);
   await touchLastSeen(user.id);
   return reply.header('Set-Cookie', setCookie(user.id)).redirect('/');
 }

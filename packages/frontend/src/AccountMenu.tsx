@@ -14,21 +14,24 @@
  */
 import { useEffect, useRef, useState } from 'react';
 import { useSettings } from './Settings.js';
-import { COMPANY_SIZES, type Account } from './Login.js';
+import type { Account } from './Login.js';
 
 /** Which panel the popup is showing; `null` is the menu itself. */
-type Panel = 'profile' | 'workspace' | null;
+type Panel = 'profile' | null;
 
 export function AccountMenu({
   account,
   onChanged,
   onSignOut,
+  onOpenWorkspace,
   placement,
 }: {
   account: Account;
   /** A saved change; the caller re-reads the account so every view agrees. */
   onChanged: (next: Account) => void;
   onSignOut: () => void;
+  /** Workspace is a page, not a panel — it holds tables of people and numbers. */
+  onOpenWorkspace: () => void;
   /** `rail` is the resting place; `masthead` is the phone fallback, where the
    *  register — and with it the foot of the register — does not exist. */
   placement: 'rail' | 'masthead';
@@ -37,8 +40,6 @@ export function AccountMenu({
   const [open, setOpen] = useState(false);
   const [panel, setPanel] = useState<Panel>(null);
   const [name, setName] = useState('');
-  const [company, setCompany] = useState('');
-  const [size, setSize] = useState('');
   const [busy, setBusy] = useState(false);
   const [upgradeError, setUpgradeError] = useState<string | null>(null);
   const rootRef = useRef<HTMLDivElement>(null);
@@ -178,9 +179,8 @@ export function AccountMenu({
               <button
                 role="menuitem"
                 onClick={() => {
-                  setCompany(user.companyName ?? '');
-                  setSize(user.companySize ?? '');
-                  setPanel('workspace');
+                  close();
+                  onOpenWorkspace();
                 }}
               >
                 {t('account.workspace')}
@@ -223,42 +223,6 @@ export function AccountMenu({
             </div>
           ) : null}
 
-          {panel === 'workspace' ? (
-            <div className="account-panel">
-              <label htmlFor="account-company">{t('auth.companyName')}</label>
-              <input
-                id="account-company"
-                value={company}
-                autoFocus
-                onChange={(e) => setCompany(e.target.value)}
-              />
-              <span className="account-panel-label">{t('auth.companySize')}</span>
-              <div className="size-options" role="radiogroup" aria-label={t('auth.companySize')}>
-                {COMPANY_SIZES.map((s) => (
-                  <button
-                    key={s}
-                    type="button"
-                    role="radio"
-                    aria-checked={size === s}
-                    className={size === s ? 'size-option on' : 'size-option'}
-                    onClick={() => setSize(s)}
-                  >
-                    {s}
-                  </button>
-                ))}
-              </div>
-              <div className="account-panel-actions">
-                <button onClick={() => setPanel(null)}>{t('nav.cancel')}</button>
-                <button
-                  className="primary"
-                  disabled={busy || !company.trim()}
-                  onClick={() => void save({ companyName: company, companySize: size })}
-                >
-                  {t('nav.save')}
-                </button>
-              </div>
-            </div>
-          ) : null}
         </div>
       ) : null}
     </div>

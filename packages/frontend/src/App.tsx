@@ -14,6 +14,7 @@ import { Chat } from './Chat.js';
 import { Landing } from './Landing.js';
 import { type Account, PENDING_PROFILE } from './Login.js';
 import { AccountMenu } from './AccountMenu.js';
+import { Workspace } from './Workspace.js';
 import { MarkdownView } from './MarkdownView.js';
 import { NormPanel } from './NormPanel.js';
 import { Shared } from './Shared.js';
@@ -284,6 +285,15 @@ function Workbench() {
 
   /** Shared by both mounts of the account control (register foot, and masthead
    *  at phone widths where the register does not exist). */
+  /**
+   * The workspace page, shown instead of the workbench.
+   *
+   * There is no router in this app, so this is state — same as `mode`. It sits
+   * beside the workbench rather than inside it because it is not a way of
+   * asking a question; it is the account's own administration.
+   */
+  const [showWorkspace, setShowWorkspace] = useState(false);
+
   const signOut = useCallback((): void => {
     void (async () => {
       await fetch('/api/auth/logout', { method: 'POST' });
@@ -443,6 +453,7 @@ function Workbench() {
               placement="masthead"
               onChanged={setAccount}
               onSignOut={signOut}
+              onOpenWorkspace={() => setShowWorkspace(true)}
             />
           ) : null}
           <SettingsControls />
@@ -470,17 +481,22 @@ function Workbench() {
         <div className="masthead-rule" />
       </header>
 
-      {mode === 'chat' ? (
+      {showWorkspace && account?.user ? (
+        <Workspace meId={account.user.id} onClose={() => setShowWorkspace(false)} />
+      ) : null}
+
+      {!showWorkspace && mode === 'chat' ? (
         <Chat
           key={homeKey}
           corpusSynced={synced}
           account={account}
           onAccountChanged={setAccount}
           onSignOut={signOut}
+          onOpenWorkspace={() => setShowWorkspace(true)}
         />
       ) : null}
-      {mode === 'ask' ? <AskMode key={homeKey} corpusSynced={synced} /> : null}
-      {mode === 'search' ? <SearchMode key={homeKey} /> : null}
+      {!showWorkspace && mode === 'ask' ? <AskMode key={homeKey} corpusSynced={synced} /> : null}
+      {!showWorkspace && mode === 'search' ? <SearchMode key={homeKey} /> : null}
 
       {/* The colophon: what this is, and how much of it there is. */}
       <footer className="colophon">

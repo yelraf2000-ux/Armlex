@@ -2166,3 +2166,253 @@ a { color: var(--accent); }
   .invite-row { grid-template-columns: minmax(0, 1fr) 2.2rem; }
   .invite-row input:first-child { grid-column: 1 / -1; }
 }
+
+/* ── The workspace page ─────────────────────────────────────────────────── */
+
+/*
+ * A page, not a panel. It holds two tables and a running total, and neither
+ * survives being squeezed into a 236px popup — which is why Workspace left the
+ * account menu rather than growing inside it.
+ */
+.ws {
+  max-width: 900px;
+  margin: 0 auto;
+  padding: 26px 40px 60px;
+}
+
+.ws-head {
+  display: flex;
+  align-items: baseline;
+  gap: 16px;
+  padding-bottom: 14px;
+  border-bottom: 1px solid var(--ink);
+  margin-bottom: 22px;
+}
+
+.ws-back {
+  flex: 0 0 auto;
+  background: none;
+  border: 0;
+  padding: 0;
+  color: var(--ink-3);
+  font-family: var(--body);
+  font-size: 12px;
+  cursor: pointer;
+}
+.ws-back:hover { color: var(--accent); }
+
+.ws-title {
+  margin: 0;
+  font-family: var(--display);
+  font-size: 26px;
+  font-weight: 400;
+  color: var(--ink);
+}
+
+.ws-body {
+  display: grid;
+  grid-template-columns: 172px minmax(0, 1fr);
+  gap: 34px;
+  align-items: start;
+}
+
+.ws-nav { display: flex; flex-direction: column; gap: 2px; }
+.ws-nav button {
+  padding: 8px 10px;
+  border: 0;
+  border-radius: 8px;
+  background: none;
+  color: var(--ink-2);
+  font-family: var(--body);
+  font-size: 13px;
+  text-align: left;
+  cursor: pointer;
+}
+.ws-nav button:hover { background: var(--leaf); }
+.ws-nav button.on { background: var(--leaf); color: var(--accent); font-weight: 600; }
+
+.ws-section-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+  margin: 4px 0 10px;
+}
+.ws-section-head h2 {
+  margin: 0;
+  font-size: 11px;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  font-weight: 600;
+  color: var(--ink-3);
+}
+/* A second table on the same page needs air above it, or the two read as one. */
+.ws-table + .ws-section-head { margin-top: 30px; }
+
+.ws-add {
+  background: none;
+  border: 1px solid var(--rule-2);
+  border-radius: 7px;
+  padding: 5px 10px;
+  color: var(--ink-2);
+  font-family: var(--body);
+  font-size: 12px;
+  cursor: pointer;
+}
+.ws-add:hover { border-color: var(--ink-3); color: var(--ink); }
+
+.ws-invite {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  padding: 12px;
+  margin-bottom: 12px;
+  border: 1px solid var(--rule-2);
+  border-radius: 10px;
+  background: var(--leaf);
+}
+.ws-invite input {
+  flex: 1 1 180px;
+  min-width: 0;
+  font-family: var(--body);
+  font-size: 13px;
+  padding: 7px 9px;
+  border: 1px solid var(--rule-2);
+  border-radius: 7px;
+  background: var(--paper);
+  color: var(--ink);
+}
+.ws-invite input:focus { outline: none; border-color: var(--accent); }
+.ws-invite button {
+  flex: 0 0 auto;
+  padding: 7px 13px;
+  font-family: var(--body);
+  font-size: 12px;
+  border: 1px solid var(--rule-2);
+  border-radius: 7px;
+  background: none;
+  color: var(--ink-2);
+  cursor: pointer;
+}
+.ws-invite button.primary {
+  border-color: var(--ink);
+  background: var(--ink);
+  color: var(--paper);
+}
+.ws-invite button:disabled { opacity: 0.5; cursor: default; }
+
+.ws-error {
+  margin: 0 0 12px;
+  font-size: 12.5px;
+  color: var(--accent);
+}
+
+.ws-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+.ws-table td {
+  padding: 11px 8px;
+  border-bottom: 1px solid var(--rule);
+  font-size: 13px;
+  vertical-align: middle;
+}
+.ws-table td:first-child { padding-left: 0; }
+.ws-table td:last-child { padding-right: 0; }
+
+.ws-name { color: var(--ink); }
+.ws-you { color: var(--ink-3); font-style: italic; }
+.ws-mail { color: var(--ink-3); font-size: 12px; }
+.ws-count { text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; }
+.ws-act { text-align: right; width: 1%; white-space: nowrap; }
+
+.ws-badge {
+  display: inline-block;
+  padding: 2px 8px;
+  border: 1px solid var(--rule-2);
+  border-radius: 999px;
+  font-size: 10.5px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--ink-3);
+}
+.ws-badge.admin { border-color: var(--accent); color: var(--accent); }
+.ws-badge.pending { font-style: italic; text-transform: none; letter-spacing: 0; }
+
+.ws-remove {
+  background: none;
+  border: 0;
+  padding: 4px 6px;
+  color: var(--ink-3);
+  font-family: var(--body);
+  font-size: 12px;
+  cursor: pointer;
+}
+.ws-remove:hover { color: var(--accent); }
+
+.ws-confirm { display: inline-flex; gap: 6px; }
+.ws-confirm button {
+  padding: 4px 9px;
+  font-family: var(--body);
+  font-size: 11.5px;
+  border: 1px solid var(--rule-2);
+  border-radius: 6px;
+  background: none;
+  color: var(--ink-2);
+  cursor: pointer;
+}
+.ws-confirm button.danger {
+  border-color: var(--accent);
+  background: var(--accent);
+  color: var(--paper);
+}
+
+.ws-note, .ws-empty {
+  margin: 12px 0 0;
+  font-size: 12px;
+  font-style: italic;
+  color: var(--ink-3);
+  line-height: 1.5;
+}
+
+/* The firm's total, above the per-person breakdown that explains it. */
+.ws-total {
+  padding: 14px 16px;
+  margin-bottom: 18px;
+  border: 1px solid var(--rule-2);
+  border-radius: 10px;
+  background: var(--leaf);
+}
+.ws-total-line {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 12px;
+  font-size: 12.5px;
+  color: var(--ink-2);
+}
+.ws-total-line .num {
+  font-family: var(--display);
+  font-size: 20px;
+  color: var(--ink);
+  font-variant-numeric: tabular-nums;
+}
+.ws-bar {
+  height: 4px;
+  margin-top: 10px;
+  border-radius: 2px;
+  background: var(--rule-2);
+  overflow: hidden;
+}
+.ws-bar-fill { height: 100%; background: var(--accent); }
+
+@media (max-width: 700px) {
+  .ws { padding: 20px 20px 44px; }
+  /* The nav becomes a strip above the content: two items do not earn a column
+     at this width, and the table needs every pixel. */
+  .ws-body { grid-template-columns: minmax(0, 1fr); gap: 18px; }
+  .ws-nav { flex-direction: row; gap: 6px; }
+  /* The address is the least load-bearing column once space runs out — the name
+     identifies the person and the role is the point of the table. */
+  .ws-mail { display: none; }
+}

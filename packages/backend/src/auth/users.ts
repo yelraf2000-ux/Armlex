@@ -25,6 +25,8 @@ export interface User {
   company_name: string | null;
   company_size: string | null;
   bonus_questions: number;
+  /** The firm this account belongs to. Null only for a row the backfill missed. */
+  workspace_id: string | null;
 }
 
 export interface CompanyProfile {
@@ -69,7 +71,7 @@ export function normaliseEmail(raw: string): string {
 export async function findByEmail(email: string): Promise<User | null> {
   const rows = await db()<User[]>`
     SELECT id, email, name, plan, password_hash, google_sub, plan_expires_at,
-           company_name, company_size, bonus_questions
+           company_name, company_size, bonus_questions, workspace_id
       FROM users WHERE email = ${normaliseEmail(email)} LIMIT 1`;
   return rows[0] ?? null;
 }
@@ -77,7 +79,7 @@ export async function findByEmail(email: string): Promise<User | null> {
 export async function findById(id: string): Promise<User | null> {
   const rows = await db()<User[]>`
     SELECT id, email, name, plan, password_hash, google_sub, plan_expires_at,
-           company_name, company_size, bonus_questions
+           company_name, company_size, bonus_questions, workspace_id
       FROM users WHERE id = ${id} LIMIT 1`;
   return rows[0] ?? null;
 }
@@ -94,7 +96,7 @@ export async function createWithPassword(
     VALUES (${normaliseEmail(email)}, ${name}, ${hash},
             ${profile.companyName ?? null}, ${validSize(profile.companySize)})
     RETURNING id, email, name, plan, password_hash, google_sub, plan_expires_at,
-              company_name, company_size, bonus_questions`;
+              company_name, company_size, bonus_questions, workspace_id`;
   return rows[0]!;
 }
 
@@ -117,7 +119,7 @@ export async function fillProfile(id: string, profile: CompanyProfile): Promise<
            company_size = COALESCE(company_size, ${validSize(profile.companySize)})
      WHERE id = ${id}
     RETURNING id, email, name, plan, password_hash, google_sub, plan_expires_at,
-              company_name, company_size, bonus_questions`;
+              company_name, company_size, bonus_questions, workspace_id`;
   return rows[0] ?? null;
 }
 
@@ -148,7 +150,7 @@ export async function updateProfile(
              company_size)
      WHERE id = ${id}
     RETURNING id, email, name, plan, password_hash, google_sub, plan_expires_at,
-              company_name, company_size, bonus_questions`;
+              company_name, company_size, bonus_questions, workspace_id`;
   return rows[0] ?? null;
 }
 
@@ -171,7 +173,7 @@ export async function upsertGoogleUser(
 
   const bySub = await db()<User[]>`
     SELECT id, email, name, plan, password_hash, google_sub, plan_expires_at,
-           company_name, company_size, bonus_questions
+           company_name, company_size, bonus_questions, workspace_id
       FROM users WHERE google_sub = ${sub} LIMIT 1`;
   if (bySub[0]) return bySub[0];
 
@@ -182,14 +184,14 @@ export async function upsertGoogleUser(
          SET google_sub = ${sub},
              name = COALESCE(name, ${name})
        WHERE id = ${existing.id}
-      RETURNING id, email, name, plan, password_hash, google_sub, plan_expires_at, company_name, company_size, bonus_questions`;
+      RETURNING id, email, name, plan, password_hash, google_sub, plan_expires_at, company_name, company_size, bonus_questions, workspace_id`;
     return rows[0]!;
   }
 
   const rows = await db()<User[]>`
     INSERT INTO users (email, name, google_sub)
     VALUES (${address}, ${name}, ${sub})
-    RETURNING id, email, name, plan, password_hash, google_sub, plan_expires_at, company_name, company_size, bonus_questions`;
+    RETURNING id, email, name, plan, password_hash, google_sub, plan_expires_at, company_name, company_size, bonus_questions, workspace_id`;
   return rows[0]!;
 }
 
@@ -227,6 +229,23 @@ export function effectivePlan(user: User): string {
  * the user owns. A failed turn that never persisted a message does not count
  * against them, which is the fair reading of "questions asked".
  */
+/**
+ * The ceiling for a plan: its monthly allowance plus any bonus questions.
+ *
+ * Exported so the workspace page computes a member's limit the same way the
+ * member's own account does. Two implementations of "how many questions may
+ * this person ask" is how a firm's total comes to disagree with the sum of its
+ * parts on screen.
+ */
+export function allowanceFor(
+  plan: string,
+  planExpiresAt: string | null,
+  bonus: number,
+): number | null {
+  const base = ALLOWANCE[effectivePlan({ plan, plan_expires_at: planExpiresAt } as User)] ?? null;
+  return base === null ? null : base + (bonus ?? 0);
+}
+
 export async function monthlyUsage(user: User): Promise<Usage> {
   const base = ALLOWANCE[effectivePlan(user)] ?? null;
   /*

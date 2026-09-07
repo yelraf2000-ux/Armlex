@@ -139,11 +139,13 @@ export function Chat({
   account,
   onAccountChanged,
   onSignOut,
+  onOpenWorkspace,
 }: {
   corpusSynced: string | null;
   account?: Account | null;
   onAccountChanged?: ((next: Account) => void) | undefined;
   onSignOut?: (() => void) | undefined;
+  onOpenWorkspace?: (() => void) | undefined;
 }) {
   const { t, railOpen } = useSettings();
   const [sessionId, setSessionId] = useState<string | null>(null);
@@ -471,12 +473,13 @@ export function Chat({
           display:none and the masthead carries the same control instead — CSS
           shows exactly one, so sign-out is never off the page.
         */}
-        {account?.user && onAccountChanged && onSignOut ? (
+        {account?.user && onAccountChanged && onSignOut && onOpenWorkspace ? (
           <AccountMenu
             account={account}
             placement="rail"
             onChanged={onAccountChanged}
             onSignOut={onSignOut}
+            onOpenWorkspace={onOpenWorkspace}
           />
         ) : null}
       </nav>
