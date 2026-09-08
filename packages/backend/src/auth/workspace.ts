@@ -7,8 +7,9 @@
  * A single role column with no protected owner allows exactly that state, and
  * it is unrecoverable from inside the product.
  *
- * The allowance is ONE POOL for the firm, not a quota per seat: the owner's
- * plan sets the ceiling and every member draws from it. See `workspaceQuota`.
+ * The allowance is ONE WEEKLY POOL for the firm, summed from every seat: each
+ * member contributes their own plan and bonuses, and anyone may spend the
+ * total. It renews Monday 00:00 Yerevan. See `workspaceQuota`.
  *
  * Membership comes from two places and they are deliberately different shapes:
  *   members  — accounts, with usage, who can be detached
@@ -229,19 +230,19 @@ export interface WorkspaceUsage {
  * firm would otherwise be forty round trips to Neon for one page.
  */
 /**
- * The firm's allowance, and what it has spent — ONE pool, not a sum of seats.
+ * The firm's allowance for THIS WEEK, and what it has spent.
  *
- * The limit is the OWNER's: they hold the subscription, so their plan is what
- * the firm bought. Bonus questions from every member are added, because a
- * colleague who refers someone has earned the firm those questions whoever
- * eventually asks them.
+ * One pool, summed from every seat: each member contributes their own plan
+ * plus their own bonus questions, and anyone may spend the total. A firm of
+ * three on the free plan has fifteen a week between them, not five each.
  *
- * Summing each member's plan instead would mean a firm's capacity grew by five
- * every time it added a free seat — an invitation would mint allowance, and the
- * cheapest way to buy questions would be to invite strangers.
+ * Everything renews at `armlex_period_start()` — Monday 00:00 in Yerevan — and
+ * the same function is what the count is measured from, so the number shown
+ * and the number enforced can never describe different weeks.
  *
- * Uncapped anywhere is uncapped: `unlimited` on the owner removes the ceiling
- * rather than contributing a number to it.
+ * Uncapped anywhere is uncapped: one `unlimited` member removes the ceiling
+ * rather than contributing a number to it, because a total that quietly
+ * excluded them would be a limit nothing could enforce.
  */
 export async function workspaceQuota(user: User): Promise<{ used: number; limit: number | null }> {
   const id = await workspaceIdFor(user);
@@ -250,44 +251,43 @@ export async function workspaceQuota(user: User): Promise<{ used: number; limit:
     {
       plan: string;
       plan_expires_at: string | null;
-      bonus: number;
-      used: string;
+      bonus_questions: number;
     }[]
   >`
-    SELECT o.plan,
-           o.plan_expires_at::text,
-           (SELECT COALESCE(sum(bonus_questions), 0) FROM users WHERE workspace_id = ${id}) AS bonus,
-           (
-             COALESCE((
-               SELECT count(*) FROM messages m
-                 JOIN sessions s ON s.id = m.session_id
-                 JOIN users mu ON mu.id = s.user_id
-                WHERE mu.workspace_id = ${id}
-                  AND m.role = 'user'
-                  AND m.created_at >= date_trunc('month', now())
-             ), 0)
-             + COALESCE((
-               SELECT sum(l.questions) FROM usage_ledger l
-                 JOIN users lu ON lu.id = l.user_id
-                WHERE lu.workspace_id = ${id}
-                  AND l.month = date_trunc('month', now())::date
-             ), 0)
-           )::text AS used
-      FROM workspaces w
-      JOIN users o ON o.id = w.owner_id
-     WHERE w.id = ${id}`;
+    SELECT plan, plan_expires_at::text, bonus_questions
+      FROM users WHERE workspace_id = ${id}`;
 
-  const row = rows[0];
-  // No owner row would mean a workspace whose owner was deleted. Refusing every
-  // question would be the wrong failure, so it falls back to this member's own
-  // allowance rather than to zero.
-  if (!row) return { used: 0, limit: allowanceFor(user.plan, user.plan_expires_at, user.bonus_questions) };
+  // A workspace with nobody in it cannot happen through the product, but a
+  // zero ceiling would refuse every question rather than fail visibly — so
+  // fall back to this member's own allowance.
+  if (rows.length === 0) {
+    return { used: 0, limit: allowanceFor(user.plan, user.plan_expires_at, user.bonus_questions) };
+  }
 
-  const base = allowanceFor(row.plan, row.plan_expires_at, 0);
-  return {
-    used: Number(row.used),
-    limit: base === null ? null : base + Number(row.bonus),
-  };
+  const seats = rows.map((r) => allowanceFor(r.plan, r.plan_expires_at, r.bonus_questions));
+  const limit = seats.some((s) => s === null)
+    ? null
+    : seats.reduce((n: number, s) => n + (s ?? 0), 0);
+
+  const spent = await db()<{ used: string }[]>`
+    SELECT (
+      COALESCE((
+        SELECT count(*) FROM messages m
+          JOIN sessions s ON s.id = m.session_id
+          JOIN users mu ON mu.id = s.user_id
+         WHERE mu.workspace_id = ${id}
+           AND m.role = 'user'
+           AND m.created_at >= armlex_period_start()
+      ), 0)
+      + COALESCE((
+        SELECT sum(l.questions) FROM usage_ledger l
+          JOIN users lu ON lu.id = l.user_id
+         WHERE lu.workspace_id = ${id}
+           AND l.period_start = armlex_period_start()
+      ), 0)
+    )::text AS used`;
+
+  return { used: Number(spent[0]?.used ?? 0), limit };
 }
 
 export async function readUsage(user: User): Promise<WorkspaceUsage> {
@@ -311,12 +311,12 @@ export async function readUsage(user: User): Promise<WorkspaceUsage> {
                  JOIN sessions s ON s.id = m.session_id
                 WHERE s.user_id = u.id
                   AND m.role = 'user'
-                  AND m.created_at >= date_trunc('month', now())
+                  AND m.created_at >= armlex_period_start()
              ), 0)
              + COALESCE((
                SELECT questions FROM usage_ledger l
                 WHERE l.user_id = u.id
-                  AND l.month = date_trunc('month', now())::date
+                  AND l.period_start = armlex_period_start()
              ), 0)
            )::text AS used
       FROM users u

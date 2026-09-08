@@ -1,5 +1,5 @@
 /**
- * User records and the monthly question allowance.
+ * User records and the weekly question allowance.
  *
  * The allowance is the reason this file exists alongside the identity code.
  * The old shared password was never a privacy control — it was a spending
@@ -56,7 +56,12 @@ export function validSize(size: unknown): string | null {
     : null;
 }
 
-/** Questions per calendar month, by plan. `null` means no ceiling. */
+/**
+ * Questions per WEEK, by plan. `null` means no ceiling.
+ *
+ * These are per SEAT. A workspace pools them: three free members share fifteen
+ * a week between them, not five each. See `workspaceQuota`.
+ */
 const ALLOWANCE: Record<string, number | null> = {
   free: 5,
   pro: 50,
@@ -277,11 +282,11 @@ export async function monthlyUsage(user: User): Promise<Usage> {
         FROM messages m JOIN sessions s ON s.id = m.session_id
        WHERE s.user_id = ${user.id}
          AND m.role = 'user'
-         AND m.created_at >= date_trunc('month', now())
+         AND m.created_at >= armlex_period_start()
     ) + COALESCE((
       SELECT questions FROM usage_ledger
        WHERE user_id = ${user.id}
-         AND month = date_trunc('month', now())::date
+         AND period_start = armlex_period_start()
     ), 0) AS n`;
   const used = Number(rows[0]?.n ?? 0);
   return { used, limit, remaining: limit === null ? null : Math.max(0, limit - used) };

@@ -231,9 +231,13 @@ app.post<{ Body: ChatBody }>('/api/chat/stream', async (req, reply) => {
     return reply.code(429).send({
       error: 'quota_exceeded',
       usage,
+      // Names the firm's weekly ceiling and when it returns. "Limit reached"
+      // without a renewal date reads as the end of the road rather than as a
+      // wait, which is the difference between a cancelled account and a
+      // patient one.
       detail:
-        `Այս ամսվա ${usage.limit} հարցի սահմանաչափը սպառված է։ / ` +
-        `Исчерпан лимит в ${usage.limit} вопросов на этот месяц.`,
+        `Այս շաբաթվա ${usage.limit} հարցի սահմանաչափը սպառված է։ Նորը՝ երկուշաբթի։ / ` +
+        `Исчерпан лимит в ${usage.limit} вопросов на эту неделю. Обновится в понедельник.`,
     });
   }
 
@@ -491,17 +495,25 @@ app.delete<{ Params: { id: string } }>('/api/sessions/:id', async (req, reply) =
     SELECT id FROM sessions WHERE id = ${id} AND user_id = ${req.user!.id} LIMIT 1`;
   if (!owned[0]) return reply.code(404).send({ error: 'not_found' });
 
-  // Grouped by the month the question was ASKED in — deleting a September
-  // conversation must not consume August's allowance.
+  /*
+    Grouped by the WEEK the question was asked in — deleting this week's
+    conversation must not consume last week's allowance, and deleting last
+    week's must not consume this one's.
+
+    The bucket is derived the same way `armlex_period_start()` derives the
+    current one, in Yerevan time, so a question asked at 23:00 on a Sunday
+    banks against the week it was actually asked in rather than the next.
+  */
   await db()`
-    INSERT INTO usage_ledger (user_id, month, questions)
+    INSERT INTO usage_ledger (user_id, period_start, questions)
     SELECT s.user_id,
-           date_trunc('month', m.created_at)::date,
+           date_trunc('week', m.created_at AT TIME ZONE 'Asia/Yerevan')
+             AT TIME ZONE 'Asia/Yerevan',
            count(*)::int
       FROM messages m JOIN sessions s ON s.id = m.session_id
      WHERE s.id = ${id} AND m.role = 'user' AND s.user_id IS NOT NULL
      GROUP BY 1, 2
-    ON CONFLICT (user_id, month)
+    ON CONFLICT (user_id, period_start)
       DO UPDATE SET questions = usage_ledger.questions + EXCLUDED.questions`;
 
   await db()`DELETE FROM sessions WHERE id = ${id} AND user_id = ${req.user!.id}`;
