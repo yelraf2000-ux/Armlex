@@ -529,3 +529,14 @@ wording is the data.
     `armlex.onrender.com` is gone as of 2026-09-08, so share links built
     against it no longer resolve. Share links build from
     `window.location.origin`, so new ones follow the new domain by themselves.
+
+50. **Turn on email verification.** The code is deployed and dormant. To
+    activate, in order:
+    - Create a Resend account and add `matyanai.am` as a sending domain.
+    - Add the DKIM and SPF records Resend names, in name.am DNS Կառավարում.
+      Until these resolve Resend answers 403 and NOTHING sends — the failure
+      is at the provider, so no amount of reading our logs explains it.
+    - Set `RESEND_API_KEY` and `EMAIL_FROM` in `/opt/armlex/.env`, restart.
+    - Register a throwaway address and confirm the link arrives and works.
+      The gate turns itself on the moment both variables exist, so this is the
+      first moment a real sign-up can be blocked by it.

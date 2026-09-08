@@ -1524,3 +1524,12 @@ a fresh workspace, re-inviting the same address then succeeds, and usage reads
   Hetzner database were byte-identical (same counts across all seven tables,
   same last-message timestamp), so nothing had been written to Neon after the
   migration dump. A 101MB dump was also copied off both machines beforehand.
+
+- **2026-09-08 — Email verification, shipped dark.** Password sign-ups now
+  prove their address before the account works; Google accounts are exempt and
+  marked verified on arrival. The gate is bound to `mailer.isEnabled()`, so it
+  stays off until RESEND_API_KEY and EMAIL_FROM exist — enforcing it
+  unconditionally would have accepted registrations and stranded each behind a
+  link nothing could send. Tokens stored as SHA-256; existing rows backfilled
+  as verified. `deploy/update.sh` now runs migrations before the restart,
+  which 011 was the first to need.
