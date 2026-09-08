@@ -144,9 +144,14 @@ export function Login({
   onSuccess,
   googleEnabled,
   initialTab,
+  initialError,
 }: {
   onSuccess: () => void;
   googleEnabled?: boolean | undefined;
+  /** An outcome from the OAuth round trip, which has no other way back here —
+   *  the redirect destroys component state, so it arrives as a query
+   *  parameter and is handed in already translated. */
+  initialError?: string | undefined;
   /** Which tab opens first. A visitor arriving from "register and see it all"
    *  must land on Register — sending them to Sign in contradicts the button
    *  they just pressed. */
@@ -170,7 +175,7 @@ export function Login({
   const [password, setPassword] = useState('');
   const [confirm, setConfirm] = useState('');
   const [reveal, setReveal] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(initialError ?? null);
   const [busy, setBusy] = useState(false);
 
   /**
@@ -610,9 +615,15 @@ export function Login({
               component state — `App` posts it to /api/auth/profile once the
               account exists on the other side.
             */}
+            {/*
+              The intent travels so the server knows which door this was. From
+              here it is only a hint — it is re-signed into the OAuth state and
+              verified on the way back, because a query parameter the user can
+              edit is no basis for deciding who may create an account.
+            */}
             <a
               className="login-google"
-              href="/api/auth/google"
+              href={`/api/auth/google?intent=${tab === 'register' ? 'register' : 'signin'}`}
               onClick={() => {
                 if (tab === 'register' && profileComplete) {
                   sessionStorage.setItem(PENDING_PROFILE, JSON.stringify(profile));

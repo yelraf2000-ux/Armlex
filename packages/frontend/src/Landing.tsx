@@ -55,6 +55,39 @@ export function Landing({
    */
   const [showAuth, setShowAuth] = useState<Tab | null>(null);
 
+  /**
+   * The outcome of a Google round trip, read once on first render.
+   *
+   * The redirect destroys component state, so the server has no way to speak to
+   * this component except through the URL. Until now nothing read these — the
+   * server had been redirecting to `/?auth=cancelled` and `/?auth=failed` since
+   * Google sign-in existed, and every one of them landed on a page that showed
+   * the visitor nothing at all.
+   *
+   * `no_account` opens REGISTER rather than sign-in: they proved they have a
+   * Google account and no account here, so the only useful next step is the
+   * other door. The rest reopen sign-in, which is where they were.
+   */
+  const [oauth] = useState(() => {
+    const code = new URLSearchParams(window.location.search).get('auth');
+    if (!code) return null;
+    // Clear it immediately: a reload should not replay a stale complaint, and
+    // the parameter would otherwise survive into any link they share.
+    window.history.replaceState(null, '', window.location.pathname);
+    return code;
+  });
+
+  const OAUTH_MESSAGES: Record<string, string> = {
+    no_account: t('auth.oauth.noAccount'),
+    cancelled: t('auth.oauth.cancelled'),
+    failed: t('auth.oauth.failed'),
+    unverified: t('auth.oauth.unverified'),
+  };
+  const oauthError = oauth ? (OAUTH_MESSAGES[oauth] ?? t('auth.oauth.failed')) : undefined;
+  const oauthTab: Tab | null = oauth ? (oauth === 'no_account' ? 'register' : 'signin') : null;
+
+  const openAuth = showAuth ?? oauthTab;
+
   async function ask(q: string): Promise<void> {
     const text = q.trim();
     if (!text || busy) return;
@@ -85,10 +118,15 @@ export function Landing({
     }
   }
 
-  if (showAuth) {
+  if (openAuth) {
     return (
       <div className="wrap">
-        <Login googleEnabled={googleEnabled} onSuccess={onAuthed} initialTab={showAuth} />
+        <Login
+          googleEnabled={googleEnabled}
+          onSuccess={onAuthed}
+          initialTab={openAuth}
+          initialError={oauthError}
+        />
         <div className="measure landing-back">
           <button className="linkish" onClick={() => setShowAuth(null)}>
             {/*

@@ -20,7 +20,14 @@ import {
   upsertGoogleUser,
   type User,
 } from './users.js';
-import { authorizeUrl, exchangeCode, googleEnabled, issueState, verifyState } from './google.js';
+import {
+  authorizeUrl,
+  type AuthIntent,
+  exchangeCode,
+  googleEnabled,
+  issueState,
+  verifyState,
+} from './google.js';
 import { markConverted } from '../answer/preview.js';
 import * as verification from './verification.js';
 import { claimInvitation, parseInvites, recordInvites } from './invitations.js';
@@ -450,9 +457,17 @@ export async function me(req: FastifyRequest, reply: FastifyReply): Promise<void
   });
 }
 
-export async function googleStart(_req: FastifyRequest, reply: FastifyReply): Promise<void> {
+export async function googleStart(req: FastifyRequest, reply: FastifyReply): Promise<void> {
   if (!googleEnabled()) return reply.code(404).send({ error: 'google_not_configured' });
-  return reply.redirect(authorizeUrl(issueState()));
+  /*
+   * Defaults to `signin`, the safe direction: the worst an unknown or missing
+   * intent can do is decline to create an account, which is recoverable by
+   * registering. Defaulting the other way would silently reopen the hole this
+   * exists to close.
+   */
+  const asked = (req.query as { intent?: unknown } | undefined)?.intent;
+  const intent: AuthIntent = asked === 'register' ? 'register' : 'signin';
+  return reply.redirect(authorizeUrl(issueState(intent)));
 }
 
 export async function googleCallback(req: FastifyRequest, reply: FastifyReply): Promise<void> {
@@ -462,7 +477,8 @@ export async function googleCallback(req: FastifyRequest, reply: FastifyReply): 
   // The user pressed cancel on Google's screen. Not an error worth a stack
   // trace — send them back to the sign-in page.
   if (q.error) return reply.redirect('/?auth=cancelled');
-  if (!q.code || !verifyState(q.state)) return reply.redirect('/?auth=failed');
+  const intent = verifyState(q.state);
+  if (!q.code || !intent) return reply.redirect('/?auth=failed');
 
   const identity = await exchangeCode(q.code);
   if (!identity) return reply.redirect('/?auth=failed');
@@ -471,6 +487,22 @@ export async function googleCallback(req: FastifyRequest, reply: FastifyReply): 
   if (!identity.emailVerified) return reply.redirect('/?auth=unverified');
 
   const before = await findByEmail(identity.email);
+
+  /*
+   * The sign-in door signs in; it does not enrol.
+   *
+   * Registration makes the firm's name and size mandatory — that answer is the
+   * only one anyone ever gives about company size, and it is what maps a
+   * signup onto a pricing tier. A Google click from the sign-in tab used to
+   * create a full account while skipping that step, and nothing ever asked
+   * again, so every Google-first user arrived permanently profile-less.
+   *
+   * Turning them away costs a signup from someone who felt like a returning
+   * user and was not. That was the accepted trade: registration stays the one
+   * door that enrols, so it stays the one place the question gets asked.
+   */
+  if (intent === 'signin' && !before) return reply.redirect('/?auth=no_account');
+
   const user = await upsertGoogleUser(identity.sub, identity.email, identity.name);
   // Only a genuinely NEW account settles an invitation — otherwise every later
   // Google sign-in would pay the inviter again.

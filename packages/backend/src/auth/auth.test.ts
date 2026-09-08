@@ -113,19 +113,36 @@ describe('session cookie', () => {
 });
 
 describe('google oauth state', () => {
-  test('our own state verifies', () => {
-    assert.equal(verifyState(issueState()), true);
+  test('our own state verifies, and returns the intent it was signed with', () => {
+    assert.equal(verifyState(issueState('signin')), 'signin');
+    assert.equal(verifyState(issueState('register')), 'register');
   });
 
   test('a state we did not sign is rejected', () => {
     // This is the whole CSRF defence: a forged callback carries a nonce that
     // was never signed here.
-    assert.equal(verifyState('attacker-nonce.attacker-mac'), false);
-    assert.equal(verifyState(undefined), false);
-    assert.equal(verifyState('no-dot'), false);
+    assert.equal(verifyState('signin.attacker-nonce.attacker-mac'), null);
+    assert.equal(verifyState(undefined), null);
+    assert.equal(verifyState('no-dot'), null);
+  });
+
+  /*
+   * The reason the intent is signed rather than passed as its own query
+   * parameter. `signin` may not create an account; `register` may. If the
+   * intent could be edited in the URL, the restriction would be advice rather
+   * than a rule — anyone could promote their own callback back to `register`.
+   */
+  test('the intent cannot be swapped without breaking the signature', () => {
+    const signin = issueState('signin');
+    const [, nonce, mac] = signin.split('.');
+    assert.equal(verifyState(`register.${nonce}.${mac}`), null);
+  });
+
+  test('an unknown intent is rejected outright', () => {
+    assert.equal(verifyState('admin.abc.def'), null);
   });
 
   test('each state is unique', () => {
-    assert.notEqual(issueState(), issueState());
+    assert.notEqual(issueState('signin'), issueState('signin'));
   });
 });

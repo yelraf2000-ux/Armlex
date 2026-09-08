@@ -32,29 +32,44 @@ export function redirectUri(): string {
 }
 
 /**
- * CSRF protection for the redirect, without a server-side store.
+ * Which door the user came through.
  *
- * The `state` parameter is a random nonce plus an HMAC of it. Google hands it
- * back untouched, and a value we did not sign cannot have originated here — so
- * a forged callback is rejected without needing to remember anything between
- * the two requests.
+ * `signin` may only sign in an account that already exists; `register` may
+ * create one. Google's own screen cannot tell them apart, so the answer has to
+ * survive the round trip — and it has to survive it UNFORGEABLY, which is why
+ * it rides inside the signed state rather than as a second query parameter.
+ * A plain `?intent=` would be editable by the person it is meant to constrain.
  */
-export function issueState(): string {
-  const nonce = randomBytes(16).toString('hex');
-  const mac = createHmac('sha256', process.env['SESSION_SECRET'] ?? '').update(nonce).digest('hex');
-  return `${nonce}.${mac}`;
+export type AuthIntent = 'signin' | 'register';
+
+function sign(payload: string): string {
+  return createHmac('sha256', process.env['SESSION_SECRET'] ?? '').update(payload).digest('hex');
 }
 
-export function verifyState(state: string | undefined): boolean {
-  if (!state) return false;
-  const [nonce, mac] = state.split('.');
-  if (!nonce || !mac) return false;
-  const expected = createHmac('sha256', process.env['SESSION_SECRET'] ?? '')
-    .update(nonce)
-    .digest('hex');
+/**
+ * CSRF protection for the redirect, without a server-side store.
+ *
+ * The `state` parameter is the intent plus a random nonce plus an HMAC over
+ * both. Google hands it back untouched, and a value we did not sign cannot
+ * have originated here — so a forged callback is rejected without needing to
+ * remember anything between the two requests.
+ */
+export function issueState(intent: AuthIntent): string {
+  const payload = `${intent}.${randomBytes(16).toString('hex')}`;
+  return `${payload}.${sign(payload)}`;
+}
+
+/** The intent this state was signed with, or null if it was not signed here. */
+export function verifyState(state: string | undefined): AuthIntent | null {
+  if (!state) return null;
+  const [intent, nonce, mac] = state.split('.');
+  if (!intent || !nonce || !mac) return null;
+  if (intent !== 'signin' && intent !== 'register') return null;
+
   const a = Buffer.from(mac);
-  const b = Buffer.from(expected);
-  return a.length === b.length && timingSafeEqual(a, b);
+  const b = Buffer.from(sign(`${intent}.${nonce}`));
+  if (a.length !== b.length || !timingSafeEqual(a, b)) return null;
+  return intent;
 }
 
 export function authorizeUrl(state: string): string {
