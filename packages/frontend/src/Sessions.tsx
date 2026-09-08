@@ -19,6 +19,8 @@ export interface SessionSummary {
   /** A name the owner gave it; falls back to the first question when unset. */
   title?: string | null;
   pinned?: boolean;
+  /** Text around the keyword hit. Present only in a search result. */
+  snippet?: string;
 }
 
 function shortDate(iso: string): string {
@@ -78,11 +80,29 @@ export function Sessions({
   const [confirming, setConfirming] = useState<string | null>(null);
   const listRef = useRef<HTMLDivElement>(null);
 
+  /**
+   * What is typed, and what has actually been sent.
+   *
+   * Separate because the request is debounced. Binding the fetch straight to
+   * the input would issue one search per keystroke — six requests to type
+   * «ԱԱՀ-ի» — and the answers can arrive out of order, so the list would
+   * settle on whichever query the server happened to finish last.
+   */
+  const [typed, setTyped] = useState('');
+  const [query, setQuery] = useState('');
+
+  useEffect(() => {
+    const id = setTimeout(() => setQuery(typed), 250);
+    return () => clearTimeout(id);
+  }, [typed]);
+
   useEffect(() => {
     let cancelled = false;
     void (async () => {
       try {
-        const res = await fetch('/api/sessions');
+        const res = await fetch(
+          query.trim() ? `/api/sessions?q=${encodeURIComponent(query.trim())}` : '/api/sessions',
+        );
         const data = (await res.json()) as { sessions?: SessionSummary[] };
         if (!cancelled) setSessions(data.sessions ?? []);
       } catch {
@@ -90,11 +110,13 @@ export function Sessions({
       }
     })();
     // `reloadKey` changes when a turn completes, so a new conversation appears
-    // in the list without a page refresh.
+    // in the list without a page refresh. `query` re-runs it for a search —
+    // and `cancelled` is what stops a slow earlier request from overwriting a
+    // faster later one with results for a query nobody is looking at.
     return () => {
       cancelled = true;
     };
-  }, [reloadKey]);
+  }, [reloadKey, query]);
 
   /**
    * Close the menu on an outside click or Escape.
@@ -206,13 +228,40 @@ export function Sessions({
     patchLocal(s.id, { shared: true });
   }
 
+  /*
+   * The search box renders even when the result is empty — otherwise the only
+   * way out of a search that found nothing would be to reload the page, since
+   * the control you would use to clear it went away with the results.
+   *
+   * It hides only when there is nothing to search AND nothing typed: a list
+   * that has never held a conversation does not need a filter above it.
+   */
+  const searchBox =
+    sessions !== null && (sessions.length > 0 || typed) ? (
+      <div className="sessions-search">
+        <input
+          type="search"
+          value={typed}
+          placeholder={t('nav.search')}
+          aria-label={t('nav.search')}
+          onChange={(e) => setTyped(e.target.value)}
+        />
+      </div>
+    ) : null;
+
   if (sessions === null) return <div className="sessions-empty">…</div>;
   if (sessions.length === 0) {
-    return <div className="sessions-empty">{t('nav.noCases')}</div>;
+    return (
+      <>
+        {searchBox}
+        <div className="sessions-empty">{typed ? t('nav.noMatches') : t('nav.noCases')}</div>
+      </>
+    );
   }
 
   return (
     <div className="sessions" ref={listRef}>
+      {searchBox}
       {sessions.map((s) => (
         <div
           key={s.id}
@@ -249,6 +298,12 @@ export function Sessions({
                 ) : null}
                 {s.title || s.firstMessage || '—'}
               </span>
+              {/*
+                Why this row matched. Without it a hit on a word buried in a
+                long answer shows a title that does not contain the word, and
+                the result reads as wrong rather than as deep.
+              */}
+              {s.snippet ? <span className="session-snippet">{s.snippet}</span> : null}
               <span className="session-meta">
                 {shortDate(s.createdAt)} · {s.turns}
                 {s.shared ? <span className="session-shared"> · {t('share.shared')}</span> : null}

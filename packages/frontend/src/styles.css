@@ -2475,3 +2475,40 @@ a { color: var(--accent); }
 .ws-role-set {
   margin-right: 0.4rem;
 }
+
+/* Keyword search over the conversation list. */
+.sessions-search {
+  padding: 0.4rem 0.5rem 0.6rem;
+}
+
+.sessions-search input {
+  width: 100%;
+  box-sizing: border-box;
+  padding: 0.4rem 0.55rem;
+  font: inherit;
+  font-size: 0.85rem;
+  color: inherit;
+  background: transparent;
+  border: 1px solid var(--rule, rgba(0, 0, 0, 0.18));
+  border-radius: 5px;
+}
+
+.sessions-search input:focus {
+  outline: none;
+  border-color: var(--accent, #a8142b);
+}
+
+/*
+  The matching passage. Two lines at most: it exists to explain the hit, and a
+  snippet that grows to five lines turns a scannable list into a page of prose.
+*/
+.session-snippet {
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  font-size: 0.78rem;
+  line-height: 1.35;
+  opacity: 0.7;
+  margin-top: 0.15rem;
+}

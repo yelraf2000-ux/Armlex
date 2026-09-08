@@ -372,6 +372,31 @@ app.get<{ Querystring: { articleId?: string } }>('/api/related', async (req, rep
 
 /** The signed-in user's own conversations, newest first. */
 app.get('/api/sessions', async (req) => {
+  /*
+   * Optional keyword filter, on the SAME route as the plain list.
+   *
+   * A separate /api/sessions/search would need its own copy of the ownership
+   * clause below, and an ownership check that exists twice is one that
+   * eventually exists correctly once.
+   *
+   * ILIKE rather than tsvector. Postgres has no Armenian stemmer — the corpus
+   * search settles for the 'simple' config, which only tokenises — and someone
+   * looking through their own conversations types a fragment of a word, not a
+   * lexeme. Substring matching treats Armenian, Russian and English alike and
+   * needs no configuration. At forty sessions a person it costs nothing; if
+   * that ever stops being true, this is the line to revisit.
+   */
+  const raw = (req.query as { q?: unknown } | undefined)?.q;
+  const query = typeof raw === 'string' ? raw.trim() : '';
+  // % and _ are ILIKE wildcards. Unescaped, a search for "50%" would match
+  // every conversation and read as a broken search rather than a typo.
+  const pattern = query ? `%${query.replace(/[\\%_]/g, (c) => `\\${c}`)}%` : null;
+
+  const filter = pattern
+    ? db()`AND (s.title ILIKE ${pattern} OR EXISTS (
+             SELECT 1 FROM messages WHERE session_id = s.id AND content ILIKE ${pattern}))`
+    : db()``;
+
   const rows = await db()<
     {
       id: string;
@@ -381,19 +406,27 @@ app.get('/api/sessions', async (req) => {
       share_token: string | null;
       title: string | null;
       pinned_at: string | null;
+      match_text: string | null;
     }[]
   >`
     SELECT s.id, s.created_at::text, s.share_token, s.title, s.pinned_at,
            count(m.id) FILTER (WHERE m.role = 'user')::text AS turns,
            (SELECT content FROM messages
              WHERE session_id = s.id AND role = 'user'
-             ORDER BY id ASC LIMIT 1) AS first_message
+             ORDER BY id ASC LIMIT 1) AS first_message,
+           -- The passage that matched, so a hit deep in a long conversation
+           -- explains itself instead of looking like a wrong result.
+           -- ILIKE against NULL is NULL, so this yields NULL when not searching.
+           (SELECT content FROM messages
+             WHERE session_id = s.id AND content ILIKE ${pattern}
+             ORDER BY id ASC LIMIT 1) AS match_text
     FROM sessions s
     LEFT JOIN messages m ON m.session_id = s.id
     -- Ownership, not a filter that can be forgotten: a conversation belongs to
     -- exactly one account, and the 151 ownerless sessions that predate accounts
     -- match nobody.
     WHERE s.user_id = ${req.user!.id}
+    ${filter}
     GROUP BY s.id
     -- A session with no messages is an artefact of a failed turn, not a
     -- conversation; showing it would just be clutter in the list.
@@ -412,9 +445,27 @@ app.get('/api/sessions', async (req) => {
       shared: Boolean(r.share_token),
       title: r.title,
       pinned: Boolean(r.pinned_at),
+      ...(r.match_text ? { snippet: snippetAround(r.match_text, query) } : {}),
     })),
   };
 });
+
+/**
+ * A window of text around the match, so the reason a result appeared is
+ * visible without opening it.
+ *
+ * Centred on the hit rather than taken from the start: a match 900 characters
+ * into an answer would otherwise be explained by an opening line that does not
+ * contain the word, which reads as a wrong result.
+ */
+function snippetAround(text: string, query: string, span = 90): string {
+  const at = text.toLowerCase().indexOf(query.toLowerCase());
+  if (at < 0) return text.slice(0, span * 2).trim();
+
+  const from = Math.max(0, at - span);
+  const to = Math.min(text.length, at + query.length + span);
+  return (from > 0 ? '…' : '') + text.slice(from, to).trim() + (to < text.length ? '…' : '');
+}
 
 /** Full transcript of one of your own conversations. */
 app.get<{ Params: { id: string } }>('/api/sessions/:id', async (req, reply) => {
