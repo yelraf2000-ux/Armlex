@@ -1,14 +1,25 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-label="MatyanAI">
   <!--
-    Drawn as a path, not <text>. A favicon renders in the browser's chrome,
-    where the page's webfonts do not exist — a lettered <text> favicon falls
-    back to whatever the OS has, so it would set differently on every machine
-    and could render tofu where no serif covers the glyph.
+    Scales drawn as paths rather than the ⚖️ emoji. An emoji favicon is
+    rendered by the OS, so it lands as Apple's glyph on a Mac and Microsoft's
+    on Windows — different mark per visitor — and both arrive in their own
+    colours, which fight the palette rather than joining it.
 
-    Filled tile rather than a bare mark: the tab strip is light in one theme
-    and near-black in the other, and a transparent mark disappears into one of
-    them. A solid ground keeps the same silhouette in both.
+    Deliberately heavier than a scales icon wants to be. A favicon lives at
+    16px: the first version used a thin beam, a slim post and a small finial,
+    and every one of them dissolved into a blur at tab size while looking fine
+    at 64. Nothing here is thinner than 5 units, and the finial is gone —
+    it merged into the beam at small sizes and only added noise.
+
+    Filled tile, because the tab strip is light in one theme and near-black in
+    the other and a transparent mark disappears into one of them.
   -->
   <rect width="64" height="64" rx="14" fill="#A8142B"/>
-  <path fill="#EDE8DC" d="M14 48V16h10l8 17 8-17h10v32h-8V28l-7 14h-6l-7-14v20z"/>
+  <g fill="#EDE8DC">
+    <rect x="12" y="16" width="40" height="5.5" rx="2.75"/>
+    <rect x="29" y="16" width="6" height="31"/>
+    <rect x="17" y="46" width="30" height="6" rx="3"/>
+    <path d="M6 21.5h21l-10.5 15z"/>
+    <path d="M37 21.5h21l-10.5 15z"/>
+  </g>
 </svg>
