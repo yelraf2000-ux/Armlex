@@ -25,7 +25,11 @@ services:
     ports:
       - "127.0.0.1:5432:5432"
     volumes:
-      - armlex_pgdata:/var/lib/postgresql/data
+      # PG18 mounts one level UP from the pg16 convention. The 18+ images store
+      # data in a major-version subdirectory so pg_upgrade --link can work
+      # without crossing a mount boundary, and refuse to start if they find a
+      # database at /var/lib/postgresql/data instead.
+      - armlex_pgdata:/var/lib/postgresql
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U armlex -d armlex"]
       interval: 5s
