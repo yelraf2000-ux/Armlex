@@ -8,6 +8,12 @@ git pull --ff-only origin main
 npm ci --include=dev --no-audit --no-fund
 npm run build
 
+# Before the restart, never after. The runner is forward-only and records what
+# it has applied, so running it every deploy is a no-op when there is nothing
+# new — and the alternative is a restarted process meeting a schema that lacks
+# the column it was just taught to read.
+npm run migrate
+
 # /api/version reads RENDER_GIT_COMMIT, which on Render was injected by the
 # platform. Nothing injects it here, so without this line the deployed commit
 # silently keeps reporting whatever it said the first time — the version
