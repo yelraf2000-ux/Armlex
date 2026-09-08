@@ -513,12 +513,11 @@ wording is the data.
       link is a document lookup), and bare conversational fragments («հա որ»,
       «why») as follow-ups, which the contextualiser must survive.
 
-49. **Domain cutover to `matyanai.am`** (bought 2026-09-05). DNS resolves but
-    still points at name.am's parking page (164.90.221.98). Remaining, in
-    order — each of the last three fails SILENTLY if skipped:
-    - Render → Settings → Custom Domains → add `matyanai.am` and
-      `www.matyanai.am`; create the records Render then names, at name.am.
-    - `PUBLIC_ORIGIN=https://matyanai.am` in Render's environment.
+49. **Domain cutover to `matyanai.am`** — DONE 2026-09-07, but not to Render.
+    The domain resolves to the Hetzner box; Caddy holds a production Let's
+    Encrypt certificate. The two third-party steps below are still OUTSTANDING
+    and still fail silently, because Google sign-in and billing were
+    deliberately left dark at cutover:
     - **Google Cloud: add `https://matyanai.am/api/auth/google/callback`** to
       the authorised redirect URIs. A mismatch fails with an error that points
       at Google rather than at our config, which is why it is the one most
@@ -527,6 +526,6 @@ wording is the data.
       `https://matyanai.am/api/billing/webhook`. Miss it and payments succeed
       while nobody is upgraded.
 
-    `armlex.onrender.com` keeps resolving throughout, so nothing breaks during
-    the move and old share links stay valid. Share links build from
+    `armlex.onrender.com` keeps resolving, so it remains the fallback until
+    Hetzner has carried real traffic for a few days. Old share links stay valid. Share links build from
     `window.location.origin`, so new ones follow the new domain by themselves.

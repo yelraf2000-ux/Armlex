@@ -1508,3 +1508,13 @@ inviting a third works, inviting them twice says so, revoking and removing both
 work and ask first, the removed member keeps 2 sessions and 2 questions and owns
 a fresh workspace, re-inviting the same address then succeeds, and usage reads
 6 / 25 broken down as 4 / 20 and 2 / 5.
+
+- **2026-09-07 — Off Render and Neon, onto a Hetzner box.** matyanai.am now
+  resolves to a CPX22 in Helsinki running the app, Caddy and Postgres 18.6
+  together. The 185MB Neon dump restored with every count intact (33 / 1737 /
+  6992 / 1100, plus 4 users and 211 sessions). Two traps on the way, both now
+  fixed in `deploy/`: PG18 moved its volume mount up one level from the pg16
+  convention and refuses to start if it finds data at the old path, and Caddy
+  burned its early ACME attempts against a domain with no A record yet,
+  backing off to a 10-minute retry and falling through to LE staging — a
+  cache flush and a clean restart got a production certificate.

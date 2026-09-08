@@ -15,11 +15,15 @@ what we intend. This file and its siblings are the state — what is true.
 
 ---
 
-## Status at a glance (end of 2026-08-24)
+## Status at a glance (2026-09-07)
 
-**Live:** https://matyanai.am — `/api/version` reports the deployed
-commit. Corpus lives in shared Neon (live immediately); code needs push +
-Render rebuild.
+**Live:** https://matyanai.am on a Hetzner CPX22 in Helsinki (77.42.35.20),
+served by Caddy with automatic TLS. `/api/version` reports the deployed
+commit. Postgres 18.6 + pgvector runs on the same box under Docker, so a turn
+no longer pays transatlantic latency several times over. Deploy is `git pull`
++ `npm ci` + `npm run build` + `systemctl restart armlex`.
+
+Render and Neon still exist as a fallback and are NOT yet decommissioned.
 
 **Real traffic — the number that matters.** 250 authentic accountant questions,
 Flash-Lite triage:
