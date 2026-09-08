@@ -17,6 +17,8 @@ interface Member {
   name: string | null;
   email: string;
   role: 'admin' | 'member';
+  /** The one admin who cannot be demoted or removed. */
+  owner: boolean;
 }
 
 interface Invitee {
@@ -38,8 +40,8 @@ interface MemberUsage {
   id: string;
   name: string | null;
   email: string;
+  /** A share of the firm's pool, not a ceiling of their own. */
   used: number;
-  limit: number | null;
 }
 
 interface UsageView {
@@ -83,6 +85,7 @@ export function Workspace({ onClose, meId }: { onClose: () => void; meId: string
   }, [section]);
 
   const isAdmin = view?.role === 'admin';
+  const [upgradeError, setUpgradeError] = useState<string | null>(null);
 
   function messageFor(code: string): string {
     switch (code) {
@@ -128,6 +131,29 @@ export function Workspace({ onClose, meId }: { onClose: () => void; meId: string
     setConfirming(null);
     const res = await fetch(path, { method: 'DELETE' });
     if (res.ok) setView((await res.json()) as WorkspaceView);
+  }
+
+  /** Promote or demote. Returns the fresh workspace for the same reason. */
+  async function setRole(memberId: string, admin: boolean): Promise<void> {
+    const res = await fetch(`/api/workspace/members/${memberId}`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ admin }),
+    });
+    if (res.ok) setView((await res.json()) as WorkspaceView);
+  }
+
+  /*
+   * The plan belongs to the firm, so this only ever runs for an admin — the
+   * button is not rendered otherwise, and the checkout route checks the session
+   * again regardless.
+   */
+  async function upgrade(): Promise<void> {
+    setUpgradeError(null);
+    const res = await fetch('/api/billing/checkout?plan=pro');
+    if (!res.ok) return setUpgradeError(t('account.upgradeSoon'));
+    const { url } = (await res.json()) as { url: string };
+    window.location.href = url;
   }
 
   return (
@@ -216,11 +242,13 @@ export function Workspace({ onClose, meId }: { onClose: () => void; meId: string
                       </td>
                       <td className="ws-act">
                         {/*
-                          The admin is not removable, so no control is offered
-                          for them — a disabled button invites the click that
-                          teaches you it does nothing.
+                          The OWNER is untouchable — not removable, not
+                          demotable — so no control is offered for them. A
+                          disabled button invites the click that teaches you it
+                          does nothing. Other admins can be demoted, which is
+                          what makes promotion safe to offer at all.
                         */}
-                        {isAdmin && m.role !== 'admin' ? (
+                        {isAdmin && !m.owner ? (
                           confirming === m.id ? (
                             <span className="ws-confirm">
                               <button className="danger" onClick={() => void drop(`/api/workspace/members/${m.id}`)}>
@@ -229,9 +257,17 @@ export function Workspace({ onClose, meId }: { onClose: () => void; meId: string
                               <button onClick={() => setConfirming(null)}>{t('nav.cancel')}</button>
                             </span>
                           ) : (
-                            <button className="ws-remove" onClick={() => setConfirming(m.id)}>
-                              {t('ws.remove')}
-                            </button>
+                            <span className="ws-confirm">
+                              <button
+                                className="ws-role-set"
+                                onClick={() => void setRole(m.id, m.role !== 'admin')}
+                              >
+                                {m.role === 'admin' ? t('ws.demote') : t('ws.promote')}
+                              </button>
+                              <button className="ws-remove" onClick={() => setConfirming(m.id)}>
+                                {t('ws.remove')}
+                              </button>
+                            </span>
                           )
                         ) : null}
                       </td>
@@ -314,6 +350,19 @@ export function Workspace({ onClose, meId }: { onClose: () => void; meId: string
                         />
                       </div>
                     ) : null}
+
+                    {/*
+                      Directly beneath the number it answers. Someone reading
+                      7 / 15 is at the one moment they care how to get more —
+                      and only an admin can act on it, so only an admin is
+                      shown the way.
+                    */}
+                    {isAdmin && usage.limit !== null ? (
+                      <button className="ws-upgrade" onClick={() => void upgrade()}>
+                        {t('account.upgrade')}
+                      </button>
+                    ) : null}
+                    {upgradeError ? <p className="ws-note">{upgradeError}</p> : null}
                   </div>
 
                   <table className="ws-table">
@@ -325,9 +374,9 @@ export function Workspace({ onClose, meId }: { onClose: () => void; meId: string
                             {m.id === meId ? <span className="ws-you"> · {t('ws.you')}</span> : null}
                           </td>
                           <td className="ws-mail">{m.email}</td>
-                          <td className="ws-count num">
-                            {m.used} / {m.limit ?? '∞'}
-                          </td>
+                          {/* A share of the pool, not a quota. The only ceiling
+                              is the firm total shown above this table. */}
+                          <td className="ws-count num">{m.used}</td>
                         </tr>
                       ))}
                     </tbody>

@@ -45,7 +45,9 @@ import {
   removeMember,
   renameWorkspace,
   revokeInvite,
+  setMemberAdmin,
   workspaceIdFor,
+  workspaceQuota,
 } from './workspace.js';
 
 /**
@@ -485,6 +487,34 @@ export async function deleteWorkspaceInvite(
   return reply.send(await readWorkspace(req.user!));
 }
 
+/**
+ * Promote a colleague to admin, or demote one.
+ *
+ * Admin-gated like every other workspace mutation, and the owner is refused by
+ * `setMemberAdmin` in both directions — so a firm can never end up with nobody
+ * able to appoint anybody, which is the one state it cannot escape from inside
+ * the product.
+ */
+export async function patchWorkspaceMember(
+  req: FastifyRequest<{ Params: { id: string } }>,
+  reply: FastifyReply,
+): Promise<void> {
+  const workspaceId = await requireAdmin(req, reply);
+  if (!workspaceId) return;
+
+  if (!/^[0-9a-f-]{36}$/i.test(req.params.id)) {
+    return reply.code(400).send({ error: 'invalid_id' });
+  }
+  const admin = (req.body as { admin?: unknown } | undefined)?.admin === true;
+
+  if (!(await setMemberAdmin(workspaceId, req.params.id, admin))) {
+    // Also the answer when the target is the owner: there is nothing to change,
+    // and saying "not found" is truthful about the row this could have altered.
+    return reply.code(404).send({ error: 'not_found' });
+  }
+  return reply.send(await readWorkspace(req.user!));
+}
+
 export async function deleteWorkspaceMember(
   req: FastifyRequest<{ Params: { id: string } }>,
   reply: FastifyReply,
@@ -519,9 +549,15 @@ export async function me(req: FastifyRequest, reply: FastifyReply): Promise<void
   const userId = verify(readCookie(req.headers.cookie));
   const user = userId ? await findById(userId) : null;
   if (!user) return reply.send({ user: null, google: googleEnabled() });
+  const view = await readWorkspace(user);
   return reply.send({
     user: publicUser(user),
-    usage: await monthlyUsage(user),
+    // The firm's pool, so the counter in the menu is the same number the next
+    // question is actually measured against.
+    usage: await workspaceQuota(user),
+    // Drives whether the upgrade route is offered at all. Presentation only —
+    // every mutation still re-checks the role server-side.
+    role: view.role,
     google: googleEnabled(),
   });
 }

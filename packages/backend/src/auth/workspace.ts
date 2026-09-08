@@ -1,10 +1,14 @@
 /**
  * The workspace: a firm, its people, and what they have spent.
  *
- * Role is derived from ownership, never stored: `workspaces.owner_id` is the
- * admin and everyone else is a member. A stored role column would be a second
- * source of truth about permissions, and the first thing to disagree in a
- * permissions model is the thing that gets exploited.
+ * A firm may have several admins. `users.is_workspace_admin` grants the role and
+ * `workspaces.owner_id` keeps one person who cannot be demoted — which is what
+ * guarantees a workspace can never end up with nobody able to appoint anyone.
+ * A single role column with no protected owner allows exactly that state, and
+ * it is unrecoverable from inside the product.
+ *
+ * The allowance is ONE POOL for the firm, not a quota per seat: the owner's
+ * plan sets the ceiling and every member draws from it. See `workspaceQuota`.
  *
  * Membership comes from two places and they are deliberately different shapes:
  *   members  — accounts, with usage, who can be detached
@@ -33,6 +37,8 @@ export interface Member {
   name: string | null;
   email: string;
   role: 'admin' | 'member';
+  /** The one admin who cannot be demoted. */
+  owner: boolean;
 }
 
 export interface Invitee {
@@ -70,10 +76,45 @@ export async function workspaceIdFor(user: User): Promise<string> {
   return id;
 }
 
+/**
+ * Owner, or anyone the owner has promoted.
+ *
+ * Ownership is still its own fact and still cannot be revoked — that is what
+ * guarantees a workspace always has at least one admin, which a plain role
+ * column would not.
+ */
 export async function isAdmin(userId: string, workspaceId: string): Promise<boolean> {
+  const rows = await db()<{ ok: boolean }[]>`
+    SELECT (w.owner_id = ${userId} OR u.is_workspace_admin) AS ok
+      FROM workspaces w
+      JOIN users u ON u.id = ${userId}
+     WHERE w.id = ${workspaceId}
+       AND u.workspace_id = ${workspaceId}`;
+  return Boolean(rows[0]?.ok);
+}
+
+/**
+ * Promote or demote a colleague.
+ *
+ * The owner is refused in both directions: demoting them could leave a
+ * workspace with no admin and no way to appoint one, and promoting them is a
+ * no-op that only invites the UI to offer a button that does nothing.
+ */
+export async function setMemberAdmin(
+  workspaceId: string,
+  memberId: string,
+  admin: boolean,
+): Promise<boolean> {
   const rows = await db()<{ id: string }[]>`
-    SELECT id FROM workspaces WHERE id = ${workspaceId} AND owner_id = ${userId}`;
-  return Boolean(rows[0]);
+    UPDATE users u
+       SET is_workspace_admin = ${admin}
+      FROM workspaces w
+     WHERE u.id = ${memberId}
+       AND u.workspace_id = ${workspaceId}
+       AND w.id = ${workspaceId}
+       AND w.owner_id <> ${memberId}
+    RETURNING u.id`;
+  return rows.length > 0;
 }
 
 export async function readWorkspace(user: User): Promise<WorkspaceView> {
@@ -96,13 +137,15 @@ export async function readWorkspace(user: User): Promise<WorkspaceView> {
     The owner is exempt: a workspace whose admin vanished from its own member
     list would be a page that appears to belong to nobody.
   */
-  const members = await db()<{ id: string; name: string | null; email: string }[]>`
-    SELECT id, name, email FROM users
+  const members = await db()<
+    { id: string; name: string | null; email: string; is_workspace_admin: boolean }[]
+  >`
+    SELECT id, name, email, is_workspace_admin FROM users
      WHERE workspace_id = ${id}
        AND (email_verified_at IS NOT NULL OR id = ${ownerId})
-     -- The admin first, then by name; a list whose order changes with the last
-     -- sign-in makes people re-read it every time.
-     ORDER BY (id = ${ownerId}) DESC, lower(coalesce(name, email))`;
+     -- The owner first, then admins, then by name; a list whose order changes
+     -- with the last sign-in makes people re-read it every time.
+     ORDER BY (id = ${ownerId}) DESC, is_workspace_admin DESC, lower(coalesce(name, email))`;
 
   /*
     Pending invitations sent by anyone already in this workspace.
@@ -134,12 +177,20 @@ export async function readWorkspace(user: User): Promise<WorkspaceView> {
   return {
     id,
     name: meta[0]?.name ?? null,
-    role: ownerId === user.id ? 'admin' : 'member',
+    // The caller's own role must agree with the row describing them below, or a
+    // promoted admin gets a page that lists them as an admin and offers them
+    // nothing an admin can do.
+    role: ownerId === user.id || members.some((m) => m.id === user.id && m.is_workspace_admin)
+      ? 'admin'
+      : 'member',
     members: members.map((m) => ({
       id: m.id,
       name: m.name,
       email: m.email,
-      role: m.id === ownerId ? 'admin' : 'member',
+      role: (m.id === ownerId || m.is_workspace_admin ? 'admin' : 'member') as 'admin' | 'member',
+      // Reported separately from the role so the UI can withhold the demote
+      // control rather than offering one the server will refuse.
+      owner: m.id === ownerId,
     })),
     invitees: invitees.map((i) => ({
       id: i.id,
@@ -154,8 +205,11 @@ export interface MemberUsage {
   id: string;
   name: string | null;
   email: string;
+  /**
+   * This person's share of the firm's spending — NOT a ceiling of their own.
+   * There is one pool, and `workspaceQuota` holds the only limit there is.
+   */
   used: number;
-  limit: number | null;
 }
 
 export interface WorkspaceUsage {
@@ -174,6 +228,68 @@ export interface WorkspaceUsage {
  * grouped query rather than looping `monthlyUsage` per member: a forty-person
  * firm would otherwise be forty round trips to Neon for one page.
  */
+/**
+ * The firm's allowance, and what it has spent — ONE pool, not a sum of seats.
+ *
+ * The limit is the OWNER's: they hold the subscription, so their plan is what
+ * the firm bought. Bonus questions from every member are added, because a
+ * colleague who refers someone has earned the firm those questions whoever
+ * eventually asks them.
+ *
+ * Summing each member's plan instead would mean a firm's capacity grew by five
+ * every time it added a free seat — an invitation would mint allowance, and the
+ * cheapest way to buy questions would be to invite strangers.
+ *
+ * Uncapped anywhere is uncapped: `unlimited` on the owner removes the ceiling
+ * rather than contributing a number to it.
+ */
+export async function workspaceQuota(user: User): Promise<{ used: number; limit: number | null }> {
+  const id = await workspaceIdFor(user);
+
+  const rows = await db()<
+    {
+      plan: string;
+      plan_expires_at: string | null;
+      bonus: number;
+      used: string;
+    }[]
+  >`
+    SELECT o.plan,
+           o.plan_expires_at::text,
+           (SELECT COALESCE(sum(bonus_questions), 0) FROM users WHERE workspace_id = ${id}) AS bonus,
+           (
+             COALESCE((
+               SELECT count(*) FROM messages m
+                 JOIN sessions s ON s.id = m.session_id
+                 JOIN users mu ON mu.id = s.user_id
+                WHERE mu.workspace_id = ${id}
+                  AND m.role = 'user'
+                  AND m.created_at >= date_trunc('month', now())
+             ), 0)
+             + COALESCE((
+               SELECT sum(l.questions) FROM usage_ledger l
+                 JOIN users lu ON lu.id = l.user_id
+                WHERE lu.workspace_id = ${id}
+                  AND l.month = date_trunc('month', now())::date
+             ), 0)
+           )::text AS used
+      FROM workspaces w
+      JOIN users o ON o.id = w.owner_id
+     WHERE w.id = ${id}`;
+
+  const row = rows[0];
+  // No owner row would mean a workspace whose owner was deleted. Refusing every
+  // question would be the wrong failure, so it falls back to this member's own
+  // allowance rather than to zero.
+  if (!row) return { used: 0, limit: allowanceFor(user.plan, user.plan_expires_at, user.bonus_questions) };
+
+  const base = allowanceFor(row.plan, row.plan_expires_at, 0);
+  return {
+    used: Number(row.used),
+    limit: base === null ? null : base + Number(row.bonus),
+  };
+}
+
 export async function readUsage(user: User): Promise<WorkspaceUsage> {
   const id = await workspaceIdFor(user);
 
@@ -212,17 +328,18 @@ export async function readUsage(user: User): Promise<WorkspaceUsage> {
     name: r.name,
     email: r.email,
     used: Number(r.used),
-    limit: allowanceFor(r.plan, r.plan_expires_at, r.bonus_questions),
   }));
 
-  // One uncapped member makes the firm's ceiling meaningless, so it is reported
-  // as no ceiling rather than as a number that quietly excludes them.
-  const uncapped = members.some((m) => m.limit === null);
-  return {
-    members,
-    used: members.reduce((n, m) => n + m.used, 0),
-    limit: uncapped ? null : members.reduce((n, m) => n + (m.limit ?? 0), 0),
-  };
+  /*
+    The totals come from the POOL, not from adding the seats up.
+
+    The per-member numbers below are still worth showing — an admin wants to
+    know who is spending the firm's allowance — but they are a breakdown of one
+    shared figure, not quotas of their own. Summing them would report a
+    different ceiling than the one actually enforced on the next question.
+  */
+  const pool = await workspaceQuota(user);
+  return { members, used: pool.used, limit: pool.limit };
 }
 
 export type InviteResult =

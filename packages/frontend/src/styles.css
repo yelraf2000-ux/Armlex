@@ -2462,3 +2462,16 @@ a { color: var(--accent); }
   margin: 0 0 1rem;
   font-weight: 600;
 }
+
+/*
+  Upgrade, offered directly under the number that prompts it. Quiet rather than
+  a call to action: an admin reading 7 / 15 is deciding, not being sold to.
+*/
+.ws-upgrade {
+  margin-top: 0.75rem;
+}
+
+/* Promote / demote. Sits beside Remove, and is never shown for the owner. */
+.ws-role-set {
+  margin-right: 0.4rem;
+}

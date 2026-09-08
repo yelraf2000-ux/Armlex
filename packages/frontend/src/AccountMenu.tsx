@@ -185,10 +185,24 @@ export function AccountMenu({
               >
                 {t('account.workspace')}
               </button>
-              <button role="menuitem" className="account-upgrade" onClick={() => void upgrade()}>
-                {t('account.upgrade')}
-              </button>
-              {upgradeError ? <p className="account-note">{upgradeError}</p> : null}
+              {/*
+                Admins only. The plan is bought for the firm, so a member
+                following this would land on a checkout for a subscription that
+                is not theirs to buy — and if they did buy it, the firm would be
+                paying twice for one pool.
+              */}
+              {account.role !== 'member' ? (
+                <>
+                  <button
+                    role="menuitem"
+                    className="account-upgrade"
+                    onClick={() => void upgrade()}
+                  >
+                    {t('account.upgrade')}
+                  </button>
+                  {upgradeError ? <p className="account-note">{upgradeError}</p> : null}
+                </>
+              ) : null}
 
               <div className="account-rule" />
 

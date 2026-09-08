@@ -24,10 +24,11 @@ import {
   postWorkspaceInvite,
   deleteWorkspaceInvite,
   deleteWorkspaceMember,
+  patchWorkspaceMember,
   patchWorkspace,
   requireAuth,
 } from './auth/routes.js';
-import { monthlyUsage } from './auth/users.js';
+import { workspaceQuota } from './auth/workspace.js';
 import { generatePreview, hashIp } from './answer/preview.js';
 import { checkRate } from './answer/rateLimit.js';
 import { startCheckout, webhook } from './billing/routes.js';
@@ -111,6 +112,7 @@ app.patch('/api/workspace', patchWorkspace);
 app.post('/api/workspace/invites', postWorkspaceInvite);
 app.delete('/api/workspace/invites/:id', deleteWorkspaceInvite);
 app.delete('/api/workspace/members/:id', deleteWorkspaceMember);
+app.patch('/api/workspace/members/:id', patchWorkspaceMember);
 app.get('/api/auth/google', googleStart);
 app.get('/api/auth/google/callback', googleCallback);
 
@@ -217,7 +219,10 @@ app.post<{ Body: ChatBody }>('/api/chat/stream', async (req, reply) => {
   // The allowance, checked before any provider is called. This is what stands
   // in for the old shared password: registration is open, so without a ceiling
   // per account the first crawler to find the signup form spends the balance.
-  const usage = await monthlyUsage(req.user!);
+  // The FIRM's pool, not this person's seat. One allowance is drawn down by
+  // everyone in the workspace, so the ceiling a question meets is the same
+  // number the workspace page shows.
+  const usage = await workspaceQuota(req.user!);
   if (usage.limit !== null && usage.used >= usage.limit) {
     return reply.code(429).send({
       error: 'quota_exceeded',

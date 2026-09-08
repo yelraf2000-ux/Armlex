@@ -22,7 +22,14 @@ export interface Account {
     companyName: string | null;
     companySize: string | null;
   } | null;
-  usage?: { used: number; limit: number | null; remaining: number | null };
+  /** The FIRM's pool, shared by everyone in the workspace — not a per-seat quota. */
+  usage?: { used: number; limit: number | null; remaining?: number | null };
+  /**
+   * The caller's role in their workspace. Decides whether the upgrade route is
+   * offered at all: the subscription belongs to the firm, and a member who
+   * cannot buy it should not be sent to a checkout that is not theirs.
+   */
+  role?: 'admin' | 'member';
   /** False when the server has no Google credentials — then the button is not offered. */
   google?: boolean;
 }
