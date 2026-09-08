@@ -10,6 +10,8 @@ import {
   googleCallback,
   verifyEmail,
   resendVerification,
+  readInvite,
+  acceptInvite,
   googleStart,
   login,
   logout,
@@ -93,6 +95,8 @@ app.post('/api/auth/logout', logout);
 // if the SPA ever fails to boot.
 app.post('/api/auth/verify/:token', verifyEmail);
 app.post('/api/auth/resend-verification', resendVerification);
+app.get('/api/invite/:token', readInvite);
+app.post('/api/invite/:token', acceptInvite);
 app.get('/api/auth/me', me);
 app.post('/api/auth/profile', saveProfile);
 // NOT `/api/auth/me`: the guard matches on path and `GET /api/auth/me` has to

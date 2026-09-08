@@ -19,6 +19,7 @@ import { MarkdownView } from './MarkdownView.js';
 import { NormPanel } from './NormPanel.js';
 import { Shared } from './Shared.js';
 import { Verify } from './Verify.js';
+import { Invite } from './Invite.js';
 import { extractQuotes } from './quotes.js';
 import { RailToggle, SettingsControls, SettingsProvider, useSettings } from './Settings.js';
 
@@ -393,6 +394,13 @@ function Workbench() {
   */
   const verifying = /^\/verify\/([A-Za-z0-9_-]{20,200})$/.exec(window.location.pathname);
   if (verifying) return <Verify token={verifying[1]!} onVerified={() => void loadAccount()} />;
+
+  /*
+    An invitation link. Same reasoning once more: the person following it has
+    no account, which is precisely what the link exists to give them.
+  */
+  const invited = /^\/invite\/([A-Za-z0-9_-]{20,200})$/.exec(window.location.pathname);
+  if (invited) return <Invite token={invited[1]!} onAccepted={() => void loadAccount()} />;
 
   if (authed === null) return <div className="wrap" />;
   if (!authed) {

@@ -16,6 +16,7 @@
 import { db } from '../db/pool.js';
 import { allowanceFor, normaliseEmail, type User } from './users.js';
 import { sendInvite } from '../mail/invite.js';
+import { hashInviteToken, newInviteToken } from './invitations.js';
 
 /**
  * How many people one workspace may hold, invitations included.
@@ -82,9 +83,23 @@ export async function readWorkspace(user: User): Promise<WorkspaceView> {
     SELECT name, owner_id FROM workspaces WHERE id = ${id}`;
   const ownerId = meta[0]?.owner_id ?? user.id;
 
+  /*
+    Members are VERIFIED accounts only.
+
+    Someone who has set a password from an invitation link but not yet clicked
+    the verification mail has an account, a workspace and a seat — but nobody
+    has yet shown they read that mailbox, and a colleague's belief about an
+    address is not the same as proof of it. They stay in the pending list until
+    they click, which is also what makes that list mean "not in yet" rather
+    than "not registered yet".
+
+    The owner is exempt: a workspace whose admin vanished from its own member
+    list would be a page that appears to belong to nobody.
+  */
   const members = await db()<{ id: string; name: string | null; email: string }[]>`
     SELECT id, name, email FROM users
      WHERE workspace_id = ${id}
+       AND (email_verified_at IS NOT NULL OR id = ${ownerId})
      -- The admin first, then by name; a list whose order changes with the last
      -- sign-in makes people re-read it every time.
      ORDER BY (id = ${ownerId}) DESC, lower(coalesce(name, email))`;
@@ -96,14 +111,24 @@ export async function readWorkspace(user: User): Promise<WorkspaceView> {
     invitation predates workspaces, registration writes rows before the invitee
     has an account, and the inviter is the one fact that has always been there.
   */
+  /*
+    Not accepted, OR accepted by an account that has not verified yet.
+
+    The second half is what stops someone falling out of both lists. Setting a
+    password marks the invitation accepted, which used to remove them from
+    here — while the verification gate above kept them out of `members`. For
+    the stretch between those two clicks the admin would have watched a
+    colleague simply disappear.
+  */
   const invitees = await db()<
     { id: string; name: string | null; email: string; created_at: string }[]
   >`
     SELECT i.id, i.name, i.email, i.created_at::text
       FROM invitations i
       JOIN users u ON u.id = i.inviter_id
+      LEFT JOIN users a ON a.id = i.accepted_user_id
      WHERE u.workspace_id = ${id}
-       AND i.accepted_user_id IS NULL
+       AND (i.accepted_user_id IS NULL OR a.email_verified_at IS NULL)
      ORDER BY i.created_at DESC`;
 
   return {
@@ -237,9 +262,10 @@ export async function inviteToWorkspace(
     return { ok: false, reason: 'already_here' };
   }
 
+  const token = newInviteToken();
   await db()`
-    INSERT INTO invitations (inviter_id, email, name)
-    VALUES (${user.id}, ${email}, ${name})
+    INSERT INTO invitations (inviter_id, email, name, token_hash)
+    VALUES (${user.id}, ${email}, ${name}, ${hashInviteToken(token)})
     ON CONFLICT (inviter_id, email) DO NOTHING`;
   void id;
 
@@ -250,7 +276,7 @@ export async function inviteToWorkspace(
    * while a thrown error would cost them the invitation itself.
    */
   const inviter = user.name?.trim() || user.company_name?.trim() || '';
-  await sendInvite({ to: email, inviter, kind: 'workspace', lang });
+  await sendInvite({ to: email, inviter, kind: 'workspace', token, lang });
 
   return { ok: true };
 }

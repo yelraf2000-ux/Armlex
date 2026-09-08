@@ -30,7 +30,13 @@ import {
 } from './google.js';
 import { markConverted } from '../answer/preview.js';
 import * as verification from './verification.js';
-import { claimInvitation, parseInvites, recordInvites } from './invitations.js';
+import {
+  acceptInvitation,
+  claimInvitation,
+  parseInvites,
+  readInvitation,
+  recordInvites,
+} from './invitations.js';
 import {
   inviteToWorkspace,
   isAdmin,
@@ -73,6 +79,9 @@ const PUBLIC_PREFIXES = [
   // requiring a session to spend a verification link would demand the very
   // thing the link exists to grant.
   '/api/auth/verify/',
+  // Same reasoning. An invitee has no account yet — that is the entire point
+  // of the link — so the token stands in for one.
+  '/api/invite/',
 ];
 const PUBLIC_PATHS = new Set([
   '/api/auth',
@@ -277,6 +286,62 @@ export async function verifyEmail(req: FastifyRequest, reply: FastifyReply): Pro
   if (!user) return reply.code(400).send({ error: 'invalid' });
 
   await touchLastSeen(user.id);
+  return reply
+    .header('Set-Cookie', setCookie(user.id))
+    .send({ user: publicUser(user), usage: await monthlyUsage(user) });
+}
+
+/**
+ * What an invitation link opens: the address and name already chosen for them.
+ *
+ * Public, because the whole point is that the invitee has no account yet. The
+ * token IS the credential, exactly as with a shared conversation.
+ */
+export async function readInvite(req: FastifyRequest, reply: FastifyReply): Promise<void> {
+  const token = (req.params as { token?: string } | undefined)?.token ?? '';
+  const view = await readInvitation(token);
+  if (!view) return reply.code(404).send({ error: 'invalid' });
+  return reply.send(view);
+}
+
+/**
+ * Accept an invitation: a password, and nothing else.
+ *
+ * Verification still applies. The invitation proves a colleague believes this
+ * address belongs to them; it does not prove the person holding the link reads
+ * that mailbox, and a workspace seat is exactly the thing worth being sure
+ * about. So the account is created unverified, the link is sent, and they
+ * appear as a member only once they have clicked it.
+ */
+export async function acceptInvite(req: FastifyRequest, reply: FastifyReply): Promise<void> {
+  const token = (req.params as { token?: string } | undefined)?.token ?? '';
+  const body = req.body as { password?: unknown; lang?: unknown } | undefined;
+  const password = typeof body?.password === 'string' ? body.password : '';
+
+  if (password.length < MIN_PASSWORD) {
+    return reply.code(400).send({ error: 'weak_password', minimum: MIN_PASSWORD });
+  }
+
+  const result = await acceptInvitation(token, password, (email, pw, name) =>
+    createWithPassword(email, pw, name),
+  );
+  if (!result.ok) {
+    return reply.code(result.reason === 'invalid' ? 404 : 409).send({ error: result.reason });
+  }
+
+  const user = (await findById(result.userId))!;
+  await workspaceIdFor(user);
+
+  if (verification.isRequired()) {
+    const sent = await verification.issueFor(user, body?.lang);
+    if (!sent.sent) req.log.error({ err: sent.error, email: user.email }, 'invite verify mail failed');
+    return reply.send({
+      needsVerification: true,
+      verificationSent: sent.sent,
+      email: user.email,
+    });
+  }
+
   return reply
     .header('Set-Cookie', setCookie(user.id))
     .send({ user: publicUser(user), usage: await monthlyUsage(user) });

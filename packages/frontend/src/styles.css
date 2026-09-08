@@ -2453,3 +2453,12 @@ a { color: var(--accent); }
   opacity: 0.72;
   line-height: 1.45;
 }
+
+/*
+  A value the invitation supplied rather than a field to fill. Reads as
+  answered text, not as an input the person has failed to complete.
+*/
+.invite-given {
+  margin: 0 0 1rem;
+  font-weight: 600;
+}

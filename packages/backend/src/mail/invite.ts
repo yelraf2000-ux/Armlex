@@ -8,10 +8,11 @@
  *              sides gain questions, but only once the invitee registers.
  *   workspace  an admin adds someone to their firm's shared workspace.
  *
- * There is no invitation token, and deliberately so: `claimInvitation` matches
- * on the ADDRESS at registration time. That means the mail must say, plainly,
- * to register with this same address — someone who signs up with a personal
- * account instead gets in fine and silently earns nobody anything.
+ * The link carries an invitation token, so the page it opens already knows the
+ * address and the name the inviter typed and asks only for a password. Without
+ * one the invitee had to fill the whole signup form, retyping answers a
+ * colleague had already given — and any deviation in the address meant the
+ * invitation silently applied to nobody.
  *
  * Sending never throws. An invitation that is recorded but unsent is a
  * recoverable annoyance; a 500 that loses the invitation is not.
@@ -49,8 +50,8 @@ const COPY: Record<Lang, Copy> = {
     referral: (who) => `${who}-ը խորհուրդ է տալիս MatyanAI-ն։`,
     workspace: (who) => `${who}-ը Ձեզ ավելացրել է իր թիմին MatyanAI-ում։`,
     what: 'MatyanAI-ն պատասխանում է ՀՀ հարկային և աշխատանքային օրենսդրության հարցերին՝ հենվելով օրենքի իրական տեքստի վրա, հոդվածների հղումներով։',
-    button: 'Բացել MatyanAI-ն',
-    useThis: 'Կարևոր․ գրանցվեք հենց այս էլ. հասցեով, որպեսզի հրավերը գործի։',
+    button: 'Ընդունել հրավերը',
+    useThis: 'Կմնա միայն գաղտնաբառ ընտրել — անունն ու հասցեն արդեն լրացված են։',
     free: 'Անվճար փաթեթը ներառում է ամսական 5 հարց։',
     ignore: 'Եթե սա Ձեզ չի վերաբերում, պարզապես անտեսեք այս նամակը։',
   },
@@ -60,8 +61,8 @@ const COPY: Record<Lang, Copy> = {
     referral: (who) => `${who} рекомендует вам MatyanAI.`,
     workspace: (who) => `${who} добавил вас в свою команду в MatyanAI.`,
     what: 'MatyanAI отвечает на вопросы по налоговому и трудовому законодательству РА, опираясь на реальный текст закона, со ссылками на статьи.',
-    button: 'Открыть MatyanAI',
-    useThis: 'Важно: зарегистрируйтесь именно на этот адрес, иначе приглашение не сработает.',
+    button: 'Принять приглашение',
+    useThis: 'Останется только выбрать пароль — имя и адрес уже заполнены.',
     free: 'Бесплатный тариф включает 5 вопросов в месяц.',
     ignore: 'Если это не к вам, просто проигнорируйте письмо.',
   },
@@ -71,8 +72,8 @@ const COPY: Record<Lang, Copy> = {
     referral: (who) => `${who} recommends MatyanAI.`,
     workspace: (who) => `${who} added you to their team on MatyanAI.`,
     what: 'MatyanAI answers questions on Armenian tax and labour law, grounded in the actual text of the law, with links to the articles.',
-    button: 'Open MatyanAI',
-    useThis: 'Important: register with this exact address, or the invitation will not apply.',
+    button: 'Accept the invitation',
+    useThis: 'All that is left is choosing a password — the name and address are already filled in.',
     free: 'The free plan includes 5 questions a month.',
     ignore: 'If this is not for you, simply ignore this message.',
   },
@@ -97,6 +98,9 @@ export async function sendInvite(opts: {
   to: string;
   inviter: string;
   kind: InviteKind;
+  /** Raw invitation token. Its presence is what makes the link an acceptance
+   *  link rather than a bare trip to the homepage. */
+  token?: string;
   lang?: unknown;
 }): Promise<{ sent: boolean; error?: string }> {
   if (!mailer.isEnabled()) return { sent: false, error: 'mail_disabled' };
@@ -104,7 +108,9 @@ export async function sendInvite(opts: {
   const c = COPY[normaliseLang(opts.lang)];
   const who = opts.inviter.trim() || 'MatyanAI';
   const lead = opts.kind === 'workspace' ? c.workspace(who) : c.referral(who);
-  const link = origin();
+  // Falls back to the homepage for an invitation minted before tokens existed:
+  // those emails are already sent, but a resend should still lead somewhere.
+  const link = opts.token ? `${origin()}/invite/${opts.token}` : origin();
 
   const html = [
     '<div style="margin:0;padding:32px 16px;background:#EDE8DC;font-family:Georgia,serif;color:#33191E">',

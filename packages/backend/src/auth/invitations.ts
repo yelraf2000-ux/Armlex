@@ -18,9 +18,70 @@
  * never allowed to fail the invitation — losing the row to save the email would
  * be the wrong way round.
  */
+import { createHash, randomBytes } from 'node:crypto';
 import { db } from '../db/pool.js';
 import { normaliseEmail } from './users.js';
 import { sendInvite } from '../mail/invite.js';
+
+/**
+ * The token that turns an invitation into a link.
+ *
+ * Hashed at rest for the same reason the verification token is: holding one
+ * lets you create an account at a known address inside somebody's firm, which
+ * is a bearer credential whatever else it is called.
+ */
+export function newInviteToken(): string {
+  return randomBytes(32).toString('base64url');
+}
+
+export function hashInviteToken(token: string): string {
+  return createHash('sha256').update(token).digest('hex');
+}
+
+export interface InvitationView {
+  email: string;
+  name: string | null;
+  inviter: string;
+  workspace: string | null;
+}
+
+/**
+ * What the acceptance page shows before anyone types anything.
+ *
+ * Returns null for a token that is unknown, or for one whose invitation has
+ * already been accepted — a second click on a link that worked is not an
+ * error, but it cannot enrol a second account either, and the page says so.
+ */
+export async function readInvitation(token: string): Promise<InvitationView | null> {
+  if (!token || !/^[A-Za-z0-9_-]{20,200}$/.test(token)) return null;
+
+  const rows = await db()<
+    {
+      email: string;
+      name: string | null;
+      inviter_name: string | null;
+      company_name: string | null;
+      workspace_name: string | null;
+    }[]
+  >`
+    SELECT i.email, i.name,
+           u.name AS inviter_name, u.company_name,
+           w.name AS workspace_name
+      FROM invitations i
+      JOIN users u ON u.id = i.inviter_id
+      LEFT JOIN workspaces w ON w.id = u.workspace_id
+     WHERE i.token_hash = ${hashInviteToken(token)}
+       AND i.accepted_user_id IS NULL`;
+
+  const row = rows[0];
+  if (!row) return null;
+  return {
+    email: row.email,
+    name: row.name,
+    inviter: row.inviter_name?.trim() || row.company_name?.trim() || '',
+    workspace: row.workspace_name ?? row.company_name ?? null,
+  };
+}
 
 /** Most invitations one account may record. */
 export const MAX_INVITES = 4;
@@ -77,16 +138,17 @@ export async function recordInvites(
   if (invites.length === 0) return 0;
 
   for (const invite of invites) {
+    const token = newInviteToken();
     // An inviter re-inviting the same address is not a second reward.
     const rows = await db()<{ id: string }[]>`
-      INSERT INTO invitations (inviter_id, email, name)
-      VALUES (${inviterId}, ${invite.email}, ${invite.name ?? null})
+      INSERT INTO invitations (inviter_id, email, name, token_hash)
+      VALUES (${inviterId}, ${invite.email}, ${invite.name ?? null}, ${hashInviteToken(token)})
       ON CONFLICT (inviter_id, email) DO NOTHING
       RETURNING id`;
     // No row means the conflict clause swallowed it — this address was already
     // invited by this person, and mailing them a second time would be the
     // reward-free half of a duplicate invitation arriving as spam.
-    if (rows.length > 0) await mailInvite(inviterId, invite.email, lang);
+    if (rows.length > 0) await mailInvite(inviterId, invite.email, token, lang);
   }
 
   await db()`
@@ -103,14 +165,62 @@ export async function recordInvites(
  * the bonus settles on the address at registration regardless of whether the
  * mail arrived. Throwing here would lose the invitation to save the email.
  */
-async function mailInvite(inviterId: string, to: string, lang: unknown): Promise<void> {
+async function mailInvite(
+  inviterId: string,
+  to: string,
+  token: string,
+  lang: unknown,
+): Promise<void> {
   const rows = await db()<{ name: string | null; company_name: string | null }[]>`
     SELECT name, company_name FROM users WHERE id = ${inviterId}`;
   const row = rows[0];
   // Falls back to the firm when the person left their own name blank, since
   // "someone invited you" persuades nobody.
   const inviter = row?.name?.trim() || row?.company_name?.trim() || '';
-  await sendInvite({ to, inviter, kind: 'referral', lang });
+  await sendInvite({ to, inviter, kind: 'referral', token, lang });
+}
+
+export type AcceptResult =
+  | { ok: true; userId: string; email: string }
+  | { ok: false; reason: 'invalid' | 'email_taken' | 'weak_password' };
+
+/**
+ * Turn an invitation into an account, given only a password.
+ *
+ * The address and the name come from the invitation, because the inviter
+ * already typed both — asking the invitee to retype their colleague's answers
+ * is work that produces nothing, and lets them enter an address the invitation
+ * does not cover, which silently earns nobody the bonus.
+ *
+ * The company profile is deliberately NOT asked for either. They are joining
+ * an existing workspace, so the firm is already known; that question exists to
+ * identify a new firm, and this person is not one.
+ */
+export async function acceptInvitation(
+  token: string,
+  password: string,
+  createUser: (email: string, password: string, name: string | null) => Promise<{ id: string }>,
+): Promise<AcceptResult> {
+  const view = await readInvitation(token);
+  if (!view) return { ok: false, reason: 'invalid' };
+
+  const existing = await db()<{ id: string }[]>`
+    SELECT id FROM users WHERE email = ${view.email}`;
+  // Already registered, by this link or any other route. Not an error to
+  // apologise for — they have an account — but it cannot be created twice.
+  if (existing[0]) return { ok: false, reason: 'email_taken' };
+
+  const user = await createUser(view.email, password, view.name);
+
+  /*
+   * Claim by ADDRESS, exactly as a normal registration would.
+   *
+   * Reusing the one path means the bonus, the acceptance timestamp and the
+   * workspace join all behave identically however the person arrived — and
+   * `claimInvitation` already guards against paying twice.
+   */
+  await claimInvitation(user.id, view.email);
+  return { ok: true, userId: user.id, email: view.email };
 }
 
 /**
