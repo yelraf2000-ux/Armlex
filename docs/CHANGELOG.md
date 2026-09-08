@@ -1518,3 +1518,9 @@ a fresh workspace, re-inviting the same address then succeeds, and usage reads
   burned its early ACME attempts against a domain with no A record yet,
   backing off to a 10-minute retry and falling through to LE staging — a
   cache flush and a clean restart got a production certificate.
+
+- **2026-09-08 — Render decommissioned.** The service and its blueprint are
+  gone; `render.yaml` deleted with them. Verified first that Neon and the
+  Hetzner database were byte-identical (same counts across all seven tables,
+  same last-message timestamp), so nothing had been written to Neon after the
+  migration dump. A 101MB dump was also copied off both machines beforehand.

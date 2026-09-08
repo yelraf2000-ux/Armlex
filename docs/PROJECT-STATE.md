@@ -23,7 +23,8 @@ commit. Postgres 18.6 + pgvector runs on the same box under Docker, so a turn
 no longer pays transatlantic latency several times over. Deploy is `git pull`
 + `npm ci` + `npm run build` + `systemctl restart armlex`.
 
-Render and Neon still exist as a fallback and are NOT yet decommissioned.
+Render is gone. Neon still holds an identical copy of the corpus and is the
+only remaining rollback target; a dump also sits outside both boxes.
 
 **Real traffic — the number that matters.** 250 authentic accountant questions,
 Flash-Lite triage:

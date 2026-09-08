@@ -526,6 +526,6 @@ wording is the data.
       `https://matyanai.am/api/billing/webhook`. Miss it and payments succeed
       while nobody is upgraded.
 
-    `armlex.onrender.com` keeps resolving, so it remains the fallback until
-    Hetzner has carried real traffic for a few days. Old share links stay valid. Share links build from
+    `armlex.onrender.com` is gone as of 2026-09-08, so share links built
+    against it no longer resolve. Share links build from
     `window.location.origin`, so new ones follow the new domain by themselves.
