@@ -175,7 +175,17 @@ export function Login({
   const [password, setPassword] = useState('');
   const [confirm, setConfirm] = useState('');
   const [reveal, setReveal] = useState(false);
-  const [error, setError] = useState<string | null>(initialError ?? null);
+  const [error, setError] = useState<string | null>(null);
+  /*
+   * The OAuth outcome is kept APART from the form's own error.
+   *
+   * Form errors render beside the submit button, which on the register tab
+   * only exists at step 3 — so seeding that state with an arrival message left
+   * it invisible for anyone landing on step 1, which is exactly where
+   * no_account sends them. This one renders under the note instead, above
+   * whichever step is showing.
+   */
+  const [arrival, setArrival] = useState<string | null>(initialError ?? null);
   const [busy, setBusy] = useState(false);
 
   /**
@@ -382,6 +392,9 @@ export function Login({
           onClick={() => {
             setTab('signin');
             setError(null);
+            // The arrival message described the door they came from, not the
+            // one they just chose.
+            setArrival(null);
           }}
         >
           {t('auth.signIn')}
@@ -393,6 +406,7 @@ export function Login({
           onClick={() => {
             setTab('register');
             setError(null);
+            setArrival(null);
           }}
         >
           {t('auth.register')}
@@ -400,6 +414,14 @@ export function Login({
       </div>
 
       <p className="login-note">{tab === 'signin' ? t('auth.signInNote') : t('auth.registerNote')}</p>
+
+      {/*
+        Why the Google round trip sent them back. Sits here, above the steps,
+        because the form's own errors live beside the submit button — which on
+        the register tab does not exist until step 3, and `no_account` lands
+        them on step 1.
+      */}
+      {arrival ? <div className="error">{arrival}</div> : null}
 
       {/* Step 1 of registration: who you are and how big your firm is. */}
       {tab === 'register' && step === 1 ? (
