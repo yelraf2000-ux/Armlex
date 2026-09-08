@@ -15,6 +15,7 @@
  */
 import { db } from '../db/pool.js';
 import { allowanceFor, normaliseEmail, type User } from './users.js';
+import { sendInvite } from '../mail/invite.js';
 
 /**
  * How many people one workspace may hold, invitations included.
@@ -215,6 +216,7 @@ export type InviteResult =
 export async function inviteToWorkspace(
   user: User,
   input: { email: unknown; name: unknown },
+  lang?: unknown,
 ): Promise<InviteResult> {
   const email = typeof input.email === 'string' ? normaliseEmail(input.email) : '';
   if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return { ok: false, reason: 'invalid_email' };
@@ -240,6 +242,16 @@ export async function inviteToWorkspace(
     VALUES (${user.id}, ${email}, ${name})
     ON CONFLICT (inviter_id, email) DO NOTHING`;
   void id;
+
+  /*
+   * Recorded first, mailed second, and a send failure does not fail the
+   * invite. The row is what admits them — `claimInvitation` matches on the
+   * address at registration — so an unsent mail costs the admin a re-send,
+   * while a thrown error would cost them the invitation itself.
+   */
+  const inviter = user.name?.trim() || user.company_name?.trim() || '';
+  await sendInvite({ to: email, inviter, kind: 'workspace', lang });
+
   return { ok: true };
 }
 

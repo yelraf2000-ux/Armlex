@@ -185,7 +185,7 @@ export async function register(req: FastifyRequest, reply: FastifyReply): Promis
 
   // And this account may itself be inviting others.
   const invites = parseInvites((req.body as { invites?: unknown })?.invites);
-  const bonus = await recordInvites(user.id, invites);
+  const bonus = await recordInvites(user.id, invites, (req.body as { lang?: unknown })?.lang);
 
   // Re-read: both of the above may have changed the allowance, and the UI
   // should be told the number that is true rather than the one it expected.
@@ -391,11 +391,15 @@ export async function postWorkspaceInvite(
 ): Promise<void> {
   if (!(await requireAdmin(req, reply))) return;
 
-  const body = req.body as { email?: unknown; name?: unknown } | undefined;
-  const result = await inviteToWorkspace(req.user!, {
-    email: body?.email,
-    name: body?.name,
-  });
+  const body = req.body as { email?: unknown; name?: unknown; lang?: unknown } | undefined;
+  // The invitee has no stored preference — they have no account yet — so the
+  // mail goes out in the language the inviter is working in, which is the best
+  // guess available about a colleague at the same firm.
+  const result = await inviteToWorkspace(
+    req.user!,
+    { email: body?.email, name: body?.name },
+    body?.lang,
+  );
   if (!result.ok) return reply.code(400).send({ error: result.reason });
   return reply.send(await readWorkspace(req.user!));
 }

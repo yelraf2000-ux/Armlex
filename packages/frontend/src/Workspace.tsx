@@ -51,7 +51,7 @@ interface UsageView {
 type Section = 'members' | 'usage';
 
 export function Workspace({ onClose, meId }: { onClose: () => void; meId: string }) {
-  const { t } = useSettings();
+  const { t, lang } = useSettings();
   const [section, setSection] = useState<Section>('members');
   const [view, setView] = useState<WorkspaceView | null>(null);
   const [usage, setUsage] = useState<UsageView | null>(null);
@@ -105,7 +105,9 @@ export function Workspace({ onClose, meId }: { onClose: () => void; meId: string
       const res = await fetch('/api/workspace/invites', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email: email.trim(), name: name.trim() || undefined }),
+        // Carries the language so the invitation mail is written in the one the
+        // inviter works in -- the invitee has no account and so no preference.
+        body: JSON.stringify({ email: email.trim(), name: name.trim() || undefined, lang }),
       });
       if (res.ok) {
         setView((await res.json()) as WorkspaceView);
@@ -282,7 +284,7 @@ export function Workspace({ onClose, meId }: { onClose: () => void; meId: string
                     Said plainly, because it is the difference between "they
                     have not replied" and "nothing was ever sent to them".
                   */}
-                  <p className="ws-note">{t('ws.noMailYet')}</p>
+                  <p className="ws-note">{t('ws.inviteNote')}</p>
                 </>
               ) : null}
             </>

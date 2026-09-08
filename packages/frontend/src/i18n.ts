@@ -55,7 +55,7 @@ const hy: Dict = {
   'ws.full': 'Թիմը լրացված է։',
   'ws.failed': 'Չհաջողվեց։ Փորձեք կրկին։',
   'ws.totalThisMonth': 'Ընդամենը այս ամիս',
-  'ws.noMailYet': 'Նամակներ դեռ չենք ուղարկում․ հրավերը գրանցվում է, հղումը փոխանցեք ինքներդ։',
+  'ws.inviteNote': 'Հրավերն ուղարկվում է նշված հասցեին։ Գործում է միայն այդ հասցեով գրանցվելիս։',
 
   'mode.chat': 'Երկխոսություն',
   'mode.ask': 'Մեկանգամյա',
@@ -233,7 +233,7 @@ const ru: Dict = {
   'ws.full': 'Команда заполнена.',
   'ws.failed': 'Не получилось. Попробуйте ещё раз.',
   'ws.totalThisMonth': 'Всего в этом месяце',
-  'ws.noMailYet': 'Письма пока не отправляются: приглашение записывается, ссылку передайте сами.',
+  'ws.inviteNote': 'Приглашение отправляется на указанный адрес. Оно сработает только при регистрации на этот же адрес.',
 
   'mode.chat': 'Диалог',
   'mode.ask': 'Разовый',
@@ -410,7 +410,7 @@ const en: Dict = {
   'ws.full': 'The team is full.',
   'ws.failed': 'That did not work. Try again.',
   'ws.totalThisMonth': 'Total this month',
-  'ws.noMailYet': 'No email is sent yet: the invitation is recorded, share the link yourself.',
+  'ws.inviteNote': 'An invitation is emailed to that address. It only applies if they register with the same address.',
 
   'mode.chat': 'Dialogue',
   'mode.ask': 'One-shot',

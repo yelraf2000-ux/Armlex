@@ -12,12 +12,15 @@
  * to the thing the referral exists for. The +10 is safe to pay up front because
  * it is capped at once per account.
  *
- * NOTE: nothing here SENDS an email. There is no mail provider wired up, so an
- * invitation is a record and a claim on a bonus, and the inviter shares the
- * link themselves. When mail is added, this is where it hooks in.
+ * The invitation is now MAILED as well as recorded, but the record remains what
+ * counts: `claimInvitation` matches on the address at registration, so a bonus
+ * settles whether or not the mail arrived. Sending is therefore best-effort and
+ * never allowed to fail the invitation — losing the row to save the email would
+ * be the wrong way round.
  */
 import { db } from '../db/pool.js';
 import { normaliseEmail } from './users.js';
+import { sendInvite } from '../mail/invite.js';
 
 /** Most invitations one account may record. */
 export const MAX_INVITES = 4;
@@ -66,21 +69,48 @@ export function parseInvites(raw: unknown): InviteInput[] {
  * Returns how many questions were added, so the UI can say the true number
  * rather than repeating what the form promised.
  */
-export async function recordInvites(inviterId: string, invites: InviteInput[]): Promise<number> {
+export async function recordInvites(
+  inviterId: string,
+  invites: InviteInput[],
+  lang?: unknown,
+): Promise<number> {
   if (invites.length === 0) return 0;
 
   for (const invite of invites) {
     // An inviter re-inviting the same address is not a second reward.
-    await db()`
+    const rows = await db()<{ id: string }[]>`
       INSERT INTO invitations (inviter_id, email, name)
       VALUES (${inviterId}, ${invite.email}, ${invite.name ?? null})
-      ON CONFLICT (inviter_id, email) DO NOTHING`;
+      ON CONFLICT (inviter_id, email) DO NOTHING
+      RETURNING id`;
+    // No row means the conflict clause swallowed it — this address was already
+    // invited by this person, and mailing them a second time would be the
+    // reward-free half of a duplicate invitation arriving as spam.
+    if (rows.length > 0) await mailInvite(inviterId, invite.email, lang);
   }
 
   await db()`
     UPDATE users SET bonus_questions = bonus_questions + ${BONUS_FOR_INVITING}
      WHERE id = ${inviterId}`;
   return BONUS_FOR_INVITING;
+}
+
+/**
+ * Send one invitation, having already recorded it.
+ *
+ * Recorded first, sent second, and a failure to send is swallowed: the
+ * invitation exists either way, the inviter has already been paid for it, and
+ * the bonus settles on the address at registration regardless of whether the
+ * mail arrived. Throwing here would lose the invitation to save the email.
+ */
+async function mailInvite(inviterId: string, to: string, lang: unknown): Promise<void> {
+  const rows = await db()<{ name: string | null; company_name: string | null }[]>`
+    SELECT name, company_name FROM users WHERE id = ${inviterId}`;
+  const row = rows[0];
+  // Falls back to the firm when the person left their own name blank, since
+  // "someone invited you" persuades nobody.
+  const inviter = row?.name?.trim() || row?.company_name?.trim() || '';
+  await sendInvite({ to, inviter, kind: 'referral', lang });
 }
 
 /**
