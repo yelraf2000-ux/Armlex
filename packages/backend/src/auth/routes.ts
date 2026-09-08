@@ -30,6 +30,7 @@ import {
 } from './google.js';
 import { markConverted } from '../answer/preview.js';
 import * as verification from './verification.js';
+import * as reset from './reset.js';
 import {
   acceptInvitation,
   claimInvitation,
@@ -81,6 +82,9 @@ const PUBLIC_PREFIXES = [
   // requiring a session to spend a verification link would demand the very
   // thing the link exists to grant.
   '/api/auth/verify/',
+  // A forgotten password is by definition unusable, so the link cannot demand
+  // the session it exists to restore.
+  '/api/auth/reset/',
   // Same reasoning. An invitee has no account yet — that is the entire point
   // of the link — so the token stands in for one.
   '/api/invite/',
@@ -94,6 +98,7 @@ const PUBLIC_PATHS = new Set([
   '/api/auth/google',
   '/api/auth/google/callback',
   '/api/auth/resend-verification',
+  '/api/auth/forgot',
   '/api/health',
   '/api/version',
   '/health',
@@ -291,6 +296,58 @@ export async function verifyEmail(req: FastifyRequest, reply: FastifyReply): Pro
   return reply
     .header('Set-Cookie', setCookie(user.id))
     .send({ user: publicUser(user), usage: await monthlyUsage(user) });
+}
+
+/**
+ * Ask for a reset link.
+ *
+ * Answers `{ ok: true }` whether or not the address has an account, and takes
+ * the same deliberate delay as `login`. This route needs no password, so a
+ * distinguishing response would make it a way to test a leaked address list
+ * against our user table — the exact leak `login`'s shared error message
+ * exists to close.
+ */
+export async function forgotPassword(req: FastifyRequest, reply: FastifyReply): Promise<void> {
+  const body = req.body as { email?: unknown; lang?: unknown } | undefined;
+  const email = typeof body?.email === 'string' ? normaliseEmail(body.email) : '';
+
+  await slow();
+
+  if (/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+    const sent = await reset.issueFor(email, body?.lang);
+    // Logged, never returned: the caller must not learn which of the two
+    // reasons — no such account, or a provider failure — applied.
+    if (!sent.sent) req.log.info({ email }, 'reset link not sent');
+  }
+  return reply.send({ ok: true });
+}
+
+/**
+ * Spend a reset link and sign in.
+ *
+ * Signing in here is the point: they have just proved they read the mailbox
+ * AND chosen the password. Returning them to a form to type it again proves
+ * nothing and is one more chance to mistype it.
+ */
+export async function resetPassword(req: FastifyRequest, reply: FastifyReply): Promise<void> {
+  const token = (req.params as { token?: string } | undefined)?.token ?? '';
+  const body = req.body as { password?: unknown } | undefined;
+  const password = typeof body?.password === 'string' ? body.password : '';
+
+  if (password.length < MIN_PASSWORD) {
+    return reply.code(400).send({ error: 'weak_password', minimum: MIN_PASSWORD });
+  }
+
+  const result = await reset.consume(token, password);
+  if (!result.ok) return reply.code(400).send({ error: result.reason });
+
+  const user = await findById(result.userId);
+  if (!user) return reply.code(400).send({ error: 'invalid' });
+
+  await touchLastSeen(user.id);
+  return reply
+    .header('Set-Cookie', setCookie(user.id))
+    .send({ user: publicUser(user), usage: await workspaceQuota(user) });
 }
 
 /**

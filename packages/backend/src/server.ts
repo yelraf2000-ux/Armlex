@@ -10,6 +10,8 @@ import {
   googleCallback,
   verifyEmail,
   resendVerification,
+  forgotPassword,
+  resetPassword,
   readInvite,
   acceptInvite,
   googleStart,
@@ -96,6 +98,8 @@ app.post('/api/auth/logout', logout);
 // if the SPA ever fails to boot.
 app.post('/api/auth/verify/:token', verifyEmail);
 app.post('/api/auth/resend-verification', resendVerification);
+app.post('/api/auth/forgot', forgotPassword);
+app.post('/api/auth/reset/:token', resetPassword);
 app.get('/api/invite/:token', readInvite);
 app.post('/api/invite/:token', acceptInvite);
 app.get('/api/auth/me', me);

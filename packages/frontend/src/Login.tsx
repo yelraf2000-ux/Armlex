@@ -178,6 +178,15 @@ export function Login({
    */
   const [pending, setPending] = useState<{ email: string; sent: boolean } | null>(null);
   const [resent, setResent] = useState(false);
+  /**
+   * Set once a reset link has been asked for.
+   *
+   * The message deliberately does NOT say whether that address has an account.
+   * The endpoint answers the same either way, and a screen that revealed what
+   * the endpoint conceals would give the answer back.
+   */
+  const [forgotSent, setForgotSent] = useState(false);
+  const [forgot, setForgot] = useState(false);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirm, setConfirm] = useState('');
@@ -316,6 +325,26 @@ export function Login({
       }
 
       setError(messageFor(body.error ?? '', res.status));
+    } catch (err) {
+      setError(String(err));
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function askReset(): Promise<void> {
+    if (busy || !LOOKS_LIKE_EMAIL.test(email.trim())) return;
+    setBusy(true);
+    setError(null);
+    try {
+      await fetch('/api/auth/forgot', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: email.trim(), lang }),
+      });
+      // Nothing to branch on: the route answers `ok` for an unknown address
+      // too, and showing anything else here would leak what it withholds.
+      setForgotSent(true);
     } catch (err) {
       setError(String(err));
     } finally {
@@ -633,6 +662,33 @@ export function Login({
           <button className="linkish" onClick={() => setStep(2)}>
             {t('auth.backStep')}
           </button>
+        ) : null}
+
+        {/*
+          Sign-in only. On the register tab there is no password to have
+          forgotten, and offering the escape hatch there would read as a hint
+          that an account already exists.
+
+          The confirmation is deliberately vague about whether that address is
+          registered — the endpoint answers identically either way, and saying
+          more here would hand back what it withholds.
+        */}
+        {tab === 'signin' ? (
+          forgotSent ? (
+            <p className="login-verify-hint">{t('reset.maybeSent')}</p>
+          ) : forgot ? (
+            <button
+              className="linkish"
+              disabled={busy || !LOOKS_LIKE_EMAIL.test(email.trim())}
+              onClick={() => void askReset()}
+            >
+              {busy ? '…' : t('reset.send')}
+            </button>
+          ) : (
+            <button className="linkish" onClick={() => setForgot(true)}>
+              {t('reset.forgot')}
+            </button>
+          )
         ) : null}
 
         {googleEnabled ? (

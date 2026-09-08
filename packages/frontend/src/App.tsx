@@ -20,6 +20,7 @@ import { NormPanel } from './NormPanel.js';
 import { Shared } from './Shared.js';
 import { Verify } from './Verify.js';
 import { Invite } from './Invite.js';
+import { Reset } from './Reset.js';
 import { extractQuotes } from './quotes.js';
 import { RailToggle, SettingsControls, SettingsProvider, useSettings } from './Settings.js';
 
@@ -401,6 +402,13 @@ function Workbench() {
   */
   const invited = /^\/invite\/([A-Za-z0-9_-]{20,200})$/.exec(window.location.pathname);
   if (invited) return <Invite token={invited[1]!} onAccepted={() => void loadAccount()} />;
+
+  /*
+    A reset link. Checked before the gate for the plainest reason of all: the
+    person following it cannot sign in, which is why they are here.
+  */
+  const resetting = /^\/reset\/([A-Za-z0-9_-]{20,200})$/.exec(window.location.pathname);
+  if (resetting) return <Reset token={resetting[1]!} onDone={() => void loadAccount()} />;
 
   if (authed === null) return <div className="wrap" />;
   if (!authed) {
