@@ -181,16 +181,21 @@ export async function upsertGoogleUser(
   if (existing) {
     const rows = await db()<User[]>`
       UPDATE users
-         SET google_sub = ${sub},
-             name = COALESCE(name, ${name})
+         SET google_sub = ,
+             name = COALESCE(name, ),
+             -- Signing in through Google proves the address. An account that
+             -- registered by password and never clicked its link is verified
+             -- by arriving here, which is also the escape hatch for anyone
+             -- whose verification mail never landed.
+             email_verified_at = COALESCE(email_verified_at, now())
        WHERE id = ${existing.id}
       RETURNING id, email, name, plan, password_hash, google_sub, plan_expires_at, company_name, company_size, bonus_questions, workspace_id`;
     return rows[0]!;
   }
 
   const rows = await db()<User[]>`
-    INSERT INTO users (email, name, google_sub)
-    VALUES (${address}, ${name}, ${sub})
+    INSERT INTO users (email, name, google_sub, email_verified_at)
+    VALUES (, , , now())
     RETURNING id, email, name, plan, password_hash, google_sub, plan_expires_at, company_name, company_size, bonus_questions, workspace_id`;
   return rows[0]!;
 }

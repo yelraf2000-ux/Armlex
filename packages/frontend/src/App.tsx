@@ -18,6 +18,7 @@ import { Workspace } from './Workspace.js';
 import { MarkdownView } from './MarkdownView.js';
 import { NormPanel } from './NormPanel.js';
 import { Shared } from './Shared.js';
+import { Verify } from './Verify.js';
 import { extractQuotes } from './quotes.js';
 import { RailToggle, SettingsControls, SettingsProvider, useSettings } from './Settings.js';
 
@@ -383,6 +384,15 @@ function Workbench() {
   */
   const shared = /^\/shared\/([0-9a-f]{48})$/.exec(window.location.pathname);
   if (shared) return <Shared token={shared[1]!} />;
+
+  /*
+    Same reasoning, same place in the order: the person following a verification
+    link is by definition not signed in yet, so this has to be reachable before
+    the gate. Base64url, so the character class is wider than the shared token's
+    hex and the length is a range rather than a constant.
+  */
+  const verifying = /^\/verify\/([A-Za-z0-9_-]{20,200})$/.exec(window.location.pathname);
+  if (verifying) return <Verify token={verifying[1]!} onVerified={() => void loadAccount()} />;
 
   if (authed === null) return <div className="wrap" />;
   if (!authed) {

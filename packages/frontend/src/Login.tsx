@@ -152,8 +152,20 @@ export function Login({
    *  they just pressed. */
   initialTab?: Tab | undefined;
 }) {
-  const { t } = useSettings();
+  const { t, lang } = useSettings();
   const [tab, setTab] = useState<Tab>(initialTab ?? 'signin');
+  /**
+   * Set when an address needs proving. Replaces the whole form rather than
+   * sitting beside it: the next act is in their inbox, and leaving the fields
+   * on screen invites a second registration with the same address, which only
+   * earns them `email_taken`.
+   *
+   * Reached from BOTH directions — a fresh registration, and a sign-in by
+   * someone who registered earlier and never clicked. The second is the more
+   * common one in practice, because it is the person who closed the tab.
+   */
+  const [pending, setPending] = useState<{ email: string; sent: boolean } | null>(null);
+  const [resent, setResent] = useState(false);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirm, setConfirm] = useState('');
@@ -233,10 +245,14 @@ export function Login({
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(
           tab === 'signin'
-            ? { email: email.trim(), password }
+            ? { email: email.trim(), password, lang }
             : {
                 email: email.trim(),
                 password,
+                // Decides which language the verification mail is written in.
+                // The account has no stored preference yet — this request is
+                // the only place that knowledge exists.
+                lang,
                 name: profile.fullName.trim() || undefined,
                 companyName: profile.companyName.trim() || undefined,
                 companySize: profile.companySize || undefined,
@@ -249,19 +265,100 @@ export function Login({
               },
         ),
       });
+      const body = (await res.json().catch(() => ({}))) as {
+        error?: string;
+        needsVerification?: boolean;
+        verificationSent?: boolean;
+        email?: string;
+      };
+
       if (res.ok) {
         setPassword('');
         setConfirm('');
+        // A 200 that withholds the session. Registration succeeded; the
+        // account is simply not usable until the address is proved.
+        if (body.needsVerification) {
+          setPending({ email: body.email ?? email.trim(), sent: body.verificationSent !== false });
+          return;
+        }
         onSuccess();
         return;
       }
-      const body = (await res.json().catch(() => ({}))) as { error?: string };
+
+      // Right password, unproved address. Not an error to correct — a step to
+      // finish — so it opens the same panel rather than reddening the form.
+      if (res.status === 403 && body.error === 'email_unverified') {
+        setPassword('');
+        setPending({ email: body.email ?? email.trim(), sent: true });
+        return;
+      }
+
       setError(messageFor(body.error ?? '', res.status));
     } catch (err) {
       setError(String(err));
     } finally {
       setBusy(false);
     }
+  }
+
+  async function resend(): Promise<void> {
+    if (!pending || busy) return;
+    setBusy(true);
+    try {
+      await fetch('/api/auth/resend-verification', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: pending.email, lang }),
+      });
+      // The route answers `ok` whether or not the address exists, so there is
+      // nothing here to branch on — and nothing worth telling the user apart,
+      // since the honest message for both is "if that address is waiting, a
+      // link is on its way".
+      setPending({ ...pending, sent: true });
+      setResent(true);
+    } catch (err) {
+      setError(String(err));
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  if (pending) {
+    return (
+      <div className="login">
+        <div className="login-head">
+          <h1 className="login-title">{BRAND}</h1>
+          <div className="login-sub">{t('masthead.sub')}</div>
+          <div className="masthead-rule" />
+        </div>
+        <div className="login-row">
+          <h2 className="login-verify-title">{t('auth.verify.title')}</h2>
+          <p className="login-verify-body">{t('auth.verify.body')}</p>
+          <p className="login-verify-email">{pending.email}</p>
+
+          {!pending.sent ? <div className="error">{t('auth.verify.sendFailed')}</div> : null}
+          {error ? <div className="error">{error}</div> : null}
+
+          <p className="login-verify-hint">{t('auth.verify.hint')}</p>
+
+          <button disabled={busy || resent} onClick={() => void resend()}>
+            {busy ? '…' : resent ? t('auth.verify.resent') : t('auth.verify.resend')}
+          </button>
+        </div>
+
+        <button
+          className="linkish"
+          onClick={() => {
+            setPending(null);
+            setResent(false);
+            setError(null);
+            setTab('signin');
+          }}
+        >
+          {t('auth.verify.toSignIn')}
+        </button>
+      </div>
+    );
   }
 
   return (

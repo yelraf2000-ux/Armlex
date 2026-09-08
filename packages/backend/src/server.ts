@@ -8,6 +8,8 @@ import Fastify from 'fastify';
 import fastifyStatic from '@fastify/static';
 import {
   googleCallback,
+  verifyEmail,
+  resendVerification,
   googleStart,
   login,
   logout,
@@ -85,6 +87,12 @@ app.addHook('preHandler', requireAuth);
 app.post('/api/auth/register', register);
 app.post('/api/auth/login', login);
 app.post('/api/auth/logout', logout);
+// The token in the path is the credential, so this is a GET the mail client can
+// follow — but it is the FRONTEND route /verify/:token that people click; this
+// is what that page calls. Kept POST-free so a link opened directly still works
+// if the SPA ever fails to boot.
+app.post('/api/auth/verify/:token', verifyEmail);
+app.post('/api/auth/resend-verification', resendVerification);
 app.get('/api/auth/me', me);
 app.post('/api/auth/profile', saveProfile);
 // NOT `/api/auth/me`: the guard matches on path and `GET /api/auth/me` has to

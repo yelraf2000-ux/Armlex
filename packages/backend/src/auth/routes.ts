@@ -22,6 +22,7 @@ import {
 } from './users.js';
 import { authorizeUrl, exchangeCode, googleEnabled, issueState, verifyState } from './google.js';
 import { markConverted } from '../answer/preview.js';
+import * as verification from './verification.js';
 import { claimInvitation, parseInvites, recordInvites } from './invitations.js';
 import {
   inviteToWorkspace,
@@ -59,7 +60,13 @@ import {
  * `/api/shared/` stays a prefix — the token in the URL is the capability, and
  * that is what sharing a conversation means.
  */
-const PUBLIC_PREFIXES = ['/api/shared/'];
+const PUBLIC_PREFIXES = [
+  '/api/shared/',
+  // The token in the path IS the credential, exactly as with a shared link —
+  // requiring a session to spend a verification link would demand the very
+  // thing the link exists to grant.
+  '/api/auth/verify/',
+];
 const PUBLIC_PATHS = new Set([
   '/api/auth',
   '/api/auth/register',
@@ -68,6 +75,7 @@ const PUBLIC_PATHS = new Set([
   '/api/auth/me',
   '/api/auth/google',
   '/api/auth/google/callback',
+  '/api/auth/resend-verification',
   '/api/health',
   '/api/version',
   '/health',
@@ -179,6 +187,29 @@ export async function register(req: FastifyRequest, reply: FastifyReply): Promis
   // did not becomes the admin of its own. AFTER the claim, so an invited user
   // does not first own a workspace and then abandon it.
   await workspaceIdFor(fresh);
+
+  /*
+   * With the gate on, registration ends WITHOUT a cookie. Everything above
+   * still ran — the account, the invitation payout, the workspace — because
+   * the account is real, merely unproven; only the session is withheld.
+   *
+   * If the send fails we say so rather than pretending. An account that exists
+   * behind a link that never arrived is the one state the user cannot get
+   * themselves out of, and `verificationSent: false` is what lets the UI offer
+   * the resend instead of a spinner.
+   */
+  if (verification.isRequired()) {
+    const sent = await verification.issueFor(fresh, (req.body as { lang?: unknown })?.lang);
+    if (!sent.sent) req.log.error({ err: sent.error, email }, 'verification mail failed');
+    return reply.send({
+      needsVerification: true,
+      verificationSent: sent.sent,
+      email: fresh.email,
+      invitesRecorded: invites.length,
+      bonusQuestions: bonus,
+    });
+  }
+
   return reply
     .header('Set-Cookie', setCookie(fresh.id))
     .send({
@@ -203,10 +234,69 @@ export async function login(req: FastifyRequest, reply: FastifyReply): Promise<v
     return reply.code(401).send({ error: 'bad_credentials' });
   }
 
+  /*
+   * Checked AFTER the password, never before. Refusing an unverified address
+   * on sight would answer "does this account exist" to anyone who asked, which
+   * is the leak the shared `bad_credentials` message above exists to close.
+   *
+   * The address rides back in the response so the UI can offer a resend
+   * without asking the person to type it a second time — they have already
+   * proved they hold the password for it.
+   */
+  if (!(await verification.isVerified(user.id))) {
+    return reply.code(403).send({ error: 'email_unverified', email: user.email });
+  }
+
   await touchLastSeen(user.id);
   return reply
     .header('Set-Cookie', setCookie(user.id))
     .send({ user: publicUser(user), usage: await monthlyUsage(user) });
+}
+
+/**
+ * Spend a verification link and sign the account in.
+ *
+ * Signing in here rather than returning them to the login form is the point:
+ * the click already proves both the password (they set it minutes ago) and the
+ * address. Sending them back to type it again is a step that proves nothing.
+ */
+export async function verifyEmail(req: FastifyRequest, reply: FastifyReply): Promise<void> {
+  const token = (req.params as { token?: string } | undefined)?.token ?? '';
+  const result = await verification.consume(token);
+
+  if (!result.ok) return reply.code(400).send({ error: result.reason });
+
+  const user = await findById(result.userId);
+  if (!user) return reply.code(400).send({ error: 'invalid' });
+
+  await touchLastSeen(user.id);
+  return reply
+    .header('Set-Cookie', setCookie(user.id))
+    .send({ user: publicUser(user), usage: await monthlyUsage(user) });
+}
+
+/**
+ * Send another link.
+ *
+ * Answers the same way whether or not the address exists. This route needs no
+ * password, so a distinguishing response would turn it into the address oracle
+ * that `login` is careful not to be.
+ */
+export async function resendVerification(
+  req: FastifyRequest,
+  reply: FastifyReply,
+): Promise<void> {
+  const body = req.body as { email?: unknown; lang?: unknown } | undefined;
+  const email = typeof body?.email === 'string' ? normaliseEmail(body.email) : '';
+
+  await slow();
+
+  const user = await findByEmail(email);
+  if (user && !(await verification.isVerified(user.id))) {
+    const sent = await verification.issueFor(user, body?.lang);
+    if (!sent.sent) req.log.error({ err: sent.error, email }, 'verification resend failed');
+  }
+  return reply.send({ ok: true });
 }
 
 export async function logout(_req: FastifyRequest, reply: FastifyReply): Promise<void> {
