@@ -18,6 +18,17 @@
       `prefetch` rather than `preload` so it never competes with the fonts and
       the bundle, which the first paint actually depends on.
     -->
+    <!--
+      SVG only. Every browser this app supports reads an SVG favicon, and one
+      vector file stays sharp at 16px in the tab and at 180px on a home
+      screen — where a single .ico would be soft at one end or heavy at the
+      other. theme-color paints the mobile browser chrome to match the page
+      ground instead of leaving a white band above a cream design.
+    -->
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <link rel="apple-touch-icon" href="/favicon.svg" />
+    <meta name="theme-color" content="#EDE8DC" media="(prefers-color-scheme: light)" />
+    <meta name="theme-color" content="#33191E" media="(prefers-color-scheme: dark)" />
     <link rel="prefetch" as="image" href="/thinking.png" />
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />

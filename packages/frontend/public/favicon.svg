@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-label="MatyanAI">
+  <!--
+    Drawn as a path, not <text>. A favicon renders in the browser's chrome,
+    where the page's webfonts do not exist — a lettered <text> favicon falls
+    back to whatever the OS has, so it would set differently on every machine
+    and could render tofu where no serif covers the glyph.
+
+    Filled tile rather than a bare mark: the tab strip is light in one theme
+    and near-black in the other, and a transparent mark disappears into one of
+    them. A solid ground keeps the same silhouette in both.
+  -->
+  <rect width="64" height="64" rx="14" fill="#A8142B"/>
+  <path fill="#EDE8DC" d="M14 48V16h10l8 17 8-17h10v32h-8V28l-7 14h-6l-7-14v20z"/>
+</svg>
