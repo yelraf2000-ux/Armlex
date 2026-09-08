@@ -1533,3 +1533,30 @@ a fresh workspace, re-inviting the same address then succeeds, and usage reads
   link nothing could send. Tokens stored as SHA-256; existing rows backfilled
   as verified. `deploy/update.sh` now runs migrations before the restart,
   which 011 was the first to need.
+
+- **2026-09-08 — Accounts became a product, not a gate.** Six things, in
+  order: email verification for password sign-ups (gated on `mailer.isEnabled`,
+  so it shipped dark and switched itself on when Resend was configured); Google
+  sign-in, with the sign-in door refusing to ENROL so registration stays the one
+  place the firm profile is asked for; invitations that are mailed and carry a
+  token, so an invitee is asked only for a password and appears in
+  «Անդամներ» once verified; the allowance pooled across the workspace and
+  renewed WEEKLY at Monday 00:00 Yerevan (`armlex_period_start()`); several
+  admins per firm with a protected owner, and upgrade offered only to admins;
+  and password reset. Migrations 011-015.
+
+  Two of these corrected earlier calls of mine. The pool started as the owner's
+  plan alone and is now the sum of the seats — a firm that adds a colleague and
+  gains no capacity has been given a reason not to add them. And a bad `perl`
+  edit stripped every `${...}` from two SQL templates in `upsertGoogleUser`,
+  breaking Google sign-in in production; `db/sql-shape.test.ts` now scans for
+  exactly that, because TypeScript accepts a template literal with no
+  interpolations and no unit test touches a database.
+
+- **2026-09-08 — Something for a crawler to read.** robots.txt was returning
+  HTML (the SPA fallback answered it), `lang` was `ru` over Armenian content,
+  and there was no description, canonical or sitemap. All fixed, and the
+  property is verified in Search Console. Worth knowing what SEO cannot fix:
+  «մատյան» already belongs to `matyan.emis.am`, the national school register.
+  Search will confirm the name to people who have heard it; it will not be how
+  the first customers arrive.
