@@ -1,9 +1,45 @@
 <!doctype html>
-<html lang="ru">
+<!--
+  Armenian, matching the default the app boots with. The inline script below
+  restamps it from the saved preference, but a crawler reads the attribute as
+  served — and declaring Russian over Armenian content tells a search engine to
+  index it against the wrong language.
+-->
+<html lang="hy">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>MatyanAI</title>
+    <title>MatyanAI — ՀՀ հարկային և աշխատանքային օրենսդրության տեղեկատու</title>
+
+    <!--
+      What a search result and a shared link actually show.
+
+      Written in Armenian because that is who searches for this: an accountant
+      in Yerevan looking for "հարկային օրենսգիրք" is the audience, and a
+      description in English would be indexed against words nobody types.
+
+      The title carries the subject rather than only the brand. Nobody is
+      searching for "MatyanAI" yet — the name has to be found through what it
+      does before it can be found by name.
+    -->
+    <meta
+      name="description"
+      content="ՀՀ հարկային և աշխատանքային օրենսդրության տեղեկատու։ Պատասխանները հենվում են օրենքի իրական տեքստի վրա՝ հոդվածների ուղիղ հղումներով։ Ոչ իրավաբանական խորհրդատվություն։"
+    />
+    <link rel="canonical" href="https://matyanai.am/" />
+
+    <meta property="og:type" content="website" />
+    <meta property="og:site_name" content="MatyanAI" />
+    <meta property="og:url" content="https://matyanai.am/" />
+    <meta
+      property="og:title"
+      content="MatyanAI — ՀՀ հարկային և աշխատանքային օրենսդրության տեղեկատու"
+    />
+    <meta
+      property="og:description"
+      content="Տվեք հարկային կամ աշխատանքային հարց։ Պատասխանը հենվում է ՀՀ օրենսդրության իրական տեքստի վրա։"
+    />
+    <meta name="twitter:card" content="summary" />
     <!--
       Prata sets display, Lora sets body, Noto Serif Armenian sets statute.
       Preconnect because the first paint depends on them: this design is

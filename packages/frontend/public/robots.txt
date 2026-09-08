@@ -1,0 +1,15 @@
+# Everything here is public marketing and a sign-in wall; there is nothing to
+# hide from a crawler and nothing behind /api/ worth crawling.
+User-agent: *
+Allow: /
+
+# Token-bearing paths. Not secret — the token is the credential and these are
+# single-use — but a crawler following one would spend a colleague's invitation
+# or a stranger's verification link, and some mail clients prefetch links.
+Disallow: /verify/
+Disallow: /invite/
+Disallow: /reset/
+Disallow: /shared/
+Disallow: /api/
+
+Sitemap: https://matyanai.am/sitemap.xml
