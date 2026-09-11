@@ -1985,6 +1985,12 @@ body:has(.rail-mini) .page { padding-left: 56px; }
   margin: 0 auto 1.5rem;
 }
 
+/*
+  Grows with the question, then scrolls inside itself — never a drag handle.
+  Landing.tsx sets the height from scrollHeight on every change; this cap is
+  where growing stops and the box scrolls instead, so a pasted page of text
+  cannot push the page's Ask button and examples off the screen.
+*/
 .landing-ask textarea {
   flex-grow: 1;
   font-family: var(--body);
@@ -1995,7 +2001,9 @@ body:has(.rail-mini) .page { padding-left: 56px; }
   border-radius: 4px;
   background: var(--glow);
   color: var(--ink);
-  resize: vertical;
+  resize: none;
+  max-height: 220px;
+  overflow-y: auto;
 }
 
 .landing-ask textarea:focus { outline: none; border-color: var(--accent); }

@@ -10,7 +10,7 @@
  * visitor who has to retype their question after registering has been made to
  * pay twice for the same thing.
  */
-import { useState } from 'react';
+import { useLayoutEffect, useRef, useState } from 'react';
 import { BRAND } from './brand.js';
 import { Login, type Tab } from './Login.js';
 import { MarkdownView } from './MarkdownView.js';
@@ -43,6 +43,30 @@ export function Landing({
 }) {
   const { t } = useSettings();
   const [question, setQuestion] = useState('');
+  const askRef = useRef<HTMLTextAreaElement>(null);
+
+  /*
+   * Fit the box to its text, up to the CSS max-height, where it starts
+   * scrolling instead. Keyed on `question` rather than done in onChange so a
+   * programmatic change — the box cleared after asking, or refilled — resizes
+   * too, instead of leaving it stuck at the height of the last thing typed.
+   * Layout effect, so the height is corrected before paint and the box never
+   * visibly jumps.
+   *
+   * Collapsing to `auto` first is what lets it SHRINK: scrollHeight never
+   * reports less than the current height, so without the reset a box that grew
+   * could never get smaller again.
+   */
+  useLayoutEffect(() => {
+    const el = askRef.current;
+    if (!el) return;
+    el.style.height = 'auto';
+    // scrollHeight covers content + padding but NOT the border, while the page
+    // sizes boxes as border-box. Setting scrollHeight alone left the box 2px
+    // short, and with overflow-y: auto that 2px showed a scrollbar on every
+    // one-line question. offsetHeight − clientHeight is exactly the border.
+    el.style.height = `${el.scrollHeight + el.offsetHeight - el.clientHeight}px`;
+  }, [question]);
   const [busy, setBusy] = useState(false);
   const [preview, setPreview] = useState<PreviewResult | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -181,6 +205,7 @@ export function Landing({
             visitor meets first is the box they will use after registering. */}
         <div className="composer-field">
           <textarea
+            ref={askRef}
             value={question}
             onChange={(e) => setQuestion(e.target.value)}
             onKeyDown={(e) => {
