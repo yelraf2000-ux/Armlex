@@ -216,7 +216,14 @@ a { color: var(--accent); }
  * The double rule under a masthead. Two elements would be one too many, so the
  * band carries a top border, its own height, and a bottom border.
  */
+/*
+  Hidden, not deleted. The double rule under the title is used on ten screens
+  (landing, sign-in, verify, invite, reset, the signed-in header); one rule
+  here removes it from all of them, and bringing it back is deleting one line
+  rather than restoring ten elements.
+*/
 .masthead-rule {
+  display: none;
   border-top: 2px solid var(--ink);
   height: 3px;
   border-bottom: 1px solid var(--ink);
