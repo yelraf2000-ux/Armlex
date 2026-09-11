@@ -9,7 +9,7 @@
  * and inside conversation turns, and a fixed overlay nested in either inherits
  * whatever clipping or stacking context those containers happen to set.
  */
-import { useEffect, useId, type ReactNode } from 'react';
+import { useEffect, useId, useRef, type ReactNode } from 'react';
 import { createPortal } from 'react-dom';
 import { useSettings } from './Settings.js';
 
@@ -24,6 +24,8 @@ export function Popup({
 }) {
   const { t } = useSettings();
   const titleId = useId();
+  /** Whether the current press began on the backdrop itself — see the handlers below. */
+  const downOnBackdrop = useRef(false);
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent): void => {
@@ -36,8 +38,25 @@ export function Popup({
   return createPortal(
     <div
       className="popup-backdrop"
+      /*
+        Close on the CLICK, and only when the press also STARTED on the
+        backdrop.
+
+        Closing on mousedown unmounted the popup mid-click, so the click that
+        finished it landed on whatever lay underneath — over the sidebar's
+        blank ground, dismissing a popup also folded the sidebar away. Now the
+        click lands on the backdrop, which the sidebar's own handler ignores.
+
+        Remembering where the press began keeps the one thing mousedown was
+        protecting: selecting the share link by dragging, and releasing past
+        the dialog's edge, does not close it.
+      */
       onMouseDown={(e) => {
-        if (e.target === e.currentTarget) onClose();
+        downOnBackdrop.current = e.target === e.currentTarget;
+      }}
+      onClick={(e) => {
+        if (downOnBackdrop.current && e.target === e.currentTarget) onClose();
+        downOnBackdrop.current = false;
       }}
     >
       <div className="popup" role="dialog" aria-modal="true" aria-labelledby={titleId}>
