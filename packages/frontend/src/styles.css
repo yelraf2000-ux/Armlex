@@ -402,6 +402,10 @@ body:has(.workbench:not(.rail-hidden)) {
 .new-case.active { background: var(--leaf); color: var(--accent); cursor: default; }
 
 .sessions { display: block; }
+/* "Pinned" / "Recent" headings inside the list. They reuse .panel-title's
+   small caps so they read as the same kind of label as the rail's own title,
+   with space above so each starts a visibly new group. */
+.rail .panel-title.sessions-group { margin-top: 16px; margin-bottom: 4px; }
 .sessions-empty {
   color: var(--ink-3);
   font-size: 13px;

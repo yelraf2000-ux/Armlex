@@ -225,10 +225,8 @@ export function Sessions({
     );
   }
 
-  return (
-    <div className="sessions" ref={listRef}>
-      {searchBox}
-      {sessions.map((s) => (
+  /* One row. Drawn by a function because it appears in two groups below. */
+  const row = (s: SessionSummary) => (
         <div
           key={s.id}
           className={
@@ -256,14 +254,9 @@ export function Sessions({
               onClick={() => onOpen(s.id)}
               title={s.title || s.firstMessage}
             >
-              <span className="session-q">
-                {s.pinned ? (
-                  <span className="session-pin" aria-hidden="true">
-                    <Icon d={PIN} />
-                  </span>
-                ) : null}
-                {s.title || s.firstMessage || '—'}
-              </span>
+              {/* No pin glyph: a pinned row says so by sitting in the Pinned
+                  section, which is a clearer mark than an icon beside a title. */}
+              <span className="session-q">{s.title || s.firstMessage || '—'}</span>
               {/*
                 Why this row matched. Without it a hit on a word buried in a
                 long answer shows a title that does not contain the word, and
@@ -358,7 +351,37 @@ export function Sessions({
             </div>
           ) : null}
         </div>
-      ))}
+  );
+
+  /*
+   * Pinned conversations get a section of their own, above the rest, and the
+   * section exists only when something is pinned — an empty "Pinned" heading
+   * would be a label for nothing.
+   *
+   * Grouped here from the `pinned` flag rather than trusted to the server's
+   * ordering, so pinning or unpinning from the menu moves the row between
+   * sections at once (togglePin only patches the flag locally).
+   *
+   * The second heading appears only alongside the first. With nothing pinned
+   * the list is just the list, under the rail's own title; with a Pinned
+   * section above it, the rest needs a name or the boundary is invisible.
+   */
+  const pinned = sessions.filter((s) => s.pinned);
+  const rest = sessions.filter((s) => !s.pinned);
+
+  return (
+    <div className="sessions" ref={listRef}>
+      {searchBox}
+      {pinned.length > 0 ? (
+        <>
+          <div className="panel-title sessions-group">{t('nav.pinned')}</div>
+          {pinned.map(row)}
+          {rest.length > 0 ? (
+            <div className="panel-title sessions-group">{t('nav.recent')}</div>
+          ) : null}
+        </>
+      ) : null}
+      {rest.map(row)}
     </div>
   );
 }
