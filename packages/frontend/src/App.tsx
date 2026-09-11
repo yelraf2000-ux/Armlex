@@ -441,10 +441,10 @@ function Workbench() {
           mark in the corner sits better against a centred reading column than a
           full-width band does.
 
-          What stays is only what qualifies an answer: the way home, the way to
-          the register, and when the corpus was last checked against ARLIS. The
-          not-legal-advice notice lives in the colophon at the foot of the
-          page — it is the imprint of the edition, not its running head.
+          What stays is only the way home and the way to the register. The
+          not-legal-advice notice and the date the corpus was last checked
+          against ARLIS live in the colophon at the foot of the page — they are
+          the imprint of the edition, not its running head.
         */}
         <div className="masthead-top">
           {/*
@@ -455,11 +455,6 @@ function Workbench() {
           */}
           <button className="brand" onClick={goHome}>{BRAND}</button>
           <RailToggle />
-          {corpus && synced ? (
-            <span className="masthead-synced">
-              {t('corpus.synced')} <span className="num">{synced}</span>
-            </span>
-          ) : null}
 
           <span className="spacer" />
           {/*
@@ -523,11 +518,19 @@ function Workbench() {
       {!showWorkspace && mode === 'ask' ? <AskMode key={homeKey} corpusSynced={synced} /> : null}
       {!showWorkspace && mode === 'search' ? <SearchMode key={homeKey} /> : null}
 
-      {/* The colophon: what this is. The corpus counts ("33 acts · 1737
-          fragments") used to sit here too; they meant something to whoever
-          built the index and nothing to an accountant reading an answer. */}
+      {/* The colophon: what this is, and how current it is. The "checked
+          against ARLIS" date moved here from the masthead — it is the imprint
+          of the edition, like the disclaimer above it, not running head. The
+          corpus counts ("33 acts · 1737 fragments") that once sat here are
+          gone for good: they meant something to whoever built the index and
+          nothing to an accountant reading an answer. */}
       <footer className="colophon">
         <div className="colophon-disclaimer">{t('corpus.disclaimer')}</div>
+        {corpus && synced ? (
+          <div className="colophon-synced">
+            {t('corpus.synced')} <span className="num">{synced}</span>
+          </div>
+        ) : null}
       </footer>
     </div>
   );

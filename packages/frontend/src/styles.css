@@ -232,14 +232,15 @@ a { color: var(--accent); }
   margin-top: 26px;
 }
 .colophon-disclaimer { font-size: 12.5px; font-style: italic; color: var(--accent); }
-.colophon-counts {
+/* "Checked against ARLIS <date>", under the disclaimer — quiet small caps. */
+.colophon-synced {
   font-size: 11px;
   letter-spacing: 0.14em;
   text-transform: uppercase;
   color: var(--ink-3);
   margin-top: 8px;
 }
-.colophon-counts .num { color: var(--ink-3); }
+.colophon-synced .num { color: var(--ink-3); }
 
 /*
  * The double rule under a masthead. Two elements would be one too many, so the
