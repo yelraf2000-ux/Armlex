@@ -8,6 +8,7 @@
  */
 import { useEffect, useRef, useState } from 'react';
 import { SharePopup } from './SharePopup.js';
+import { Popup } from './Popup.js';
 import { useSettings } from './Settings.js';
 
 export interface SessionSummary {
@@ -286,6 +287,26 @@ export function Sessions({
             <SharePopup sessionId={s.id} onClose={() => setSharingFor(null)} />
           ) : null}
 
+          {/*
+            A popup, not an in-menu "are you sure": there is no undo. The
+            messages go by cascade, the text is genuinely gone, and any share
+            link stops working with it — which deserves a sentence saying so,
+            not a two-word question squeezed into a menu row.
+          */}
+          {confirming === s.id ? (
+            <Popup title={t('nav.deleteTitle')} onClose={() => setConfirming(null)}>
+              <p className="popup-body">{t('nav.deleteBody')}</p>
+              <div className="popup-actions">
+                <button className="popup-secondary" onClick={() => setConfirming(null)}>
+                  {t('nav.cancel')}
+                </button>
+                <button className="popup-danger" onClick={() => void remove(s)}>
+                  {t('nav.deleteYes')}
+                </button>
+              </div>
+            </Popup>
+          ) : null}
+
           <button
             className="session-more"
             aria-label={t('nav.more')}
@@ -333,26 +354,17 @@ export function Sessions({
 
               <div className="session-menu-rule" />
 
-              {/*
-                The confirmation replaces the item in place rather than opening a
-                dialog. A modal for one list row is heavier than the act — and
-                the question has to be asked, because there is no undo: the
-                messages go by cascade and the text is genuinely gone.
-              */}
-              {confirming === s.id ? (
-                <div className="session-confirm">
-                  <span>{t('nav.deleteAsk')}</span>
-                  <button className="danger" onClick={() => void remove(s)}>
-                    {t('nav.deleteYes')}
-                  </button>
-                  <button onClick={() => setConfirming(null)}>{t('nav.cancel')}</button>
-                </div>
-              ) : (
-                <button role="menuitem" className="danger" onClick={() => setConfirming(s.id)}>
-                  <Icon d={TRASH} />
-                  {t('nav.delete')}
-                </button>
-              )}
+              <button
+                role="menuitem"
+                className="danger"
+                onClick={() => {
+                  setMenuFor(null);
+                  setConfirming(s.id);
+                }}
+              >
+                <Icon d={TRASH} />
+                {t('nav.delete')}
+              </button>
             </div>
           ) : null}
         </div>

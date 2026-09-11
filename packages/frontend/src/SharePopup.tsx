@@ -1,5 +1,5 @@
 /**
- * Share a conversation: one popup, one link, one Copy button.
+ * Share a conversation: one link, one Copy button, and a plain warning.
  *
  * Replaces a share control that was also a state machine — "shared" badges,
  * "stop sharing", a toggle whose label changed meaning with every click, and
@@ -10,13 +10,13 @@
  * idempotent — it returns the existing link rather than minting a new one — so
  * there is no local "already shared?" state to keep in step with the server.
  *
- * Rendered through a portal to <body>. The share button lives inside the
- * sidebar and inside a conversation turn, and a fixed-position overlay nested
- * in either inherits whatever clipping or stacking context those containers
- * happen to set.
+ * The note says the link is PUBLIC because it is: /shared/:token needs no
+ * account. These are conversations about a firm's tax affairs, and someone
+ * pasting the link into a group chat should know that everyone in it — and
+ * anyone it is forwarded to — can read the whole thing.
  */
 import { useEffect, useRef, useState } from 'react';
-import { createPortal } from 'react-dom';
+import { Popup } from './Popup.js';
 import { useSettings } from './Settings.js';
 
 export function SharePopup({ sessionId, onClose }: { sessionId: string; onClose: () => void }) {
@@ -49,14 +49,6 @@ export function SharePopup({ sessionId, onClose }: { sessionId: string; onClose:
     if (url) inputRef.current?.select();
   }, [url]);
 
-  useEffect(() => {
-    const onKey = (e: KeyboardEvent): void => {
-      if (e.key === 'Escape') onClose();
-    };
-    window.addEventListener('keydown', onKey);
-    return () => window.removeEventListener('keydown', onKey);
-  }, [onClose]);
-
   async function copy(): Promise<void> {
     if (!url) return;
     try {
@@ -71,25 +63,13 @@ export function SharePopup({ sessionId, onClose }: { sessionId: string; onClose:
     window.setTimeout(() => setCopied(false), 2000);
   }
 
-  return createPortal(
-    <div
-      className="share-backdrop"
-      onMouseDown={(e) => {
-        if (e.target === e.currentTarget) onClose();
-      }}
-    >
-      <div className="share-popup" role="dialog" aria-modal="true" aria-labelledby="share-title">
-        <div className="share-popup-head">
-          <h2 id="share-title">{t('share.title')}</h2>
-          <button className="share-close" onClick={onClose} aria-label={t('nav.cancel')}>
-            ×
-          </button>
-        </div>
-
-        {failed ? (
-          <p className="error">{t('share.failed')}</p>
-        ) : (
-          <div className="share-row">
+  return (
+    <Popup title={t('share.title')} onClose={onClose}>
+      {failed ? (
+        <p className="error">{t('share.failed')}</p>
+      ) : (
+        <>
+          <div className="popup-row">
             <input
               ref={inputRef}
               readOnly
@@ -97,13 +77,13 @@ export function SharePopup({ sessionId, onClose }: { sessionId: string; onClose:
               onFocus={(e) => e.target.select()}
               aria-label={t('share.title')}
             />
-            <button className="share-copy" disabled={!url} onClick={() => void copy()}>
+            <button className="popup-primary" disabled={!url} onClick={() => void copy()}>
               {copied ? t('share.copied') : t('share.copy')}
             </button>
           </div>
-        )}
-      </div>
-    </div>,
-    document.body,
+          <p className="popup-note">{t('share.publicNote')}</p>
+        </>
+      )}
+    </Popup>
   );
 }

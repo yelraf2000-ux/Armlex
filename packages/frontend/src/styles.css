@@ -1927,8 +1927,8 @@ a { color: var(--accent); }
   letter-spacing: 0.03em;
 }
 
-/* ── Share popup: a link and a Copy button, nothing else ──────────────── */
-.share-backdrop {
+/* ── Popups (share, delete): one shell, see Popup.tsx ─────────────────── */
+.popup-backdrop {
   position: fixed;
   inset: 0;
   z-index: 1000;
@@ -1939,7 +1939,7 @@ a { color: var(--accent); }
   background: rgba(20, 12, 10, 0.35);
 }
 
-.share-popup {
+.popup {
   width: 100%;
   max-width: 460px;
   background: var(--paper);
@@ -1950,21 +1950,21 @@ a { color: var(--accent); }
   font-family: var(--body);
 }
 
-.share-popup-head {
+.popup-head {
   display: flex;
   align-items: center;
   justify-content: space-between;
   margin-bottom: 14px;
 }
 
-.share-popup-head h2 {
+.popup-head h2 {
   margin: 0;
   font-family: var(--display, Georgia, serif);
   font-size: 1.1rem;
   font-weight: normal;
 }
 
-.share-close {
+.popup-close {
   border: 0;
   background: none;
   color: var(--ink-3);
@@ -1973,16 +1973,16 @@ a { color: var(--accent); }
   cursor: pointer;
   padding: 0 4px;
 }
-.share-close:hover { color: var(--ink); }
+.popup-close:hover { color: var(--ink); }
 
-.share-row {
+.popup-row {
   display: flex;
   gap: 8px;
 }
 
 /* min-width: 0 lets a long link shrink inside the flex row instead of
    pushing the Copy button out of the popup on a phone. */
-.share-row input {
+.popup-row input {
   flex: 1;
   min-width: 0;
   font: inherit;
@@ -1994,19 +1994,43 @@ a { color: var(--accent); }
   padding: 8px 10px;
 }
 
-.share-copy {
+.popup-body {
+  margin: 0 0 18px;
+  font-size: 0.92rem;
+  line-height: 1.5;
+}
+
+/* The public-link warning. Quiet, but not hidden: it is the one sentence in
+   the share popup that changes what someone should do with the link. */
+.popup-note {
+  margin: 12px 0 0;
+  font-size: 0.8rem;
+  line-height: 1.45;
+  color: var(--ink-3);
+}
+
+.popup-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+}
+
+.popup-primary,
+.popup-secondary,
+.popup-danger {
   flex-shrink: 0;
   font: inherit;
   font-size: 0.85rem;
   font-weight: 600;
-  border: 0;
   border-radius: 6px;
   padding: 8px 16px;
-  background: var(--ink);
-  color: var(--paper);
   cursor: pointer;
 }
-.share-copy:disabled { opacity: 0.5; cursor: default; }
+.popup-primary { border: 0; background: var(--ink); color: var(--paper); }
+.popup-secondary { border: 1px solid var(--rule); background: none; color: var(--ink); }
+.popup-secondary:hover { background: var(--leaf); }
+.popup-danger { border: 0; background: var(--accent); color: var(--paper); }
+.popup-primary:disabled { opacity: 0.5; cursor: default; }
 
 /* ── Both doors, before anything is asked ───────────────────────────────── */
 
