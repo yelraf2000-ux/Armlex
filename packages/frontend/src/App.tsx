@@ -443,9 +443,8 @@ function Workbench() {
 
           What stays is only what qualifies an answer: the way home, the way to
           the register, and when the corpus was last checked against ARLIS. The
-          corpus size and the not-legal-advice notice live in the colophon at
-          the foot of the page — they are the imprint of the edition, not its
-          running head.
+          not-legal-advice notice lives in the colophon at the foot of the
+          page — it is the imprint of the edition, not its running head.
         */}
         <div className="masthead-top">
           {/*
@@ -524,15 +523,11 @@ function Workbench() {
       {!showWorkspace && mode === 'ask' ? <AskMode key={homeKey} corpusSynced={synced} /> : null}
       {!showWorkspace && mode === 'search' ? <SearchMode key={homeKey} /> : null}
 
-      {/* The colophon: what this is, and how much of it there is. */}
+      {/* The colophon: what this is. The corpus counts ("33 acts · 1737
+          fragments") used to sit here too; they meant something to whoever
+          built the index and nothing to an accountant reading an answer. */}
       <footer className="colophon">
         <div className="colophon-disclaimer">{t('corpus.disclaimer')}</div>
-        {corpus ? (
-          <div className="colophon-counts">
-            <span className="num">{corpus.documents}</span> {t('corpus.acts')} ·{' '}
-            <span className="num">{corpus.chunks}</span> {t('corpus.chunks')}
-          </div>
-        ) : null}
       </footer>
     </div>
   );
