@@ -504,7 +504,15 @@ export function Chat({
           reach while the list is out of the way. Every one of them reopens the
           sidebar; the pen also starts a new conversation first.
         */
-        <nav className="rail-mini" aria-label={t('nav.consultations')}>
+        <nav
+          className="rail-mini"
+          aria-label={t('nav.consultations')}
+          // Anywhere on the strip opens the sidebar — its blank length as well
+          // as its three icons, which is where people actually click. The pen
+          // still starts a new conversation first; its click then bubbles
+          // here, and opening an already-opening sidebar is harmless.
+          onClick={() => setRail(true)}
+        >
           <button
             className="rail-mini-logo"
             onClick={() => setRail(true)}

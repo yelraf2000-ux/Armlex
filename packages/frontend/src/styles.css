@@ -315,7 +315,18 @@ a { color: var(--accent); }
      window's lower-left corner (see .account-rail) — without it the last
      conversation in a long list could never scroll out from underneath it. */
   padding: 22px 22px 96px 44px;
-  align-self: start;
+  /*
+    Stretch to the full grid row, not `start`.
+
+    With `start` the element was only as tall as its list, while its tint (the
+    fixed strip on body) runs the whole window. Everything below the last
+    conversation LOOKED like sidebar but was the bare workbench, so the
+    click-to-collapse handler on this element never heard those clicks —
+    clicking the visible sidebar did nothing. Stretching makes the element
+    occupy the space it appears to. It still has no height cap and no scroller
+    of its own, so a long list scrolls with the page as before.
+  */
+  align-self: stretch;
 }
 
 .thread {
@@ -1174,6 +1185,8 @@ a { color: var(--accent); }
 .rail-mini button:focus-visible { outline: 1px solid var(--accent); outline-offset: 2px; }
 .rail-mini-logo { margin-bottom: 8px; }
 .rail-mini-spacer { flex: 1; }
+/* The whole strip opens the sidebar, not only its three icons. */
+.rail-mini { cursor: pointer; }
 body:has(.rail-mini) .page { padding-left: 56px; }
 
 /* Below 1200px the sidebar cannot be shown at all (.rail is display:none in the
