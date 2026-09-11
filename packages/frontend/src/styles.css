@@ -459,8 +459,9 @@ a { color: var(--accent); }
   width: 100%;
   text-align: left;
   padding: 13px 8px 13px 0;
+  /* No divider between examples — the hover background marks each row, as in
+     the sidebar. */
   border: 0;
-  border-bottom: 1px solid var(--rule);
   background: none;
   color: var(--ink);
   font: inherit;
