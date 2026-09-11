@@ -874,23 +874,57 @@ a { color: var(--accent); }
   box-shadow: 0 0 0 1.5px var(--accent);
 }
 .composer textarea:disabled { background: var(--paper); color: var(--ink-3); }
-/* Matches the field's corner, or a soft input beside a sharp button reads as
-   two unrelated controls that happen to be adjacent. */
-.composer button {
-  padding: 13px 22px;
-  font-family: var(--body);
-  font-size: 13px;
-  font-weight: 600;
-  letter-spacing: 0.1em;
-  text-transform: uppercase;
-  cursor: pointer;
+/*
+  Send lives INSIDE the field as a small arrow (signed-in composer and the
+  landing box alike). The wrapper is the positioning context; the textarea
+  keeps right padding so typed text never runs underneath the button.
+
+  The textarea rule is written with two classes so it outranks both
+  `.composer textarea` and `.landing-ask textarea`, which set the padding
+  shorthand — otherwise whichever came later in this file would win.
+*/
+.composer-field {
+  position: relative;
+  flex: 1;
+  min-width: 0;
+  display: flex;
+}
+.composer .composer-field textarea,
+.landing-ask .composer-field textarea { padding-right: 52px; }
+
+.send-arrow {
+  position: absolute;
+  right: 7px;
+  bottom: 7px;
+  width: 32px;
+  height: 32px;
+  padding: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   border: 0;
-  border-radius: 10px;
+  border-radius: 50%;
   background: var(--ink);
   color: var(--paper);
-  white-space: nowrap;
+  cursor: pointer;
 }
-.composer button:disabled { background: var(--rule-2); color: var(--leaf); cursor: default; }
+.send-arrow:disabled { background: var(--rule-2); color: var(--leaf); cursor: default; }
+
+/* While a question is being answered: a small spinner in place of the arrow.
+   On the landing page this is the only sign anything is happening during a
+   wait of ten seconds or more, which is why it replaces the arrow rather than
+   just greying it out. */
+.send-arrow.busy { background: var(--ink); }
+.send-arrow.busy::after {
+  content: '';
+  width: 14px;
+  height: 14px;
+  border: 2px solid var(--paper);
+  border-right-color: transparent;
+  border-radius: 50%;
+  animation: send-spin 0.8s linear infinite;
+}
+@keyframes send-spin { to { transform: rotate(360deg); } }
 
 /* ---------------------------------------------------------------------------
    One-shot modes (Search / Ask)

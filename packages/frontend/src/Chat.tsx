@@ -608,28 +608,46 @@ export function Chat({
       <div ref={endRef} />
 
       <div className="composer measure">
-        <textarea
-          ref={inputRef}
-          value={input}
-          rows={1}
-          onChange={(e) => {
-            setInput(e.target.value);
-            autoGrow(e.target);
-          }}
-          onKeyDown={(e) => {
-            // Enter sends; Shift+Enter is a newline. A tax question often runs
-            // several lines (turnover, headcount, activity), and a single-line
-            // input hides most of what was typed.
-            if (e.key === 'Enter' && !e.shiftKey) {
-              e.preventDefault();
-              void send();
-            }
-          }}
-          placeholder={turns.length === 0 ? t('composer.first') : t('composer.next')}
-        />
-        <button onClick={() => void send()} disabled={loading || !input.trim()}>
-          {loading ? '…' : t('composer.send')}
-        </button>
+        {/*
+          The send control sits INSIDE the field, as a small arrow, rather than
+          as a labelled button beside it: the field is the thing you use, and a
+          word-sized button next to it competed with it for attention. The
+          label survives as aria-label and title, so it is still named.
+        */}
+        <div className="composer-field">
+          <textarea
+            ref={inputRef}
+            value={input}
+            rows={1}
+            onChange={(e) => {
+              setInput(e.target.value);
+              autoGrow(e.target);
+            }}
+            onKeyDown={(e) => {
+              // Enter sends; Shift+Enter is a newline. A tax question often runs
+              // several lines (turnover, headcount, activity), and a single-line
+              // input hides most of what was typed.
+              if (e.key === 'Enter' && !e.shiftKey) {
+                e.preventDefault();
+                void send();
+              }
+            }}
+            placeholder={turns.length === 0 ? t('composer.first') : t('composer.next')}
+          />
+          <button
+            className={loading ? 'send-arrow busy' : 'send-arrow'}
+            onClick={() => void send()}
+            disabled={loading || !input.trim()}
+            aria-label={t('composer.send')}
+            title={t('composer.send')}
+          >
+            {loading ? null : (
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                <path d="M5 12h14M13 6l6 6-6 6" />
+              </svg>
+            )}
+          </button>
+        </div>
       </div>
       </section>
 

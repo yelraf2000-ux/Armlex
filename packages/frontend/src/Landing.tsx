@@ -177,22 +177,36 @@ export function Landing({
       )}
 
       <div className="landing-ask">
-        <textarea
-          value={question}
-          onChange={(e) => setQuestion(e.target.value)}
-          onKeyDown={(e) => {
-            if (e.key === 'Enter' && !e.shiftKey) {
-              e.preventDefault();
-              void ask(question);
-            }
-          }}
-          placeholder={t('composer.first')}
-          rows={3}
-          disabled={busy}
-        />
-        <button onClick={() => void ask(question)} disabled={busy || !question.trim()}>
-          {busy ? t('preview.thinking') : t('preview.ask')}
-        </button>
+        {/* Same arrow-inside-the-field as the signed-in composer, so the box a
+            visitor meets first is the box they will use after registering. */}
+        <div className="composer-field">
+          <textarea
+            value={question}
+            onChange={(e) => setQuestion(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter' && !e.shiftKey) {
+                e.preventDefault();
+                void ask(question);
+              }
+            }}
+            placeholder={t('composer.first')}
+            rows={3}
+            disabled={busy}
+          />
+          <button
+            className={busy ? 'send-arrow busy' : 'send-arrow'}
+            onClick={() => void ask(question)}
+            disabled={busy || !question.trim()}
+            aria-label={busy ? t('preview.thinking') : t('preview.ask')}
+            title={busy ? t('preview.thinking') : t('preview.ask')}
+          >
+            {busy ? null : (
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                <path d="M5 12h14M13 6l6 6-6 6" />
+              </svg>
+            )}
+          </button>
+        </div>
       </div>
 
       {error ? <div className="error measure">{error}</div> : null}
