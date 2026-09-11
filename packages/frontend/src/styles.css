@@ -133,6 +133,31 @@ a { color: var(--accent); }
    --------------------------------------------------------------------------- */
 
 /* Masthead, mode, colophon — the middle one absorbs the slack. */
+/*
+  The sidebar's own tint — a slightly different paper from the dialogue, the
+  way Gemini sets its sidebar apart, instead of a rule down the seam.
+
+  Painted as a background layer on BODY, not on .rail. The rail is a plain
+  column whose height is its content (sticky was removed for a reason — see
+  .rail), so a background on it stopped wherever the list ended, exactly as
+  its border used to. A fixed 244px strip on body spans the full window at any
+  scroll position. :has() scopes it to pages that actually show the rail, so
+  the landing page and a collapsed rail stay one continuous sheet.
+
+  color-mix against --ink rather than a fixed hex: in the light theme it
+  darkens the paper a shade, in the dark theme it lightens it, which is the
+  right direction for a sidebar in each.
+*/
+body:has(.workbench:not(.rail-hidden)) {
+  background-image:
+    linear-gradient(
+      to right,
+      color-mix(in srgb, var(--ink) 5%, var(--paper)) 244px,
+      transparent 244px
+    ),
+    var(--ground);
+}
+
 .page { display: flex; flex-direction: column; min-height: 100vh; }
 .page > .provenance,
 .page > .colophon { flex: 0 0 auto; }
@@ -199,7 +224,6 @@ a { color: var(--accent); }
 .colophon {
   text-align: center;
   padding: 24px 20px 30px;
-  border-top: 1px solid var(--rule);
   margin-top: 26px;
 }
 .colophon-disclaimer { font-size: 12.5px; font-style: italic; color: var(--accent); }
@@ -279,7 +303,9 @@ a { color: var(--accent); }
  * unreachable. Without a cap this column is exactly that tall.
  */
 .rail {
-  border-right: 1px solid var(--rule-2);
+  /* No right border: the column is set apart by its own tint instead (see the
+     body:has() rule near .page), which runs the full window height where a
+     border stopped wherever the list ended. */
   /* Bottom padding clears the account block, which is pinned to the
      window's lower-left corner (see .account-rail) — without it the last
      conversation in a long list could never scroll out from underneath it. */
@@ -1399,9 +1425,9 @@ a { color: var(--accent); }
   lets the last conversation scroll clear of it.
 
   Width matches the rail's grid track (244px) and its padding, so the name
-  lines up with the list above; the right border continues the rail's rule;
-  and it carries the page ground so rows slide under it rather than through.
-  Its menu already opens upward (.account-pop), so it has room to.
+  lines up with the list above, and it carries the sidebar's tint so rows
+  slide under it rather than through. Its menu already opens upward
+  (.account-pop), so it has room to.
 
   Below 1200px the rail mount is hidden and the masthead carries the same
   control — the media query below still wins.
@@ -1414,10 +1440,10 @@ a { color: var(--accent); }
   width: 244px;
   box-sizing: border-box;
   padding: 10px 22px 14px 44px;
-  border-right: 1px solid var(--rule-2);
-  background-color: var(--paper);
-  background-image: var(--ground);
-  background-attachment: fixed;
+  /* The sidebar's tint, solid, so the block reads as part of the column and
+     rows scroll underneath it rather than through it. Must match the strip
+     painted on body in the body:has() rule near .page. */
+  background-color: color-mix(in srgb, var(--ink) 5%, var(--paper));
 }
 .account-masthead { display: none; }
 
