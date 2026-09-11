@@ -2658,8 +2658,11 @@ body:has(.workbench:not(.rail-hidden)) {
   margin-right: 0.4rem;
 }
 
-/* Keyword search over the conversation list. */
+/* Keyword search over the conversation list.
+   HIDDEN on request. The component, its debounce and the ?q= search on
+   /api/sessions all still work — deleting this display:none brings it back. */
 .sessions-search {
+  display: none;
   padding: 0.4rem 0.5rem 0.6rem;
 }
 
