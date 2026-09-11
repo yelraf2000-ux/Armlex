@@ -351,25 +351,24 @@ a { color: var(--accent); }
 
 /* Sits above the register now, so it carries no rule of its own — the
    register's own top rule immediately follows it. */
-/* The same design as the send button: this is the one action in its column, and
-   two primary actions in one interface should not look like different species. */
+/* Styled as a row of the list it adds to, not as a separate call to action:
+   same left alignment, type and hover as `.session-item`, so it reads as the
+   first entry in the register rather than a banner above it. */
 .new-case {
+  display: block;
   width: 100%;
-  text-align: center;
+  text-align: left;
   font-family: var(--body);
-  font-size: 12px;
-  font-weight: 600;
-  letter-spacing: 0.1em;
-  text-transform: uppercase;
-  padding: 11px 12px;
-  margin-bottom: 16px;
+  font-size: 13.5px;
+  padding: 10px 6px 10px 0;
+  margin-bottom: 4px;
   border: 0;
-  border-radius: 10px;
-  background: var(--ink);
-  color: var(--paper);
+  background: none;
+  color: var(--ink);
   cursor: pointer;
 }
-.new-case:disabled { background: var(--rule-2); color: var(--leaf); cursor: default; }
+.new-case:hover { background: var(--leaf); }
+.new-case:disabled { color: var(--ink-3); background: none; cursor: default; }
 
 .sessions { display: block; }
 .sessions-empty {
