@@ -25,13 +25,6 @@ export interface SessionSummary {
   snippet?: string;
 }
 
-function shortDate(iso: string): string {
-  // Postgres renders `2026-08-15 14:02:07.95+00`; the date and minute are all
-  // that is useful in a list.
-  const m = /^(\d{4})-(\d{2})-(\d{2})[ T](\d{2}:\d{2})/.exec(iso);
-  return m ? `${m[3]}.${m[2]} ${m[4]}` : iso.slice(0, 16);
-}
-
 /** Small stroked glyphs, sized to the menu text rather than to each other. */
 function Icon({ d }: { d: string[] }) {
   return (
@@ -277,9 +270,6 @@ export function Sessions({
                 the result reads as wrong rather than as deep.
               */}
               {s.snippet ? <span className="session-snippet">{s.snippet}</span> : null}
-              <span className="session-meta">
-                {shortDate(s.createdAt)} · {s.turns}
-              </span>
             </button>
           )}
 
