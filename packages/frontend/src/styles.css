@@ -346,7 +346,8 @@ a { color: var(--accent); }
    --------------------------------------------------------------------------- */
 
 .rail .panel-title { margin-bottom: 6px; }
-.register-rule { border-top: 1px solid var(--ink); margin-bottom: 2px; }
+/* Hidden with the other rules — the sidebar now separates by spacing alone. */
+.register-rule { display: none; border-top: 1px solid var(--ink); margin-bottom: 2px; }
 
 /* Sits above the register now, so it carries no rule of its own — the
    register's own top rule immediately follows it. */
@@ -385,8 +386,9 @@ a { color: var(--accent); }
   width: 100%;
   text-align: left;
   padding: 10px 6px 10px 0;
+  /* No divider between rows: the hover and active backgrounds already mark
+     where one conversation ends, and the lines read as clutter at this size. */
   border: 0;
-  border-bottom: 1px solid var(--rule);
   background: none;
   color: var(--ink);
   cursor: pointer;
@@ -1358,7 +1360,6 @@ a { color: var(--accent); }
 .account-rail {
   margin-top: 14px;
   padding-top: 12px;
-  border-top: 1px solid var(--rule-2);
 }
 .account-masthead { display: none; }
 
