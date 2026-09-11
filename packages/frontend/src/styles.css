@@ -368,7 +368,9 @@ a { color: var(--accent); }
   cursor: pointer;
 }
 .new-case:hover { background: var(--leaf); }
-.new-case:disabled { color: var(--ink-3); background: none; cursor: default; }
+/* Matches `.session-item.active`: in an empty conversation this row is the one
+   you are in. */
+.new-case.active { background: var(--leaf); color: var(--accent); cursor: default; }
 
 .sessions { display: block; }
 .sessions-empty {

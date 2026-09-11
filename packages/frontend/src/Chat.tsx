@@ -456,7 +456,19 @@ export function Chat({
           is a list to read. Below forty register entries it sat off the bottom
           of a scrolling column, which is nowhere.
         */}
-        <button className="new-case" onClick={reset} disabled={turns.length === 0}>
+        {/*
+          In an empty conversation this row IS the current conversation — no
+          entry below is highlighted, because the new one has no row yet — so
+          it takes the active style rather than a greyed-out disabled one.
+          Still inert: starting a new conversation from a new conversation
+          would do nothing.
+        */}
+        <button
+          className={turns.length === 0 ? 'new-case active' : 'new-case'}
+          onClick={reset}
+          disabled={turns.length === 0}
+          aria-current={turns.length === 0 ? 'page' : undefined}
+        >
           {t('nav.newCase')}
         </button>
         <div className="register-rule" />
