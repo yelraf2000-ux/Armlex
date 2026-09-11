@@ -1628,7 +1628,6 @@ a { color: var(--accent); }
 .session-more:hover { color: var(--ink); }
 .session-row.menu-open .session-more { color: var(--ink); }
 
-.session-shared { color: var(--accent); }
 
 /* Renaming happens in place: the row is where the name is read, so it is where
    it should be corrected. */
@@ -1784,7 +1783,6 @@ a { color: var(--accent); }
 }
 
 .turn-share:hover { color: var(--accent); background: var(--accent-bg); }
-.turn-share.on { color: var(--accent); }
 
 /* ── The landing page a visitor with no account meets ───────────────────── */
 
@@ -1929,19 +1927,86 @@ a { color: var(--accent); }
   letter-spacing: 0.03em;
 }
 
-/* The issued share link, always visible once created. */
-.share-link {
-  margin-left: 0.6rem;
+/* ── Share popup: a link and a Copy button, nothing else ──────────────── */
+.share-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+  background: rgba(20, 12, 10, 0.35);
+}
+
+.share-popup {
+  width: 100%;
+  max-width: 460px;
+  background: var(--paper);
+  color: var(--ink);
+  border-radius: 10px;
+  padding: 18px 20px 20px;
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.22);
   font-family: var(--body);
-  font-size: 0.7rem;
+}
+
+.share-popup-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 14px;
+}
+
+.share-popup-head h2 {
+  margin: 0;
+  font-family: var(--display, Georgia, serif);
+  font-size: 1.1rem;
+  font-weight: normal;
+}
+
+.share-close {
+  border: 0;
+  background: none;
   color: var(--ink-3);
+  font-size: 1.4rem;
+  line-height: 1;
+  cursor: pointer;
+  padding: 0 4px;
+}
+.share-close:hover { color: var(--ink); }
+
+.share-row {
+  display: flex;
+  gap: 8px;
+}
+
+/* min-width: 0 lets a long link shrink inside the flex row instead of
+   pushing the Copy button out of the popup on a phone. */
+.share-row input {
+  flex: 1;
+  min-width: 0;
+  font: inherit;
+  font-size: 0.85rem;
+  color: var(--ink);
   background: var(--leaf);
   border: 1px solid var(--rule);
-  border-radius: 3px;
-  padding: 0.2rem 0.4rem;
-  width: 17rem;
-  max-width: 40vw;
+  border-radius: 6px;
+  padding: 8px 10px;
 }
+
+.share-copy {
+  flex-shrink: 0;
+  font: inherit;
+  font-size: 0.85rem;
+  font-weight: 600;
+  border: 0;
+  border-radius: 6px;
+  padding: 8px 16px;
+  background: var(--ink);
+  color: var(--paper);
+  cursor: pointer;
+}
+.share-copy:disabled { opacity: 0.5; cursor: default; }
 
 /* ── Both doors, before anything is asked ───────────────────────────────── */
 

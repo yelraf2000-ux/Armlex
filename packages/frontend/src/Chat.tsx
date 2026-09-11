@@ -14,6 +14,7 @@ import type { Entry } from './NormPanel.js';
 import { MarkdownView } from './MarkdownView.js';
 import { extractQuotes } from './quotes.js';
 import { Sessions } from './Sessions.js';
+import { SharePopup } from './SharePopup.js';
 import { AccountMenu } from './AccountMenu.js';
 import type { Account } from './Login.js';
 import { useSettings } from './Settings.js';
@@ -120,20 +121,6 @@ function autoGrow(el: HTMLTextAreaElement): void {
   el.style.height = `${Math.min(el.scrollHeight, 200)}px`;
 }
 
-/**
- * Issue a link for a conversation and put it on the clipboard.
- *
- * Returns the link so the caller can show it when the clipboard is refused —
- * which browsers do, and a share control that silently fails has not shared
- * anything.
- */
-async function issueShareLink(sessionId: string): Promise<string | null> {
-  const res = await fetch(`/api/sessions/${sessionId}/share`, { method: 'POST' });
-  if (!res.ok) return null;
-  const { url } = (await res.json()) as { url: string };
-  return `${window.location.origin}${url}`;
-}
-
 export function Chat({
   corpusSynced,
   account,
@@ -157,8 +144,8 @@ export function Chat({
   const [selectedId, setSelectedId] = useState<string | null>(null);
   /** Bumped when a turn completes, so the session list refetches. */
   const [reloadKey, setReloadKey] = useState(0);
-  /** The share link for this conversation, once one has been issued. */
-  const [shareUrl, setShareUrl] = useState<string | null>(null);
+  /** Whether the share popup is open. The link itself lives in the popup. */
+  const [shareOpen, setShareOpen] = useState(false);
 
   /**
    * Ask the question the visitor typed before they had an account.
@@ -178,22 +165,6 @@ export function Chat({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  async function share(): Promise<void> {
-    if (!sessionId) return;
-    const url = shareUrl ?? (await issueShareLink(sessionId));
-    if (!url) return;
-    setShareUrl(url);
-    // Copying is a convenience, not the mechanism: the link is rendered beside
-    // the button either way. The first version fell back to `window.prompt`,
-    // which is blocked outright in embedded contexts and threw — leaving the
-    // click looking like nothing had happened, in the one flow where the user
-    // is trying to hand something to somebody else.
-    try {
-      await navigator.clipboard.writeText(url);
-    } catch {
-      /* shown inline instead */
-    }
-  }
   const endRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
   /** Whether to keep following the streaming answer; false once the reader scrolls up. */
@@ -557,22 +528,16 @@ export function Chat({
               it acts on.
             */}
             {turn.role === 'user' && i === 0 && sessionId ? (
-              <button
-                className={`turn-share${shareUrl ? ' on' : ''}`}
-                onClick={() => void share()}
-                title={shareUrl ? t('share.copied') : t('share.share')}
-              >
+              <button className="turn-share" onClick={() => setShareOpen(true)} title={t('share.share')}>
                 <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
                   <path d="M4 12v7a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-7" />
                   <path d="M12 15V3M8 7l4-4 4 4" />
                 </svg>
-                {shareUrl ? t('share.copied') : t('share.share')}
+                {t('share.share')}
               </button>
             ) : null}
-            {turn.role === 'user' && i === 0 && shareUrl ? (
-              // Always visible once issued, and selectable — a link the user
-              // can see is a link they can send even when the clipboard refused.
-              <input className="share-link" readOnly value={shareUrl} onFocus={(e) => e.target.select()} />
+            {turn.role === 'user' && i === 0 && shareOpen && sessionId ? (
+              <SharePopup sessionId={sessionId} onClose={() => setShareOpen(false)} />
             ) : null}
           </div>
           {turn.coverage && COVERAGE_KEY[turn.coverage] ? (

@@ -7,6 +7,7 @@
  * and the work has to be redone from the first question.
  */
 import { useEffect, useRef, useState } from 'react';
+import { SharePopup } from './SharePopup.js';
 import { useSettings } from './Settings.js';
 
 export interface SessionSummary {
@@ -71,7 +72,8 @@ export function Sessions({
 }) {
   const { t } = useSettings();
   const [sessions, setSessions] = useState<SessionSummary[] | null>(null);
-  const [copied, setCopied] = useState<string | null>(null);
+  /** Which conversation's share popup is open, if any. */
+  const [sharingFor, setSharingFor] = useState<string | null>(null);
   /** Which row's menu is open — at most one, so a stray menu cannot be left behind. */
   const [menuFor, setMenuFor] = useState<string | null>(null);
   const [renaming, setRenaming] = useState<string | null>(null);
@@ -198,36 +200,6 @@ export function Sessions({
     if (s.id === currentId) onDeleted?.(s.id);
   }
 
-  /**
-   * Issue a link, or withdraw one.
-   *
-   * The link is copied to the clipboard on issue, because a share control that
-   * makes you go and find the link has not finished the job.
-   */
-  async function toggleShare(s: SessionSummary): Promise<void> {
-    setMenuFor(null);
-    if (s.shared) {
-      await fetch(`/api/sessions/${s.id}/share`, { method: 'DELETE' });
-      patchLocal(s.id, { shared: false });
-      return;
-    }
-    const res = await fetch(`/api/sessions/${s.id}/share`, { method: 'POST' });
-    if (!res.ok) return;
-    const { url } = (await res.json()) as { url: string };
-    const full = `${window.location.origin}${url}`;
-    // Copying is a convenience; the execCommand fallback is not — it is blocked
-    // outright in embedded contexts and throws, which made a refused clipboard
-    // look like a broken button.
-    try {
-      await navigator.clipboard.writeText(full);
-    } catch {
-      /* the conversation view shows the link inline */
-    }
-    setCopied(s.id);
-    window.setTimeout(() => setCopied(null), 2000);
-    patchLocal(s.id, { shared: true });
-  }
-
   /*
    * The search box renders even when the result is empty — otherwise the only
    * way out of a search that found nothing would be to reload the page, since
@@ -306,13 +278,13 @@ export function Sessions({
               {s.snippet ? <span className="session-snippet">{s.snippet}</span> : null}
               <span className="session-meta">
                 {shortDate(s.createdAt)} · {s.turns}
-                {s.shared ? <span className="session-shared"> · {t('share.shared')}</span> : null}
-                {copied === s.id ? (
-                  <span className="session-shared"> · {t('share.copied')}</span>
-                ) : null}
               </span>
             </button>
           )}
+
+          {sharingFor === s.id ? (
+            <SharePopup sessionId={s.id} onClose={() => setSharingFor(null)} />
+          ) : null}
 
           <button
             className="session-more"
@@ -348,9 +320,15 @@ export function Sessions({
                 <Icon d={PENCIL} />
                 {t('nav.rename')}
               </button>
-              <button role="menuitem" onClick={() => void toggleShare(s)}>
-                <Icon d={s.shared ? CHECK : SHARE} />
-                {s.shared ? t('share.stop') : t('share.share')}
+              <button
+                role="menuitem"
+                onClick={() => {
+                  setMenuFor(null);
+                  setSharingFor(s.id);
+                }}
+              >
+                <Icon d={SHARE} />
+                {t('share.share')}
               </button>
 
               <div className="session-menu-rule" />
