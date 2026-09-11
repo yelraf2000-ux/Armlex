@@ -445,7 +445,8 @@ a { color: var(--accent); }
    brand introducing itself. */
 .brand-name { color: var(--accent); }
 .examples { display: block; margin-top: 6px; }
-.examples-rule { border-top: 1px solid var(--ink); }
+/* Hidden, like the masthead rule — kept as a one-line switch rather than removed. */
+.examples-rule { display: none; border-top: 1px solid var(--ink); }
 
 /* Examples as a table of contents: a figure and a question, nothing else. */
 .example {
