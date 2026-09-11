@@ -280,7 +280,10 @@ a { color: var(--accent); }
  */
 .rail {
   border-right: 1px solid var(--rule-2);
-  padding: 22px 22px 22px 44px;
+  /* Bottom padding clears the account block, which is pinned to the
+     window's lower-left corner (see .account-rail) — without it the last
+     conversation in a long list could never scroll out from underneath it. */
+  padding: 22px 22px 96px 44px;
   align-self: start;
 }
 
@@ -1386,9 +1389,35 @@ a { color: var(--accent); }
  */
 .account { position: relative; }
 
+/*
+  Pinned to the window's lower-left corner, whatever the length of the list.
+
+  Only THIS block is fixed, not the rail. The rail was deliberately made a
+  plain column that scrolls with the page (see .rail above): a sticky column
+  taller than the window pins at the top and strands everything past the fold.
+  A 60px block at the foot has no such problem, and the rail's bottom padding
+  lets the last conversation scroll clear of it.
+
+  Width matches the rail's grid track (244px) and its padding, so the name
+  lines up with the list above; the right border continues the rail's rule;
+  and it carries the page ground so rows slide under it rather than through.
+  Its menu already opens upward (.account-pop), so it has room to.
+
+  Below 1200px the rail mount is hidden and the masthead carries the same
+  control — the media query below still wins.
+*/
 .account-rail {
-  margin-top: 14px;
-  padding-top: 12px;
+  position: fixed;
+  left: 0;
+  bottom: 0;
+  z-index: 20;
+  width: 244px;
+  box-sizing: border-box;
+  padding: 10px 22px 14px 44px;
+  border-right: 1px solid var(--rule-2);
+  background-color: var(--paper);
+  background-image: var(--ground);
+  background-attachment: fixed;
 }
 .account-masthead { display: none; }
 
