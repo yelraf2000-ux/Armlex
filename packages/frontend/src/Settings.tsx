@@ -16,6 +16,12 @@ interface Settings {
   /** Whether the consultations rail is shown; remembered across visits. */
   railOpen: boolean;
   toggleRail: () => void;
+  /**
+   * Explicit open/close. A click on the sidebar's blank ground must only ever
+   * CLOSE it, and the collapsed strip's buttons must only ever OPEN it — a
+   * toggle wired to either would flip the wrong way whenever the two raced.
+   */
+  setRail: (open: boolean) => void;
   lang: Lang;
   setLang: (l: Lang) => void;
   theme: Theme;
@@ -52,6 +58,7 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
     () => ({
       railOpen,
       toggleRail: () => setRailOpen((v) => !v),
+      setRail: setRailOpen,
       lang,
       setLang: setLangState,
       theme,
@@ -159,6 +166,11 @@ export function SettingsControls() {
  */
 export function RailToggle() {
   const { railOpen, toggleRail, t } = useSettings();
+  // Hidden while the sidebar is open: the sidebar carries the same word as its
+  // own title, and the same word twice on one screen reads as two different
+  // things. Once collapsed, the thin strip is the main way back, and this
+  // stays as a second one.
+  if (railOpen) return null;
   return (
     <button className="rail-toggle" onClick={toggleRail} aria-expanded={railOpen}>
       {t('nav.consultations')}

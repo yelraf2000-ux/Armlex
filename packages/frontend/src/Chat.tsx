@@ -134,7 +134,13 @@ export function Chat({
   onSignOut?: (() => void) | undefined;
   onOpenWorkspace?: (() => void) | undefined;
 }) {
-  const { t, railOpen } = useSettings();
+  const { t, railOpen, setRail } = useSettings();
+  /** The avatar letter in the collapsed strip — same rule as AccountMenu's. */
+  const railInitial = account?.user
+    ? (account.user.name || account.user.email.split('@')[0] || account.user.email)
+        .slice(0, 1)
+        .toUpperCase()
+    : '';
   const [sessionId, setSessionId] = useState<string | null>(null);
   const [turns, setTurns] = useState<Turn[]>([]);
   const [input, setInput] = useState('');
@@ -420,7 +426,32 @@ export function Chat({
         .join(' ')}
     >
       {railOpen ? (
-      <nav className="rail">
+      <nav
+        className="rail"
+        onClick={(e) => {
+          /*
+            A click on the sidebar's BLANK ground collapses it to the thin
+            strip. Anything you can act on keeps its own meaning — a
+            conversation, a button, a menu, the account block, and the share
+            and delete popups, which are portaled to <body> but whose clicks
+            still bubble here through the React tree (the backdrop included,
+            or dismissing a popup would also fold the sidebar away).
+          */
+          const target = e.target as HTMLElement;
+          if (
+            target.closest(
+              'button, a, input, textarea, select, [role="menu"], [role="dialog"], ' +
+                '.popup-backdrop, .session-row, .account',
+            )
+          ) {
+            return;
+          }
+          // A drag that selects text ends in a click; folding the sidebar at
+          // the end of a selection would be a surprise.
+          if (window.getSelection()?.toString()) return;
+          setRail(false);
+        }}
+      >
         <div className="panel-title">{t('nav.consultations')}</div>
         {/*
           Starting a new consultation is the one ACTION in this column; the rest
@@ -466,7 +497,50 @@ export function Chat({
           />
         ) : null}
       </nav>
-      ) : null}
+      ) : (
+        /*
+          The collapsed sidebar: a thin strip holding the mark, a way to start a
+          conversation, and the account — the three things worth keeping in
+          reach while the list is out of the way. Every one of them reopens the
+          sidebar; the pen also starts a new conversation first.
+        */
+        <nav className="rail-mini" aria-label={t('nav.consultations')}>
+          <button
+            className="rail-mini-logo"
+            onClick={() => setRail(true)}
+            aria-label={t('nav.openRail')}
+            title={t('nav.openRail')}
+          >
+            <img src="/favicon.svg" alt="" width={26} height={26} />
+          </button>
+          <button
+            onClick={() => {
+              reset();
+              setRail(true);
+            }}
+            aria-label={t('nav.newCase')}
+            title={t('nav.newCase')}
+          >
+            <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+              <path d="M11 4H5a2 2 0 0 0-2 2v13a2 2 0 0 0 2 2h13a2 2 0 0 0 2-2v-6" />
+              <path d="M18.5 2.5a2.1 2.1 0 0 1 3 3L12 15l-4 1 1-4z" />
+            </svg>
+          </button>
+          <span className="rail-mini-spacer" />
+          {railInitial ? (
+            <button
+              className="rail-mini-avatar"
+              onClick={() => setRail(true)}
+              aria-label={t('nav.openRail')}
+              title={t('nav.openRail')}
+            >
+              <span className="account-initial" aria-hidden="true">
+                {railInitial}
+              </span>
+            </button>
+          ) : null}
+        </nav>
+      )}
 
       <section className={turns.length === 0 ? 'thread thread-blank' : 'thread'}>
       {/*

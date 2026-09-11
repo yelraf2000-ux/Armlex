@@ -148,14 +148,19 @@ a { color: var(--accent); }
   darkens the paper a shade, in the dark theme it lightens it, which is the
   right direction for a sidebar in each.
 */
-body:has(.workbench:not(.rail-hidden)) {
-  background-image:
-    linear-gradient(
-      to right,
-      color-mix(in srgb, var(--ink) 5%, var(--paper)) 244px,
-      transparent 244px
-    ),
-    var(--ground);
+/* Wide screens only: below 1200px .rail is display:none, and without this
+   guard the tint painted a darker 244px band behind the content with no
+   sidebar in it. */
+@media (min-width: 1201px) {
+  body:has(.workbench:not(.rail-hidden)) {
+    background-image:
+      linear-gradient(
+        to right,
+        color-mix(in srgb, var(--ink) 5%, var(--paper)) 244px,
+        transparent 244px
+      ),
+      var(--ground);
+  }
 }
 
 .page { display: flex; flex-direction: column; min-height: 100vh; }
@@ -1131,6 +1136,55 @@ body:has(.workbench:not(.rail-hidden)) {
  * showing; `aria-expanded` still tells assistive technology.
  */
 .rail-toggle:focus-visible { outline: 1px solid var(--accent); outline-offset: 3px; }
+
+/* ── The collapsed sidebar: a thin strip, as Gemini does it ─────────────────
+   Fixed full-height on the left, carrying the same tint as the open sidebar
+   (see the body:has() rule near .page). Everything else on the page moves right
+   by its width, so the strip never sits on top of the masthead or a
+   conversation. */
+.rail-mini {
+  position: fixed;
+  top: 0;
+  left: 0;
+  bottom: 0;
+  z-index: 20;
+  width: 56px;
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  padding: 14px 0 16px;
+  background-color: color-mix(in srgb, var(--ink) 5%, var(--paper));
+}
+.rail-mini button {
+  width: 38px;
+  height: 38px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  border: 0;
+  border-radius: 9px;
+  background: none;
+  color: var(--ink);
+  cursor: pointer;
+}
+.rail-mini button:hover { background: var(--leaf); }
+.rail-mini button:focus-visible { outline: 1px solid var(--accent); outline-offset: 2px; }
+.rail-mini-logo { margin-bottom: 8px; }
+.rail-mini-spacer { flex: 1; }
+body:has(.rail-mini) .page { padding-left: 56px; }
+
+/* Below 1200px the sidebar cannot be shown at all (.rail is display:none in the
+   media query further down, and .rail-toggle goes with it for the same reason).
+   A strip whose every button reopens a sidebar that cannot appear would be
+   three buttons that do nothing — so the strip goes too, and the page keeps
+   its full width. */
+@media (max-width: 1200px) {
+  .rail-mini { display: none; }
+  body:has(.rail-mini) .page { padding-left: 0; }
+}
 
 /* Visible to screen readers only. */
 .sr-only {
