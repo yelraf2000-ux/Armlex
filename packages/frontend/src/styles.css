@@ -2500,6 +2500,30 @@ body:has(.rail-mini) .page { padding-left: 56px; }
   color: var(--ink);
 }
 .ws-invite input:focus { outline: none; border-color: var(--accent); }
+
+/*
+ * The rank, chosen before the invitation goes out.
+ *
+ * Neither option is preselected, so neither is drawn as chosen until it is —
+ * an unanswered pair reads as an unanswered question, which is what it is.
+ */
+.ws-roles { display: flex; flex: 0 0 auto; gap: 5px; }
+.ws-role {
+  padding: 7px 12px;
+  font-family: var(--body);
+  font-size: 12px;
+  border: 1px solid var(--rule-2);
+  border-radius: 7px;
+  background: var(--paper);
+  color: var(--ink-2);
+  cursor: pointer;
+}
+.ws-role:hover { border-color: var(--ink-3); }
+.ws-role.on {
+  border-color: var(--ink);
+  background: var(--ink);
+  color: var(--paper);
+}
 .ws-invite button {
   flex: 0 0 auto;
   padding: 7px 13px;

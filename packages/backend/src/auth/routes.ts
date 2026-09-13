@@ -515,13 +515,15 @@ export async function postWorkspaceInvite(
 ): Promise<void> {
   if (!(await requireAdmin(req, reply))) return;
 
-  const body = req.body as { email?: unknown; name?: unknown; lang?: unknown } | undefined;
+  const body = req.body as
+    | { email?: unknown; name?: unknown; admin?: unknown; lang?: unknown }
+    | undefined;
   // The invitee has no stored preference — they have no account yet — so the
   // mail goes out in the language the inviter is working in, which is the best
   // guess available about a colleague at the same firm.
   const result = await inviteToWorkspace(
     req.user!,
-    { email: body?.email, name: body?.name },
+    { email: body?.email, name: body?.name, admin: body?.admin },
     body?.lang,
   );
   if (!result.ok) return reply.code(400).send({ error: result.reason });

@@ -47,6 +47,8 @@ export interface Invitee {
   name: string | null;
   email: string;
   invitedAt: string;
+  /** The rank they will hold the moment they accept. */
+  role: 'admin' | 'member';
 }
 
 export interface WorkspaceView {
@@ -173,9 +175,9 @@ export async function readWorkspace(user: User): Promise<WorkspaceView> {
     colleague simply disappear.
   */
   const invitees = await db()<
-    { id: string; name: string | null; email: string; created_at: string }[]
+    { id: string; name: string | null; email: string; created_at: string; as_admin: boolean }[]
   >`
-    SELECT i.id, i.name, i.email, i.created_at::text
+    SELECT i.id, i.name, i.email, i.created_at::text, i.as_admin
       FROM invitations i
       JOIN users u ON u.id = i.inviter_id
       LEFT JOIN users a ON a.id = i.accepted_user_id
@@ -206,6 +208,9 @@ export async function readWorkspace(user: User): Promise<WorkspaceView> {
       name: i.name,
       email: i.email,
       invitedAt: i.created_at,
+      // The rank they will hold on arrival, so the admin can see what they
+      // chose while the invitation is still outstanding.
+      role: (i.as_admin ? 'admin' : 'member') as 'admin' | 'member',
     })),
   };
 }
@@ -352,7 +357,10 @@ export async function readUsage(user: User): Promise<WorkspaceUsage> {
 
 export type InviteResult =
   | { ok: true }
-  | { ok: false; reason: 'invalid_email' | 'already_here' | 'workspace_full' };
+  | {
+      ok: false;
+      reason: 'invalid_email' | 'name_required' | 'role_required' | 'already_here' | 'workspace_full';
+    };
 
 /**
  * Invite someone into the workspace.
@@ -365,13 +373,25 @@ export type InviteResult =
  */
 export async function inviteToWorkspace(
   user: User,
-  input: { email: unknown; name: unknown },
+  input: { email: unknown; name: unknown; admin: unknown },
   lang?: unknown,
 ): Promise<InviteResult> {
   const email = typeof input.email === 'string' ? normaliseEmail(input.email) : '';
   if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return { ok: false, reason: 'invalid_email' };
 
+  /*
+   * Both required, and checked here rather than only in the form.
+   *
+   * The name because the invitee never gets to supply one — the invitation
+   * link asks them for a password and nothing else, so a blank here is a row
+   * in the members list that reads "—" forever. The rank because it decides
+   * what they can do the moment they arrive, and a silent default is a
+   * decision made by the code on the admin's behalf.
+   */
   const name = typeof input.name === 'string' && input.name.trim() ? input.name.trim() : null;
+  if (!name) return { ok: false, reason: 'name_required' };
+  if (typeof input.admin !== 'boolean') return { ok: false, reason: 'role_required' };
+
   const id = await workspaceIdFor(user);
 
   const view = await readWorkspace(user);
@@ -389,8 +409,8 @@ export async function inviteToWorkspace(
 
   const token = newInviteToken();
   await db()`
-    INSERT INTO invitations (inviter_id, email, name, token_hash)
-    VALUES (${user.id}, ${email}, ${name}, ${hashInviteToken(token)})
+    INSERT INTO invitations (inviter_id, email, name, token_hash, as_admin)
+    VALUES (${user.id}, ${email}, ${name}, ${hashInviteToken(token)}, ${input.admin})
     ON CONFLICT (inviter_id, email) DO NOTHING`;
   void id;
 

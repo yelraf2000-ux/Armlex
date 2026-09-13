@@ -26,6 +26,7 @@ interface Invitee {
   name: string | null;
   email: string;
   invitedAt: string;
+  role: 'admin' | 'member';
 }
 
 interface WorkspaceView {
@@ -64,6 +65,13 @@ export function Workspace({ meId }: { meId: string }) {
   const [adding, setAdding] = useState(false);
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
+  /*
+   * No default. Both ranks are a real choice with real consequences — an admin
+   * can spend the firm's money and remove colleagues — and a pre-selected
+   * radio is a decision made by whoever wrote the form. null until picked, and
+   * the send button stays out of reach until it is.
+   */
+  const [admin, setAdmin] = useState<boolean | null>(null);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   /** Which row is asking "are you sure" — removal is not undoable from here. */
@@ -97,6 +105,10 @@ export function Workspace({ meId }: { meId: string }) {
         return t('ws.alreadyHere');
       case 'invalid_email':
         return t('auth.invalidEmail');
+      case 'name_required':
+        return t('ws.nameRequired');
+      case 'role_required':
+        return t('ws.roleRequired');
       case 'workspace_full':
         return t('ws.full');
       default:
@@ -104,8 +116,11 @@ export function Workspace({ meId }: { meId: string }) {
     }
   }
 
+  /** Every field answered. The server checks the same three regardless. */
+  const invitable = Boolean(name.trim()) && Boolean(email.trim()) && admin !== null;
+
   async function invite(): Promise<void> {
-    if (busy || !email.trim()) return;
+    if (busy || !invitable) return;
     setBusy(true);
     setError(null);
     try {
@@ -114,12 +129,13 @@ export function Workspace({ meId }: { meId: string }) {
         headers: { 'Content-Type': 'application/json' },
         // Carries the language so the invitation mail is written in the one the
         // inviter works in -- the invitee has no account and so no preference.
-        body: JSON.stringify({ email: email.trim(), name: name.trim() || undefined, lang }),
+        body: JSON.stringify({ email: email.trim(), name: name.trim(), admin, lang }),
       });
       if (res.ok) {
         setView((await res.json()) as WorkspaceView);
         setName('');
         setEmail('');
+        setAdmin(null);
         setAdding(false);
         return;
       }
@@ -199,6 +215,7 @@ export function Workspace({ meId }: { meId: string }) {
                     placeholder={t('auth.fullName')}
                     aria-label={t('auth.fullName')}
                     value={name}
+                    autoFocus
                     onChange={(e) => setName(e.target.value)}
                   />
                   <input
@@ -206,18 +223,48 @@ export function Workspace({ meId }: { meId: string }) {
                     placeholder={t('auth.email')}
                     aria-label={t('auth.email')}
                     value={email}
-                    autoFocus
                     onChange={(e) => setEmail(e.target.value)}
                     onKeyDown={(e) => {
                       if (e.key === 'Enter') void invite();
                     }}
                   />
-                  <button className="primary" disabled={busy || !email.trim()} onClick={() => void invite()}>
+                  {/*
+                    The rank, asked here rather than left to a promotion
+                    afterwards. The invitee never sees this — their link asks
+                    for a password and nothing else — so this is the only
+                    moment it can be said.
+                  */}
+                  <div className="ws-roles" role="radiogroup" aria-label={t('ws.roleLabel')}>
+                    <button
+                      type="button"
+                      role="radio"
+                      aria-checked={admin === false}
+                      className={admin === false ? 'ws-role on' : 'ws-role'}
+                      onClick={() => setAdmin(false)}
+                    >
+                      {t('ws.roleMember')}
+                    </button>
+                    <button
+                      type="button"
+                      role="radio"
+                      aria-checked={admin === true}
+                      className={admin === true ? 'ws-role on' : 'ws-role'}
+                      onClick={() => setAdmin(true)}
+                    >
+                      {t('ws.roleAdmin')}
+                    </button>
+                  </div>
+                  <button
+                    className="primary"
+                    disabled={busy || !invitable}
+                    onClick={() => void invite()}
+                  >
                     {t('ws.send')}
                   </button>
                   <button
                     onClick={() => {
                       setAdding(false);
+                      setAdmin(null);
                       setError(null);
                     }}
                   >
@@ -300,7 +347,13 @@ export function Workspace({ meId }: { meId: string }) {
                         <tr key={i.id}>
                           <td className="ws-name">{i.name || '—'}</td>
                           <td className="ws-mail">{i.email}</td>
+                          {/* The rank they were invited at, beside the fact that
+                              they have not arrived yet — an admin choosing it at
+                              send time should be able to see what they chose. */}
                           <td className="ws-role">
+                            <span className={i.role === 'admin' ? 'ws-badge admin' : 'ws-badge'}>
+                              {i.role === 'admin' ? t('ws.roleAdmin') : t('ws.roleMember')}
+                            </span>
                             <span className="ws-badge pending">{t('ws.pending')}</span>
                           </td>
                           <td className="ws-act">

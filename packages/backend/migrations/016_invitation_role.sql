@@ -1,0 +1,12 @@
+-- The rank a colleague is invited AT, decided when the invitation is sent.
+--
+-- Until now everyone arrived as a plain member and an admin had to find them in
+-- the list and promote them afterwards — two steps for a decision that was
+-- already made when the address was typed, and one the admin had no reason to
+-- expect was still outstanding.
+--
+-- Read once, at the moment the invitation is claimed. Changing someone's rank
+-- after they have joined is `setMemberAdmin`, and this column is not consulted
+-- again: an accepted invitation is a record of how somebody arrived, not a
+-- standing instruction about what they may do.
+ALTER TABLE invitations ADD COLUMN as_admin boolean NOT NULL DEFAULT false;

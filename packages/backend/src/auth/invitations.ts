@@ -236,7 +236,7 @@ export async function acceptInvitation(
 export async function claimInvitation(newUserId: string, email: string): Promise<void> {
   const address = normaliseEmail(email);
 
-  const claimed = await db()<{ inviter_id: string }[]>`
+  const claimed = await db()<{ inviter_id: string; as_admin: boolean }[]>`
     UPDATE invitations
        SET accepted_user_id = ${newUserId}, accepted_at = now()
      WHERE id = (
@@ -247,10 +247,11 @@ export async function claimInvitation(newUserId: string, email: string): Promise
         ORDER BY created_at ASC
         LIMIT 1
      )
-    RETURNING inviter_id`;
+    RETURNING inviter_id, as_admin`;
 
   const inviter = claimed[0]?.inviter_id;
   if (!inviter) return;
+  const asAdmin = claimed[0]!.as_admin;
 
   await db()`
     UPDATE users SET bonus_questions = bonus_questions + ${BONUS_PER_ACCEPTED}
@@ -269,9 +270,17 @@ export async function claimInvitation(newUserId: string, email: string): Promise
     them, leaving the new account in its own workspace is a better failure than
     setting it to NULL.
   */
+  /*
+   * The rank rides along in the SAME statement as the join, on purpose. If the
+   * inviter has no workspace the join does not happen and the new account stays
+   * in one of its own — where it is already the owner, and where a stray admin
+   * flag would be either meaningless or, once they were invited elsewhere
+   * later, wrong.
+   */
   await db()`
     UPDATE users u
-       SET workspace_id = inviter.workspace_id
+       SET workspace_id = inviter.workspace_id,
+           is_workspace_admin = ${asAdmin}
       FROM users inviter
      WHERE u.id = ${newUserId}
        AND inviter.id = ${inviter}
