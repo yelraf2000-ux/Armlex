@@ -16,7 +16,7 @@ import { type Account, PENDING_PROFILE } from './Login.js';
 import { AccountMenu } from './AccountMenu.js';
 import { Workspace } from './Workspace.js';
 import { ProfilePopup } from './ProfilePopup.js';
-import { navigate, sessionIdIn, usePath } from './router.js';
+import { navigate, sessionIdIn, usePath, workspaceSectionIn } from './router.js';
 import { MarkdownView } from './MarkdownView.js';
 import { NormPanel } from './NormPanel.js';
 import { Shared } from './Shared.js';
@@ -301,7 +301,8 @@ function Workbench() {
    * before anyone is signed in.
    */
   const path = usePath();
-  const showWorkspace = path === '/workspace';
+  const wsSection = workspaceSectionIn(path);
+  const showWorkspace = wsSection !== null;
   const showProfile = path === '/profile';
   const openId = sessionIdIn(path);
 
@@ -315,6 +316,12 @@ function Workbench() {
   const behindProfile = useRef('/');
   useEffect(() => {
     if (path !== '/profile') behindProfile.current = path;
+  }, [path]);
+
+  /* One screen, one address. `/workspace` is where the menu points and where a
+     bookmark from before this existed lands; it says which half it opened. */
+  useEffect(() => {
+    if (path === '/workspace') navigate('/workspace/members', { replace: true });
   }, [path]);
 
   const signOut = useCallback((): void => {
@@ -530,7 +537,11 @@ function Workbench() {
       </header>
 
       {showWorkspace && account?.user ? (
-        <Workspace meId={account.user.id} />
+        <Workspace
+          meId={account.user.id}
+          section={wsSection ?? 'members'}
+          onSection={(s) => navigate(`/workspace/${s}`)}
+        />
       ) : null}
 
       {/*

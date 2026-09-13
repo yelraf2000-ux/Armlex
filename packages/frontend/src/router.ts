@@ -47,6 +47,19 @@ export function usePath(): string {
   return path;
 }
 
+/**
+ * Which half of the workspace, if the path is in it at all.
+ *
+ * Bare `/workspace` counts as the members list — it is where the page opens —
+ * but App corrects the address to say so, rather than leaving two paths that
+ * show the same screen.
+ */
+export function workspaceSectionIn(path: string): 'members' | 'usage' | null {
+  if (path === '/workspace' || path === '/workspace/members') return 'members';
+  if (path === '/workspace/usage') return 'usage';
+  return null;
+}
+
 /** `/c/<uuid>` — a conversation. Null for every other path. */
 export function sessionIdIn(path: string): string | null {
   return /^\/c\/([0-9a-f-]{36})$/i.exec(path)?.[1] ?? null;

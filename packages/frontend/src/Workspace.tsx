@@ -57,21 +57,31 @@ type Section = 'members' | 'usage';
  * No Back button of its own: the masthead is the way home from here, as it is
  * from anywhere else in the app (`goHome` in App.tsx closes this page).
  */
-export function Workspace({ meId }: { meId: string }) {
+export function Workspace({
+  meId,
+  section,
+  onSection,
+}: {
+  meId: string;
+  /** Which half to show. It lives in the address, so a reload stays put. */
+  section: Section;
+  onSection: (section: Section) => void;
+}) {
   const { t, lang } = useSettings();
-  const [section, setSection] = useState<Section>('members');
   const [view, setView] = useState<WorkspaceView | null>(null);
   const [usage, setUsage] = useState<UsageView | null>(null);
   const [adding, setAdding] = useState(false);
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   /*
-   * No default. Both ranks are a real choice with real consequences — an admin
-   * can spend the firm's money and remove colleagues — and a pre-selected
-   * radio is a decision made by whoever wrote the form. null until picked, and
-   * the send button stays out of reach until it is.
+   * Member unless said otherwise.
+   *
+   * It is one control rather than a pair, and it starts on the rank almost
+   * every invitation carries — an admin can spend the firm's money and remove
+   * colleagues, so it is the answer that should be chosen deliberately, not the
+   * one that is one careless click away.
    */
-  const [admin, setAdmin] = useState<boolean | null>(null);
+  const [admin, setAdmin] = useState(false);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   /** Which row is asking "are you sure" — removal is not undoable from here. */
@@ -116,8 +126,9 @@ export function Workspace({ meId }: { meId: string }) {
     }
   }
 
-  /** Every field answered. The server checks the same three regardless. */
-  const invitable = Boolean(name.trim()) && Boolean(email.trim()) && admin !== null;
+  /** Both free-text fields answered; the rank always has a value. The server
+   *  checks all three regardless. */
+  const invitable = Boolean(name.trim()) && Boolean(email.trim());
 
   async function invite(): Promise<void> {
     if (busy || !invitable) return;
@@ -135,7 +146,7 @@ export function Workspace({ meId }: { meId: string }) {
         setView((await res.json()) as WorkspaceView);
         setName('');
         setEmail('');
-        setAdmin(null);
+        setAdmin(false);
         setAdding(false);
         return;
       }
@@ -184,13 +195,10 @@ export function Workspace({ meId }: { meId: string }) {
 
       <div className="ws-body">
         <nav className="ws-nav">
-          <button
-            className={section === 'members' ? 'on' : ''}
-            onClick={() => setSection('members')}
-          >
+          <button className={section === 'members' ? 'on' : ''} onClick={() => onSection('members')}>
             {t('ws.members')}
           </button>
-          <button className={section === 'usage' ? 'on' : ''} onClick={() => setSection('usage')}>
+          <button className={section === 'usage' ? 'on' : ''} onClick={() => onSection('usage')}>
             {t('ws.usage')}
           </button>
         </nav>
@@ -234,26 +242,15 @@ export function Workspace({ meId }: { meId: string }) {
                     for a password and nothing else — so this is the only
                     moment it can be said.
                   */}
-                  <div className="ws-roles" role="radiogroup" aria-label={t('ws.roleLabel')}>
-                    <button
-                      type="button"
-                      role="radio"
-                      aria-checked={admin === false}
-                      className={admin === false ? 'on' : ''}
-                      onClick={() => setAdmin(false)}
-                    >
-                      {t('ws.roleMember')}
-                    </button>
-                    <button
-                      type="button"
-                      role="radio"
-                      aria-checked={admin === true}
-                      className={admin === true ? 'on' : ''}
-                      onClick={() => setAdmin(true)}
-                    >
-                      {t('ws.roleAdmin')}
-                    </button>
-                  </div>
+                  <select
+                    className="ws-rank"
+                    aria-label={t('ws.roleLabel')}
+                    value={admin ? 'admin' : 'member'}
+                    onChange={(e) => setAdmin(e.target.value === 'admin')}
+                  >
+                    <option value="member">{t('ws.roleMember')}</option>
+                    <option value="admin">{t('ws.roleAdmin')}</option>
+                  </select>
                   <button
                     className="primary"
                     disabled={busy || !invitable}
@@ -264,7 +261,7 @@ export function Workspace({ meId }: { meId: string }) {
                   <button
                     onClick={() => {
                       setAdding(false);
-                      setAdmin(null);
+                      setAdmin(false);
                       setError(null);
                     }}
                   >
