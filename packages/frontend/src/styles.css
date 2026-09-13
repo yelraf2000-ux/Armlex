@@ -1225,6 +1225,9 @@ body:has(.rail-mini) .page { padding-left: 56px; }
 
 .login { max-width: 520px; margin: 12vh auto 0; padding: 0 24px; }
 .login-head { text-align: center; margin-bottom: 32px; }
+/* On the landing the head is the subtitle alone — the mark is in the masthead
+   above it, where it also sits once you are signed in. */
+.landing .login-head { margin-bottom: 22px; }
 .login-title {
   font-family: var(--display);
   font-size: 42px;
@@ -1885,7 +1888,20 @@ body:has(.rail-mini) .page { padding-left: 56px; }
 
 /* ── The landing page a visitor with no account meets ───────────────────── */
 
-.landing { padding-top: 2.5rem; }
+.landing { padding-top: 1rem; }
+
+/*
+ * The masthead, borrowed whole from the signed-in page.
+ *
+ * Same rules, same 24px mark, same corner — only the padding differs, because
+ * `.wrap` around it already supplies the gutter that `.provenance` supplies
+ * for itself on the signed-in page.
+ */
+.landing-masthead { padding: 0 0 1.5rem; }
+.landing-masthead .masthead-top { padding-bottom: 0; align-items: center; }
+
+/* The question, then the dots, while the answer is being made. */
+.landing-thread { margin-top: 1.5rem; }
 
 .landing-lede {
   max-width: 46ch;
@@ -1972,32 +1988,37 @@ body:has(.rail-mini) .page { padding-left: 56px; }
 .preview-gate { position: relative; margin-top: 0.5rem; }
 
 /*
- * The blur is DRAWN, not a filter over the real text: a CSS blur leaves the
- * withheld answer sitting in the DOM for anyone who opens the inspector, which
- * would make the registration prompt a lie rather than a gate. These are empty
- * bars in the shape of prose.
+ * Blurred PROSE, not bars — but not the withheld answer either.
+ *
+ * Bars read as a loading skeleton, which is the opposite of what this has to
+ * say: there is finished writing here and you are not being shown it. The text
+ * is reordered words from the part already on screen (see `blurLines`), so
+ * nothing is hidden in the DOM for an inspector to find.
+ *
+ * The blur is deliberately soft. A letter resolves here and there, which is
+ * what makes it read as text at all; no line of it can actually be read. The
+ * mask fades the block out at the foot rather than cutting it off square.
  */
 .preview-blur {
   display: flex;
   flex-direction: column;
-  gap: 0.55rem;
-  padding-top: 0.2rem;
-  filter: blur(3px);
-  opacity: 0.5;
+  gap: 0.3rem;
+  font-size: 1rem;
+  line-height: 1.7;
+  color: var(--ink-2);
+  filter: blur(2.4px);
+  opacity: 0.72;
   user-select: none;
-}
-
-.preview-blur span {
-  height: 0.72rem;
-  border-radius: 2px;
-  background: linear-gradient(90deg, var(--ink-3), var(--rule-2));
+  pointer-events: none;
+  -webkit-mask-image: linear-gradient(to bottom, #000 58%, transparent);
+  mask-image: linear-gradient(to bottom, #000 58%, transparent);
 }
 
 .preview-cta {
   position: relative;
-  margin-top: -1.5rem;
-  padding: 1.4rem 1.25rem 1.25rem;
-  background: linear-gradient(to bottom, transparent, var(--paper) 38%);
+  margin-top: 0.4rem;
+  margin-bottom: 0.6rem;
+  padding: 1.25rem;
   display: flex;
   flex-direction: column;
   align-items: center;

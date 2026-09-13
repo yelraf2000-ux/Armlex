@@ -27,6 +27,41 @@ interface PreviewResult {
   coverage: string | null;
 }
 
+/**
+ * Text for the blurred half.
+ *
+ * Not the withheld answer, and not lorem either. A CSS blur over the real text
+ * leaves it in the DOM for anyone who opens the inspector, which would make the
+ * registration prompt a lie rather than a gate — so this is built from the
+ * words ALREADY SHOWN above it, reordered into nonsense. Nothing is revealed
+ * that the visitor is not already reading, the letter shapes and word lengths
+ * are genuinely Armenian legal prose, and at the blur strength below a letter
+ * here and there resolves while no line of it can be read.
+ *
+ * The stride is fixed rather than random so the same answer always blurs to the
+ * same shape — a re-render must not reshuffle the page under the reader.
+ */
+function blurLines(shown: string): string[] {
+  const words = shown
+    .replace(/[#*_`>[\]()|]/g, ' ')
+    .split(/\s+/)
+    .filter((w) => w.length > 1);
+  if (words.length < 8) return [];
+
+  const lines: string[] = [];
+  let n = 0;
+  // Uneven lengths, ending short: an even block of text reads as a placeholder.
+  for (const count of [9, 11, 8, 10, 9, 11, 7, 4]) {
+    const line: string[] = [];
+    for (let i = 0; i < count; i++) {
+      line.push(words[(n * 7 + 3) % words.length]!);
+      n++;
+    }
+    lines.push(line.join(' '));
+  }
+  return lines;
+}
+
 /** Three real questions, from the harvested set — not invented marketing copy. */
 const EXAMPLES = [
   'Շաուրմայի կետ եմ բացում մարզում։ Կարո՞ղ եմ միկրոձեռնարկատիրություն ընտրել։',
@@ -68,6 +103,9 @@ export function Landing({
     el.style.height = `${el.scrollHeight + el.offsetHeight - el.clientHeight}px`;
   }, [question]);
   const [busy, setBusy] = useState(false);
+  /** The question as submitted. The box goes away once it is asked; this is
+   *  what keeps the visitor able to see what they asked. */
+  const [askedText, setAskedText] = useState<string | null>(null);
   const [preview, setPreview] = useState<PreviewResult | null>(null);
   const [error, setError] = useState<string | null>(null);
   /**
@@ -112,12 +150,16 @@ export function Landing({
 
   const openAuth = showAuth ?? oauthTab;
 
+  /** A question is in flight, or its answer is on screen. */
+  const answering = busy || preview !== null;
+
   async function ask(q: string): Promise<void> {
     const text = q.trim();
     if (!text || busy) return;
     setBusy(true);
     setError(null);
     setPreview(null);
+    setAskedText(text);
     try {
       const res = await fetch('/api/preview', {
         method: 'POST',
@@ -172,33 +214,64 @@ export function Landing({
         first — or hunt for a link under a blurred answer — is a toll on the
         person most likely to be a paying customer.
       */}
-      <div className="landing-top">
-        <button className="landing-signin" onClick={() => setShowAuth('signin')}>
-          {t('auth.signIn')}
-        </button>
-        <button className="landing-signup" onClick={() => setShowAuth('register')}>
-          {t('auth.register')}
-        </button>
-      </div>
+      {/*
+        The same mark, the same size, the same corner it occupies once you are
+        signed in. It used to be a 42px centred title here and a 24px word in
+        the top-left there, so registering appeared to change which product you
+        were looking at. Both doors keep the other end of the line.
+      */}
+      <header className="provenance landing-masthead">
+        <div className="masthead-top">
+          <span className="brand">{BRAND}</span>
+          <span className="spacer" />
+          <button className="landing-signin" onClick={() => setShowAuth('signin')}>
+            {t('auth.signIn')}
+          </button>
+          <button className="landing-signup" onClick={() => setShowAuth('register')}>
+            {t('auth.register')}
+          </button>
+        </div>
+      </header>
 
-      <div className="login-head">
-        <h1 className="login-title">{BRAND}</h1>
-        <div className="login-sub">{t('masthead.sub')}</div>
-        <div className="masthead-rule" />
-      </div>
-
-      {preview ? null : (
-        <>
-          <p className="landing-lede">{t('preview.lede')}</p>
-          <div className="landing-examples">
-            {EXAMPLES.map((e) => (
-              <button key={e} className="landing-example" onClick={() => void ask(e)} disabled={busy}>
-                {e}
-              </button>
-            ))}
+      {/*
+        Everything that introduces the page goes the moment a question is asked
+        — the standing subtitle, the lede, the examples and the box itself. What
+        the visitor wants from that point on is their answer, and a page still
+        offering to explain itself underneath it is asking them to read an
+        advertisement while their own question is being worked on.
+      */}
+      {answering ? (
+        <div className="measure landing-thread">
+          <div className="turn user">
+            <div className="turn-role">{t('turn.question')}</div>
+            <div className="turn-text">{askedText}</div>
           </div>
-        </>
-      )}
+          {busy ? (
+            <div className="stage">
+              <span className="stage-who">{BRAND}</span>
+              <span className="stage-dots" aria-hidden="true">
+                <i />
+                <i />
+                <i />
+              </span>
+              <span className="stage-line">{t('preview.thinking')}</span>
+            </div>
+          ) : null}
+        </div>
+      ) : (
+      <>
+      <div className="login-head">
+        <div className="login-sub">{t('masthead.sub')}</div>
+      </div>
+
+      <p className="landing-lede">{t('preview.lede')}</p>
+      <div className="landing-examples">
+        {EXAMPLES.map((e) => (
+          <button key={e} className="landing-example" onClick={() => void ask(e)} disabled={busy}>
+            {e}
+          </button>
+        ))}
+      </div>
 
       <div className="landing-ask">
         {/* Same arrow-inside-the-field as the signed-in composer, so the box a
@@ -233,6 +306,8 @@ export function Landing({
           </button>
         </div>
       </div>
+      </>
+      )}
 
       {error ? <div className="error measure">{error}</div> : null}
 
@@ -245,17 +320,6 @@ export function Landing({
 
           {preview.withheld > 0 ? (
             <div className="preview-gate">
-              {/*
-                Real withheld text would be readable in the DOM, so the blur is
-                drawn rather than applied to the answer: repeated lines of the
-                right shape, carrying no content at all.
-              */}
-              <div className="preview-blur" aria-hidden="true">
-                {[92, 100, 78, 96, 64].map((w, i) => (
-                  <span key={i} style={{ width: `${w}%` }} />
-                ))}
-              </div>
-
               <div className="preview-cta">
                 <div className="preview-cta-text">
                   {t('preview.rest')}
@@ -270,6 +334,18 @@ export function Landing({
                   {t('preview.unlock')}
                 </button>
                 <div className="preview-cta-note">{t('preview.free')}</div>
+              </div>
+
+              {/*
+                Under the prompt, not above it: the offer is what the visitor
+                needs to read, and the blurred remainder is the evidence that
+                there is something behind it. See `blurLines` for why this is
+                reordered words rather than the withheld text itself.
+              */}
+              <div className="preview-blur" aria-hidden="true">
+                {blurLines(preview.shown).map((line, i) => (
+                  <span key={i}>{line}</span>
+                ))}
               </div>
             </div>
           ) : null}
