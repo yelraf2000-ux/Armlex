@@ -22,18 +22,39 @@
      behind it. */
   --footer-h: 57px;
 
-  --paper:   #F6F0E8;  /* uncoated cream */
-  --glow:    #FFFDF6;  /* the same paper, lit    — see the body gradient below */
-  --shade:   #EDE7D8;  /* the same paper, shaded — the far end of that gradient */
-  --leaf:    #FBF8F1;  /* the apparatus column: one shade lighter than paper */
-  --ink:     #16140F;
-  --ink-2:   #4A453A;
-  --ink-3:   #7C7466;
-  --rule:    #D8D1C0;
-  --rule-2:  #BFB6A0;
-  --accent:  #A8142B;
-  --accent-bg: #F2E2E2;
-  --mark:    #F6DCC8;  /* the quoted fragment, marked as a printed page marks it */
+  /*
+   * Cool white and a working blue.
+   *
+   * This was warm cream under a crimson accent — a printed edition, which is
+   * what the serifs were for too. The palette that replaces it is the one legal
+   * services are actually set in: a near-white ground with the faintest cool
+   * cast, near-black text, and one strong blue carrying identity, links, focus
+   * and anything a person is meant to press.
+   */
+  --paper:   #F7F8FA;  /* near-white, a degree cool */
+  --glow:    #FFFFFF;  /* the same ground, lit    — see the body gradient below */
+  --shade:   #EDF0F5;  /* the same ground, shaded — the far end of that gradient */
+  --leaf:    #EEF2FC;  /* panels, hovers and the active row: paper with blue in it */
+  --ink:     #111418;
+  --ink-2:   #444C57;
+  --ink-3:   #79818E;
+  --rule:    #E3E7ED;
+  --rule-2:  #C6CCD6;
+  --accent:  #2250DC;
+  --accent-bg: #E7EDFD;
+  --mark:    #E3E1FF;  /* the quoted fragment, marked — the palette's periwinkle */
+
+  /*
+   * Caution, which is NOT the brand colour any more.
+   *
+   * It used to be: the accent was crimson, so "delete permanently", "no norm
+   * found" and the not-legal-advice line all shared one colour with the CTA.
+   * With a blue accent that stops working — a blue delete button reads as the
+   * safe choice — so warning and destruction get their own red, and the brand
+   * stops speaking for both.
+   */
+  --danger:    #C0322B;
+  --danger-bg: #FBE9E7;
 
 
   /*
@@ -80,38 +101,43 @@
 }
 
 /*
- * Dark is a night edition, not an inversion: the ground keeps the paper's warm
- * cast, and the accent lifts because #A8142B disappears against it.
+ * Dark is not an inversion: the ground keeps the same cool cast, and both the
+ * accent and the danger red lift, because #2250DC and #C0322B each disappear
+ * against a dark ground.
  */
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme="light"]) {
-    --paper:   #14130F;
-    --glow:    #24211A;
-    --shade:   #0E0D0A;
-    --leaf:    #1A1814;
-    --ink:     #EDE8DC;
-    --ink-2:   #B8B1A2;
-    --ink-3:   #8B8474;
-    --rule:    #2E2B24;
-    --rule-2:  #443F35;
-    --accent:  #E4566B;
-    --accent-bg: #33191E;
-    --mark:    #4A3524;
+    --paper:   #0F1216;
+    --glow:    #1B2230;
+    --shade:   #0A0C10;
+    --leaf:    #171D27;
+    --ink:     #E7EAF0;
+    --ink-2:   #AFB7C3;
+    --ink-3:   #7D8694;
+    --rule:    #242B36;
+    --rule-2:  #3A4250;
+    --accent:  #7FA0FF;
+    --accent-bg: #16203C;
+    --mark:    #2C2C58;
+    --danger:    #FF8378;
+    --danger-bg: #3A1B18;
   }
 }
 :root[data-theme="dark"] {
-  --paper:   #14130F;
-  --glow:    #24211A;
-  --shade:   #0E0D0A;
-  --leaf:    #1A1814;
-  --ink:     #EDE8DC;
-  --ink-2:   #B8B1A2;
-  --ink-3:   #8B8474;
-  --rule:    #2E2B24;
-  --rule-2:  #443F35;
-  --accent:  #E4566B;
-  --accent-bg: #33191E;
-  --mark:    #4A3524;
+  --paper:   #0F1216;
+  --glow:    #1B2230;
+  --shade:   #0A0C10;
+  --leaf:    #171D27;
+  --ink:     #E7EAF0;
+  --ink-2:   #AFB7C3;
+  --ink-3:   #7D8694;
+  --rule:    #242B36;
+  --rule-2:  #3A4250;
+  --accent:  #7FA0FF;
+  --accent-bg: #16203C;
+  --mark:    #2C2C58;
+  --danger:    #FF8378;
+  --danger-bg: #3A1B18;
 }
 
 * { box-sizing: border-box; }
@@ -285,7 +311,16 @@ a { color: var(--accent); }
   background-image: var(--ground);
   background-attachment: fixed;
 }
-.colophon-disclaimer { line-height: 1.4; }
+/* Set as a caution, and small: it stands on every screen, so it has to be
+   legible without competing with the page it sits under. The italic and the
+   size were lost when the two footers became one fixed bar; this restores
+   them, in the red that now means caution rather than brand. */
+.colophon-disclaimer {
+  font-size: 12.5px;
+  font-style: italic;
+  line-height: 1.4;
+  color: var(--danger);
+}
 /* "Checked against ARLIS <date>", under the disclaimer — quiet small caps. */
 .colophon-synced {
   font-size: 11px;
@@ -674,7 +709,7 @@ a { color: var(--accent); }
 .coverage {
   margin: 22px 0;
   padding: 0 0 0 20px;
-  border-left: 2px solid var(--accent);
+  border-left: 2px solid var(--danger);
   animation: fade-in 280ms ease-out;
 }
 .coverage::before {
@@ -683,7 +718,7 @@ a { color: var(--accent); }
   font-size: 11px;
   letter-spacing: 0.16em;
   text-transform: uppercase;
-  color: var(--accent);
+  color: var(--danger);
   margin-bottom: 7px;
 }
 .coverage-body {
@@ -695,8 +730,8 @@ a { color: var(--accent); }
 
 /* `none` is not a footnote — it is the answer, so it gets the weight. */
 .coverage.none {
-  border: 1px solid var(--accent);
-  background: var(--accent-bg);
+  border: 1px solid var(--danger);
+  background: var(--danger-bg);
   padding: 20px 24px 18px;
 }
 .coverage.none::before { content: "Прямой нормы не найдено"; letter-spacing: 0.18em; margin-bottom: 10px; }
@@ -1073,8 +1108,8 @@ a { color: var(--accent); }
 .error {
   margin-top: 20px;
   padding: 0 0 0 20px;
-  border-left: 2px solid var(--accent);
-  color: var(--accent);
+  border-left: 2px solid var(--danger);
+  color: var(--danger);
   font-size: 14px;
   font-style: italic;
   line-height: 1.6;
@@ -1112,14 +1147,14 @@ a { color: var(--accent); }
 }
 /* Under the confidence threshold, print the figure in the accent rather than
    hiding a weak result: a weak result should look weak. */
-.score.low { color: var(--accent); }
+.score.low { color: var(--danger); }
 .status, .act {
   font-size: 11px;
   letter-spacing: 0.12em;
   text-transform: uppercase;
   color: var(--ink-3);
 }
-.status.warn { color: var(--accent); }
+.status.warn { color: var(--danger); }
 .asof { font-size: 11px; font-style: italic; color: var(--ink-3); padding-bottom: 6px; }
 
 .chunk-header, .chunk-body {
@@ -1834,8 +1869,8 @@ body:has(.rail-mini) .page { padding-left: 56px; }
   border: 1px solid var(--rule-2);
 }
 .session-menu .session-confirm button.danger {
-  border-color: var(--accent);
-  background: var(--accent);
+  border-color: var(--danger);
+  background: var(--danger);
   color: var(--paper);
 }
 
@@ -2187,7 +2222,7 @@ body:has(.rail-mini) .page { padding-left: 56px; }
 .popup-primary { border: 0; background: var(--ink); color: var(--paper); }
 .popup-secondary { border: 1px solid var(--rule); background: none; color: var(--ink); }
 .popup-secondary:hover { background: var(--leaf); }
-.popup-danger { border: 0; background: var(--accent); color: var(--paper); }
+.popup-danger { border: 0; background: var(--danger); color: var(--paper); }
 .popup-primary:disabled { opacity: 0.5; cursor: default; }
 
 /* ── Both doors, before anything is asked ───────────────────────────────── */
@@ -2656,8 +2691,8 @@ body:has(.rail-mini) .page { padding-left: 56px; }
   cursor: pointer;
 }
 .ws-confirm button.danger {
-  border-color: var(--accent);
-  background: var(--accent);
+  border-color: var(--danger);
+  background: var(--danger);
   color: var(--paper);
 }
 
@@ -2793,7 +2828,7 @@ body:has(.rail-mini) .page { padding-left: 56px; }
 
 .sessions-search input:focus {
   outline: none;
-  border-color: var(--accent, #a8142b);
+  border-color: var(--danger);
 }
 
 /*
