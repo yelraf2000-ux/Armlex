@@ -2402,7 +2402,6 @@ body:has(.rail-mini) .page { padding-left: 56px; }
   align-items: baseline;
   gap: 16px;
   padding-bottom: 14px;
-  border-bottom: 1px solid var(--ink);
   margin-bottom: 22px;
 }
 
@@ -2508,7 +2507,12 @@ body:has(.rail-mini) .page { padding-left: 56px; }
  * an unanswered pair reads as an unanswered question, which is what it is.
  */
 .ws-roles { display: flex; flex: 0 0 auto; gap: 5px; }
-.ws-role {
+/*
+ * Scoped to the chooser, and it must stay that way: `ws-role` is also the
+ * class on the rank CELL of the members table, so an unscoped rule here drew a
+ * bordered box around every ԱԴՄԻՆ / ՕԳՏՎՈՂ in the list.
+ */
+.ws-roles button {
   padding: 7px 12px;
   font-family: var(--body);
   font-size: 12px;
@@ -2518,8 +2522,8 @@ body:has(.rail-mini) .page { padding-left: 56px; }
   color: var(--ink-2);
   cursor: pointer;
 }
-.ws-role:hover { border-color: var(--ink-3); }
-.ws-role.on {
+.ws-roles button:hover { border-color: var(--ink-3); }
+.ws-roles button.on {
   border-color: var(--ink);
   background: var(--ink);
   color: var(--paper);
@@ -2552,9 +2556,10 @@ body:has(.rail-mini) .page { padding-left: 56px; }
   width: 100%;
   border-collapse: collapse;
 }
+/* No rules between rows. The gap does the separating: a list of six people
+   does not need ruling, and the lines were the loudest thing on the page. */
 .ws-table td {
   padding: 11px 8px;
-  border-bottom: 1px solid var(--rule);
   font-size: 13px;
   vertical-align: middle;
 }
@@ -2567,17 +2572,17 @@ body:has(.rail-mini) .page { padding-left: 56px; }
 .ws-count { text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; }
 .ws-act { text-align: right; width: 1%; white-space: nowrap; }
 
+/* Set, not drawn. Uppercase and letter-spaced says "label" on its own; the
+   outline only added another line to a page that had too many. */
 .ws-badge {
   display: inline-block;
-  padding: 2px 8px;
-  border: 1px solid var(--rule-2);
-  border-radius: 999px;
+  padding: 2px 8px 2px 0;
   font-size: 10.5px;
   letter-spacing: 0.06em;
   text-transform: uppercase;
   color: var(--ink-3);
 }
-.ws-badge.admin { border-color: var(--accent); color: var(--accent); }
+.ws-badge.admin { color: var(--accent); }
 .ws-badge.pending { font-style: italic; text-transform: none; letter-spacing: 0; }
 
 .ws-remove {

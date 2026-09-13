@@ -239,7 +239,7 @@ export function Workspace({ meId }: { meId: string }) {
                       type="button"
                       role="radio"
                       aria-checked={admin === false}
-                      className={admin === false ? 'ws-role on' : 'ws-role'}
+                      className={admin === false ? 'on' : ''}
                       onClick={() => setAdmin(false)}
                     >
                       {t('ws.roleMember')}
@@ -248,7 +248,7 @@ export function Workspace({ meId }: { meId: string }) {
                       type="button"
                       role="radio"
                       aria-checked={admin === true}
-                      className={admin === true ? 'ws-role on' : 'ws-role'}
+                      className={admin === true ? 'on' : ''}
                       onClick={() => setAdmin(true)}
                     >
                       {t('ws.roleAdmin')}
