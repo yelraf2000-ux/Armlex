@@ -195,8 +195,7 @@ const hy: Dict = {
   'share.readOnly': 'Կիսված խորհրդատվություն',
   'share.ownQuestion': 'Ունե՞ք Ձեր հարցը։',
   'share.openTool': 'Բացել MatyanAI-ն',
-  'preview.lede':
-    'Տվեք Ձեր հարկային կամ աշխատանքային հարցը։ Պատասխանը հենվում է ՀՀ օրենսդրության իրական տեքստի վրա։',
+  'preview.lede': 'Տվեք Ձեր իրավական հարցը։',
   'preview.ask': 'Հարցնել',
   'preview.thinking': 'Փնտրում եմ…',
   'preview.rest': 'Պատասխանի մնացած մասը՝ հոդվածներով և բառացի մեջբերումներով',
@@ -221,7 +220,8 @@ const hy: Dict = {
   'intro.title': 'Ես {brand}-ն եմ՝ Ձեր իրավական և հարկային աջակիցը բարդ որոշումներում։',
   'intro.start': 'Հարցերի օրինակներ',
   'cites.label': 'Կարդացված հոդվածներ',
-  'masthead.sub': 'ՀՀ հարկային և աշխատանքային օրենսդրության տեղեկատու',
+  'masthead.sub':
+    'Ես {brand}-ն եմ՝ Ձեր իրավական և հարկային աջակիցը բարդ որոշումներում։ Պատասխանում եմ ՀՀ օրենսդրության իրական տեքստի հիման վրա՝ հղելով կոնկրետ հոդվածներին։',
   'card.expand': 'Ցույց տալ հոդվածը',
   'card.collapse': 'Ծալել',
   'oneshot.placeholder': 'Հարց ռուսերեն, հայերեն կամ լատինատառ (xanut bacel)',
@@ -406,8 +406,7 @@ const ru: Dict = {
   'share.readOnly': 'Консультация по ссылке',
   'share.ownQuestion': 'Есть свой вопрос?',
   'share.openTool': 'Открыть MatyanAI',
-  'preview.lede':
-    'Задайте свой налоговый или трудовой вопрос. Ответ опирается на реальный текст законодательства РА.',
+  'preview.lede': 'Задайте свой правовой вопрос.',
   'preview.ask': 'Спросить',
   'preview.thinking': 'Ищу…',
   'preview.rest': 'Остальная часть ответа — со статьями и дословными цитатами',
@@ -432,7 +431,8 @@ const ru: Dict = {
   'intro.title': 'Я {brand} — ваша правовая и налоговая поддержка в сложных решениях.',
   'intro.start': 'Примеры вопросов',
   'cites.label': 'Прочитанные статьи',
-  'masthead.sub': 'справочник по налоговому и трудовому законодательству Республики Армения',
+  'masthead.sub':
+    'Я {brand} — ваша правовая и налоговая поддержка в сложных решениях. Отвечаю по реальному тексту законодательства РА, со ссылками на конкретные статьи.',
   'card.expand': 'Показать статью',
   'card.collapse': 'Свернуть',
   'oneshot.placeholder': 'Вопрос на русском, армянском или латиницей (xanut bacel)',
@@ -617,8 +617,7 @@ const en: Dict = {
   'share.readOnly': 'Shared consultation',
   'share.ownQuestion': 'Have a question of your own?',
   'share.openTool': 'Open MatyanAI',
-  'preview.lede':
-    'Ask your tax or labour question. The answer rests on the real text of Armenian law.',
+  'preview.lede': 'Ask your legal question.',
   'preview.ask': 'Ask',
   'preview.thinking': 'Searching…',
   'preview.rest': 'The rest of the answer — with the articles and verbatim quotes',
@@ -643,7 +642,8 @@ const en: Dict = {
   'intro.title': 'I am {brand} — your legal and tax support in difficult decisions.',
   'intro.start': 'Example questions',
   'cites.label': 'Articles read',
-  'masthead.sub': 'a reference to the tax and labour law of the Republic of Armenia',
+  'masthead.sub':
+    'I am {brand} — your legal and tax support in difficult decisions. I answer from the real text of Armenian law, citing the articles themselves.',
   'card.expand': 'Show the article',
   'card.collapse': 'Collapse',
   'oneshot.placeholder': 'A question in Russian, Armenian or Latin script (xanut bacel)',

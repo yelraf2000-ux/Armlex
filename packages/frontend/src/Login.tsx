@@ -11,6 +11,7 @@
  */
 import { useState } from 'react';
 import { BRAND } from './brand.js';
+import { BrandLine } from './BrandLine.js';
 import { useSettings } from './Settings.js';
 
 export interface Account {
@@ -380,7 +381,9 @@ export function Login({
         <div className="login-head">
           {/* No mark of its own: it is in the masthead above, where it also
               sits once you are signed in. */}
-          <div className="login-sub">{t('masthead.sub')}</div>
+          <div className="login-sub">
+            <BrandLine text={t('masthead.sub')} />
+          </div>
           <div className="masthead-rule" />
         </div>
         <div className="login-row">
@@ -416,7 +419,9 @@ export function Login({
   return (
     <div className="login">
       <div className="login-head">
-        <div className="login-sub">{t('masthead.sub')}</div>
+        <div className="login-sub">
+          <BrandLine text={t('masthead.sub')} />
+        </div>
         <div className="masthead-rule" />
       </div>
 

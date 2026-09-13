@@ -14,6 +14,7 @@ import { useLayoutEffect, useRef, useState } from 'react';
 import { BRAND } from './brand.js';
 import { Login, type Tab } from './Login.js';
 import { MarkdownView } from './MarkdownView.js';
+import { BrandLine } from './BrandLine.js';
 import { useSettings } from './Settings.js';
 
 export const PENDING_QUESTION = 'matyan.pendingQuestion';
@@ -66,9 +67,8 @@ function blurLines(shown: string): string[] {
   return lines;
 }
 
-/** Three real questions, from the harvested set — not invented marketing copy. */
+/** Real questions, from the harvested set — not invented marketing copy. */
 const EXAMPLES = [
-  'Շաուրմայի կետ եմ բացում մարզում։ Կարո՞ղ եմ միկրոձեռնարկատիրություն ընտրել։',
   'Գործատուն ուշացնում է աշխատավարձը։ Ի՞նչ իրավունքներ ունեմ։',
   'Որքա՞ն է ԱԱՀ-ի դրույքաչափը։',
 ];
@@ -273,7 +273,9 @@ export function Landing({
         ) : (
         <>
         <div className="login-head">
-          <div className="login-sub">{t('masthead.sub')}</div>
+          <div className="login-sub">
+            <BrandLine text={t('masthead.sub')} />
+          </div>
         </div>
 
         <p className="landing-lede">{t('preview.lede')}</p>

@@ -11,6 +11,7 @@
  */
 import { useEffect, useState } from 'react';
 import { BRAND } from './brand.js';
+import { BrandLine } from './BrandLine.js';
 import { useSettings } from './Settings.js';
 
 interface InvitationView {
@@ -141,7 +142,9 @@ export function Invite({ token, onAccepted }: { token: string; onAccepted: () =>
     <div className="login">
       <div className="login-head">
         <h1 className="login-title">{BRAND}</h1>
-        <div className="login-sub">{t('masthead.sub')}</div>
+        <div className="login-sub">
+          <BrandLine text={t('masthead.sub')} />
+        </div>
         <div className="masthead-rule" />
       </div>
 

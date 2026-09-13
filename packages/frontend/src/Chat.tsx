@@ -13,6 +13,7 @@ import { NormPanel } from './NormPanel.js';
 import type { Entry } from './NormPanel.js';
 import { MarkdownView } from './MarkdownView.js';
 import { extractQuotes } from './quotes.js';
+import { BrandLine } from './BrandLine.js';
 import { Sessions } from './Sessions.js';
 import { SharePopup } from './SharePopup.js';
 import { AccountMenu } from './AccountMenu.js';
@@ -666,18 +667,8 @@ export function Chat({
       */}
       {turns.length === 0 ? (
         <div className="intro measure">
-          {/*
-            The product names itself here, so the name is set apart from the
-            sentence around it. `{brand}` is a placeholder rather than the name
-            written into each dictionary: only the sentence knows how to decline
-            it (Armenian takes MatyanAI-ն), and the name itself never changes.
-          */}
           <h1 className="intro-title">
-            {t('intro.title')
-              .split('{brand}')
-              .flatMap((part, i) =>
-                i === 0 ? [part] : [<span key={i} className="brand-name">{BRAND}</span>, part],
-              )}
+            <BrandLine text={t('intro.title')} />
           </h1>
         </div>
       ) : null}
