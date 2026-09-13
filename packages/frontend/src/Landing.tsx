@@ -186,7 +186,16 @@ export function Landing({
 
   if (openAuth) {
     return (
-      <div className="wrap">
+      <div className="page">
+        {/* The mark is the way back, exactly as it is the way home once you
+            are signed in — and in the same corner, at the same size. */}
+        <header className="provenance">
+          <div className="masthead-top">
+            <button className="brand" onClick={() => setShowAuth(null)}>
+              {BRAND}
+            </button>
+          </div>
+        </header>
         <Login
           googleEnabled={googleEnabled}
           onSuccess={onAuthed}
@@ -207,20 +216,18 @@ export function Landing({
   }
 
   return (
-    <div className="wrap landing">
-      {/*
-        Both doors, top right, before anything is asked. Someone who already has
-        an account arrived to USE the tool, and making them type a question
-        first — or hunt for a link under a blurred answer — is a toll on the
-        person most likely to be a paying customer.
-      */}
-      {/*
-        The same mark, the same size, the same corner it occupies once you are
-        signed in. It used to be a 42px centred title here and a 24px word in
-        the top-left there, so registering appeared to change which product you
-        were looking at. Both doors keep the other end of the line.
-      */}
-      <header className="provenance landing-masthead">
+    /*
+      The signed-in page's own shape: a full-width masthead over a centred
+      reading column.
+
+      The mark used to be a 42px centred title here and a 24px word in the
+      top-left once signed in, so registering appeared to change which product
+      you were looking at. Both doors keep the other end of the masthead line —
+      someone who already has an account arrived to USE the tool, and making
+      them type a question first is a toll on the likeliest paying customer.
+    */
+    <div className="page">
+      <header className="provenance">
         <div className="masthead-top">
           <span className="brand">{BRAND}</span>
           <span className="spacer" />
@@ -233,126 +240,128 @@ export function Landing({
         </div>
       </header>
 
-      {/*
-        Everything that introduces the page goes the moment a question is asked
-        — the standing subtitle, the lede, the examples and the box itself. What
-        the visitor wants from that point on is their answer, and a page still
-        offering to explain itself underneath it is asking them to read an
-        advertisement while their own question is being worked on.
-      */}
-      {answering ? (
-        <div className="measure landing-thread">
-          <div className="turn user">
-            <div className="turn-role">{t('turn.question')}</div>
-            <div className="turn-text">{askedText}</div>
-          </div>
-          {busy ? (
-            <div className="stage">
-              <span className="stage-who">{BRAND}</span>
-              <span className="stage-dots" aria-hidden="true">
-                <i />
-                <i />
-                <i />
-              </span>
-              <span className="stage-line">{t('preview.thinking')}</span>
+      <div className="wrap landing">
+        {/*
+          Everything that introduces the page goes the moment a question is asked
+          — the standing subtitle, the lede, the examples and the box itself. What
+          the visitor wants from that point on is their answer, and a page still
+          offering to explain itself underneath it is asking them to read an
+          advertisement while their own question is being worked on.
+        */}
+        {answering ? (
+          <div className="measure landing-thread">
+            <div className="turn user">
+              <div className="turn-role">{t('turn.question')}</div>
+              <div className="turn-text">{askedText}</div>
             </div>
-          ) : null}
-        </div>
-      ) : (
-      <>
-      <div className="login-head">
-        <div className="login-sub">{t('masthead.sub')}</div>
-      </div>
-
-      <p className="landing-lede">{t('preview.lede')}</p>
-      <div className="landing-examples">
-        {EXAMPLES.map((e) => (
-          <button key={e} className="landing-example" onClick={() => void ask(e)} disabled={busy}>
-            {e}
-          </button>
-        ))}
-      </div>
-
-      <div className="landing-ask">
-        {/* Same arrow-inside-the-field as the signed-in composer, so the box a
-            visitor meets first is the box they will use after registering. */}
-        <div className="composer-field">
-          <textarea
-            ref={askRef}
-            value={question}
-            onChange={(e) => setQuestion(e.target.value)}
-            onKeyDown={(e) => {
-              if (e.key === 'Enter' && !e.shiftKey) {
-                e.preventDefault();
-                void ask(question);
-              }
-            }}
-            placeholder={t('composer.first')}
-            rows={3}
-            disabled={busy}
-          />
-          <button
-            className={busy ? 'send-arrow busy' : 'send-arrow'}
-            onClick={() => void ask(question)}
-            disabled={busy || !question.trim()}
-            aria-label={busy ? t('preview.thinking') : t('preview.ask')}
-            title={busy ? t('preview.thinking') : t('preview.ask')}
-          >
-            {busy ? null : (
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-                <path d="M5 12h14M13 6l6 6-6 6" />
-              </svg>
-            )}
-          </button>
-        </div>
-      </div>
-      </>
-      )}
-
-      {error ? <div className="error measure">{error}</div> : null}
-
-      {preview ? (
-        <div className="measure preview">
-          <div className="turn-role">{BRAND}</div>
-          <div className="turn-text">
-            <MarkdownView text={preview.shown} />
+            {busy ? (
+              <div className="stage">
+                <span className="stage-who">{BRAND}</span>
+                <span className="stage-dots" aria-hidden="true">
+                  <i />
+                  <i />
+                  <i />
+                </span>
+                <span className="stage-line">{t('preview.thinking')}</span>
+              </div>
+            ) : null}
           </div>
+        ) : (
+        <>
+        <div className="login-head">
+          <div className="login-sub">{t('masthead.sub')}</div>
+        </div>
 
-          {preview.withheld > 0 ? (
-            <div className="preview-gate">
-              <div className="preview-cta">
-                <div className="preview-cta-text">
-                  {t('preview.rest')}
-                  {preview.sources > 0 ? (
-                    <span className="preview-sources">
-                      {' '}
-                      · {preview.sources} {t('preview.sources')}
-                    </span>
-                  ) : null}
+        <p className="landing-lede">{t('preview.lede')}</p>
+        <div className="landing-examples">
+          {EXAMPLES.map((e) => (
+            <button key={e} className="landing-example" onClick={() => void ask(e)} disabled={busy}>
+              {e}
+            </button>
+          ))}
+        </div>
+
+        <div className="landing-ask">
+          {/* Same arrow-inside-the-field as the signed-in composer, so the box a
+              visitor meets first is the box they will use after registering. */}
+          <div className="composer-field">
+            <textarea
+              ref={askRef}
+              value={question}
+              onChange={(e) => setQuestion(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' && !e.shiftKey) {
+                  e.preventDefault();
+                  void ask(question);
+                }
+              }}
+              placeholder={t('composer.first')}
+              rows={3}
+              disabled={busy}
+            />
+            <button
+              className={busy ? 'send-arrow busy' : 'send-arrow'}
+              onClick={() => void ask(question)}
+              disabled={busy || !question.trim()}
+              aria-label={busy ? t('preview.thinking') : t('preview.ask')}
+              title={busy ? t('preview.thinking') : t('preview.ask')}
+            >
+              {busy ? null : (
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                  <path d="M5 12h14M13 6l6 6-6 6" />
+                </svg>
+              )}
+            </button>
+          </div>
+        </div>
+        </>
+        )}
+
+        {error ? <div className="error measure">{error}</div> : null}
+
+        {preview ? (
+          <div className="measure preview">
+            <div className="turn-role">{BRAND}</div>
+            <div className="turn-text">
+              <MarkdownView text={preview.shown} />
+            </div>
+
+            {preview.withheld > 0 ? (
+              <div className="preview-gate">
+                <div className="preview-cta">
+                  <div className="preview-cta-text">
+                    {t('preview.rest')}
+                    {preview.sources > 0 ? (
+                      <span className="preview-sources">
+                        {' '}
+                        · {preview.sources} {t('preview.sources')}
+                      </span>
+                    ) : null}
+                  </div>
+                  <button className="preview-cta-button" onClick={() => setShowAuth('register')}>
+                    {t('preview.unlock')}
+                  </button>
+                  <div className="preview-cta-note">{t('preview.free')}</div>
                 </div>
-                <button className="preview-cta-button" onClick={() => setShowAuth('register')}>
-                  {t('preview.unlock')}
-                </button>
-                <div className="preview-cta-note">{t('preview.free')}</div>
-              </div>
 
-              {/*
-                Under the prompt, not above it: the offer is what the visitor
-                needs to read, and the blurred remainder is the evidence that
-                there is something behind it. See `blurLines` for why this is
-                reordered words rather than the withheld text itself.
-              */}
-              <div className="preview-blur" aria-hidden="true">
-                {blurLines(preview.shown).map((line, i) => (
-                  <span key={i}>{line}</span>
-                ))}
+                {/*
+                  Under the prompt, not above it: the offer is what the visitor
+                  needs to read, and the blurred remainder is the evidence that
+                  there is something behind it. See `blurLines` for why this is
+                  reordered words rather than the withheld text itself.
+                */}
+                <div className="preview-blur" aria-hidden="true">
+                  {blurLines(preview.shown).map((line, i) => (
+                    <span key={i}>{line}</span>
+                  ))}
+                </div>
               </div>
-            </div>
-          ) : null}
-        </div>
-      ) : null}
+            ) : null}
+          </div>
+        ) : null}
 
-      <div className="login-disclaimer">{t('corpus.disclaimer')}</div>
+        <div className="login-disclaimer">{t('corpus.disclaimer')}</div>
+      </div>
     </div>
   );
 }

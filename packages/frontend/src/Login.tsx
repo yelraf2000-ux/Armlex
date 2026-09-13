@@ -378,7 +378,8 @@ export function Login({
     return (
       <div className="login">
         <div className="login-head">
-          <h1 className="login-title">{BRAND}</h1>
+          {/* No mark of its own: it is in the masthead above, where it also
+              sits once you are signed in. */}
           <div className="login-sub">{t('masthead.sub')}</div>
           <div className="masthead-rule" />
         </div>
@@ -415,7 +416,6 @@ export function Login({
   return (
     <div className="login">
       <div className="login-head">
-        <h1 className="login-title">{BRAND}</h1>
         <div className="login-sub">{t('masthead.sub')}</div>
         <div className="masthead-rule" />
       </div>

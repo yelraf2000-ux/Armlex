@@ -1888,17 +1888,12 @@ body:has(.rail-mini) .page { padding-left: 56px; }
 
 /* ── The landing page a visitor with no account meets ───────────────────── */
 
-.landing { padding-top: 1rem; }
-
-/*
- * The masthead, borrowed whole from the signed-in page.
- *
- * Same rules, same 24px mark, same corner — only the padding differs, because
- * `.wrap` around it already supplies the gutter that `.provenance` supplies
- * for itself on the signed-in page.
- */
-.landing-masthead { padding: 0 0 1.5rem; }
-.landing-masthead .masthead-top { padding-bottom: 0; align-items: center; }
+.landing { padding-top: 1.5rem; }
+/* The doors sit on the mark's line, so the line centres rather than sitting on
+   a shared baseline that a 24px display face and a 13px UI face do not share. */
+.provenance .masthead-top { align-items: center; }
+/* A masthead stands above the form now; 12vh of air under it is a hole. */
+.page .login { margin-top: 5vh; }
 
 /* The question, then the dots, while the answer is being made. */
 .landing-thread { margin-top: 1.5rem; }
