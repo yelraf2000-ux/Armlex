@@ -41,11 +41,13 @@
     />
     <meta name="twitter:card" content="summary" />
     <!--
-      Prata sets display, Lora sets body, Noto Serif Armenian sets statute.
-      Preconnect because the first paint depends on them: this design is
-      typographic, and a fallback-metric flash is the whole page moving.
-      Sylfaen stays in the CSS stack behind Noto — it ships with Windows and
-      covers Armenian, so a blocked font request still never renders tofu.
+      One family for everything: Inter for Latin and Cyrillic, Noto Sans
+      Armenian for Armenian — fallback picks per glyph, so the two behave as
+      one face. Preconnect because the first paint depends on them: a
+      fallback-metric flash is the whole page moving. system-ui sits behind
+      both in the CSS stack, so a blocked font request still never renders
+      tofu — and unlike the serifs these replaced, the fallback looks close
+      enough that the swap is barely visible.
     -->
     <!--
       Fetched at idle priority, not on demand. It is only needed once a question
@@ -69,7 +71,7 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link
       rel="stylesheet"
-      href="https://fonts.googleapis.com/css2?family=Prata&family=Lora:ital,wght@0,400;0,500;0,600;1,400;1,600&family=Noto+Serif+Armenian:wght@400;600;700&display=swap"
+      href="https://fonts.googleapis.com/css2?family=Inter:ital,wght@0,400;0,500;0,600;0,700;1,400;1,600&family=Noto+Sans+Armenian:wght@400;500;600;700&display=swap"
     />
     <script>
       /*
