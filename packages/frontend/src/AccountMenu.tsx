@@ -14,20 +14,19 @@
  */
 import { useEffect, useRef, useState } from 'react';
 import { useSettings } from './Settings.js';
-import { Popup } from './Popup.js';
 import type { Account } from './Login.js';
 
 export function AccountMenu({
   account,
-  onChanged,
   onSignOut,
+  onOpenProfile,
   onOpenWorkspace,
   placement,
 }: {
   account: Account;
-  /** A saved change; the caller re-reads the account so every view agrees. */
-  onChanged: (next: Account) => void;
   onSignOut: () => void;
+  /** Both of these are screens with addresses of their own; the menu only points. */
+  onOpenProfile: () => void;
   /** Workspace is a page, not a panel — it holds tables of people and numbers. */
   onOpenWorkspace: () => void;
   /** `rail` is the resting place; `masthead` is the phone fallback, where the
@@ -36,9 +35,6 @@ export function AccountMenu({
 }) {
   const { t } = useSettings();
   const [open, setOpen] = useState(false);
-  const [editing, setEditing] = useState(false);
-  const [name, setName] = useState('');
-  const [busy, setBusy] = useState(false);
   const [upgradeError, setUpgradeError] = useState<string | null>(null);
   const rootRef = useRef<HTMLDivElement>(null);
 
@@ -63,8 +59,6 @@ export function AccountMenu({
     };
   }, [open]);
 
-  /* Only the menu. The name popup is a dialog of its own and outlives it: it
-     is opened BY closing the menu, and dismisses on its own backdrop or Escape. */
   function close(): void {
     setOpen(false);
     setUpgradeError(null);
@@ -75,24 +69,6 @@ export function AccountMenu({
   /** The name if there is one, else the local part of the address — never a blank. */
   const displayName = user.name || user.email.split('@')[0] || user.email;
   const initial = displayName.slice(0, 1).toUpperCase();
-
-  async function save(fields: Record<string, unknown>): Promise<void> {
-    setBusy(true);
-    try {
-      const res = await fetch('/api/account', {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(fields),
-      });
-      if (res.ok) {
-        const data = (await res.json()) as Account;
-        onChanged({ ...account, ...data });
-        setEditing(false);
-      }
-    } finally {
-      setBusy(false);
-    }
-  }
 
   /**
    * Upgrade.
@@ -167,9 +143,8 @@ export function AccountMenu({
           <button
             role="menuitem"
             onClick={() => {
-              setName(user.name ?? '');
               close();
-              setEditing(true);
+              onOpenProfile();
             }}
           >
             {t('account.profile')}
@@ -208,41 +183,6 @@ export function AccountMenu({
             {t('auth.signOut')}
           </button>
         </div>
-      ) : null}
-
-      {/*
-        Changing the name is a popup, like renaming a conversation. The menu is
-        190px of stacked menu items; a labelled field and two buttons growing
-        inside it made the menu the shape of a form while still reading as a
-        menu, and left no room to say what the name is for.
-      */}
-      {editing ? (
-        <Popup title={t('account.profileTitle')} onClose={() => setEditing(false)}>
-          <p className="popup-hint">{t('account.profileHint')}</p>
-          <div className="popup-row">
-            <input
-              autoFocus
-              value={name}
-              aria-label={t('auth.fullName')}
-              onChange={(e) => setName(e.target.value)}
-              onKeyDown={(e) => {
-                if (e.key === 'Enter' && name.trim()) void save({ name });
-              }}
-            />
-          </div>
-          <div className="popup-actions">
-            <button className="popup-secondary" onClick={() => setEditing(false)}>
-              {t('nav.cancel')}
-            </button>
-            <button
-              className="popup-primary"
-              disabled={busy || !name.trim()}
-              onClick={() => void save({ name })}
-            >
-              {t('nav.save')}
-            </button>
-          </div>
-        </Popup>
       ) : null}
     </div>
   );

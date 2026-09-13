@@ -6,7 +6,7 @@
  *   Ask    — one-shot grounded answer, no memory.
  *   Chat   — multi-turn with contextualisation and carried-over chunks.
  */
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import type { Chunk } from './types.js';
 import { ChunkCard } from './ChunkCard.js';
 import { BRAND } from './brand.js';
@@ -15,6 +15,8 @@ import { Landing } from './Landing.js';
 import { type Account, PENDING_PROFILE } from './Login.js';
 import { AccountMenu } from './AccountMenu.js';
 import { Workspace } from './Workspace.js';
+import { ProfilePopup } from './ProfilePopup.js';
+import { navigate, sessionIdIn, usePath } from './router.js';
 import { MarkdownView } from './MarkdownView.js';
 import { NormPanel } from './NormPanel.js';
 import { Shared } from './Shared.js';
@@ -286,16 +288,34 @@ function Workbench() {
   /** null = not yet known. */
   const [account, setAccount] = useState<Account | null>(null);
 
-  /** Shared by both mounts of the account control (register foot, and masthead
-   *  at phone widths where the register does not exist). */
-  /**
-   * The workspace page, shown instead of the workbench.
+  /*
+   * Which screen, read off the address bar.
    *
-   * There is no router in this app, so this is state — same as `mode`. It sits
-   * beside the workbench rather than inside it because it is not a way of
-   * asking a question; it is the account's own administration.
+   * State until now, which meant a reload — or a deploy, which reloads
+   * everybody — dropped whoever was reading a conversation or managing their
+   * firm back onto a blank question box. A screen you cannot link to, reload,
+   * or reach with the back button is a screen the browser does not know exists.
+   *
+   * These are the app's own paths. The four token paths further down (shared,
+   * verify, invite, reset) are matched separately because they have to work
+   * before anyone is signed in.
    */
-  const [showWorkspace, setShowWorkspace] = useState(false);
+  const path = usePath();
+  const showWorkspace = path === '/workspace';
+  const showProfile = path === '/profile';
+  const openId = sessionIdIn(path);
+
+  /*
+   * Where closing the name dialog returns you.
+   *
+   * It is a dialog over whatever you were reading, so it goes back THERE and
+   * not to the front page — by replacing, so dismissing it leaves no history
+   * entry for the back button to walk straight into.
+   */
+  const behindProfile = useRef('/');
+  useEffect(() => {
+    if (path !== '/profile') behindProfile.current = path;
+  }, [path]);
 
   const signOut = useCallback((): void => {
     void (async () => {
@@ -381,7 +401,7 @@ function Workbench() {
    * button is gone; this is what replaces it.
    */
   function goHome(): void {
-    setShowWorkspace(false);
+    navigate('/');
     setMode('chat');
     setHomeKey((k) => k + 1);
     window.scrollTo({ top: 0 });
@@ -479,9 +499,9 @@ function Workbench() {
             <AccountMenu
               account={account}
               placement="masthead"
-              onChanged={setAccount}
               onSignOut={signOut}
-              onOpenWorkspace={() => setShowWorkspace(true)}
+              onOpenProfile={() => navigate('/profile')}
+              onOpenWorkspace={() => navigate('/workspace')}
             />
           ) : null}
           <SettingsControls />
@@ -513,14 +533,32 @@ function Workbench() {
         <Workspace meId={account.user.id} />
       ) : null}
 
+      {/*
+        One mount, over whatever is behind it. The account menu is rendered
+        twice — foot of the register, and masthead at the widths where there is
+        no register — so a dialog owned by the menu would have appeared twice
+        at once, portalled past the CSS that hides one of the two.
+      */}
+      {showProfile && account?.user ? (
+        <ProfilePopup
+          account={account}
+          onChanged={setAccount}
+          onClose={() => navigate(behindProfile.current, { replace: true })}
+        />
+      ) : null}
+
       {!showWorkspace && mode === 'chat' ? (
         <Chat
           key={homeKey}
           corpusSynced={synced}
           account={account}
-          onAccountChanged={setAccount}
+          openId={openId}
+          onOpenSession={(id, replace) =>
+            navigate(id ? `/c/${id}` : '/', { replace: replace ?? false })
+          }
           onSignOut={signOut}
-          onOpenWorkspace={() => setShowWorkspace(true)}
+          onOpenProfile={() => navigate('/profile')}
+          onOpenWorkspace={() => navigate('/workspace')}
         />
       ) : null}
       {!showWorkspace && mode === 'ask' ? <AskMode key={homeKey} corpusSynced={synced} /> : null}

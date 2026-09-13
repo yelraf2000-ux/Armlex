@@ -124,14 +124,24 @@ function autoGrow(el: HTMLTextAreaElement): void {
 export function Chat({
   corpusSynced,
   account,
-  onAccountChanged,
+  openId,
+  onOpenSession,
   onSignOut,
+  onOpenProfile,
   onOpenWorkspace,
 }: {
   corpusSynced: string | null;
   account?: Account | null;
-  onAccountChanged?: ((next: Account) => void) | undefined;
+  /** Which conversation the ADDRESS says is open; null is a fresh one. */
+  openId?: string | null | undefined;
+  /**
+   * Ask for a different conversation. The caller moves the address, which comes
+   * back down as `openId` — one direction, so the two can never disagree.
+   * `replace` for a move the reader did not ask for.
+   */
+  onOpenSession?: ((id: string | null, replace?: boolean) => void) | undefined;
   onSignOut?: (() => void) | undefined;
+  onOpenProfile?: (() => void) | undefined;
   onOpenWorkspace?: (() => void) | undefined;
 }) {
   const { t, railOpen, setRail } = useSettings();
@@ -171,6 +181,27 @@ export function Chat({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  /*
+   * The address decides which conversation is open — this is where it lands.
+   *
+   * `syncedRef` holds the id this component has already acted on, so the three
+   * ways a conversation changes (a click in the register, a new one earning its
+   * id mid-answer, the browser's own back button) all end up here and none of
+   * them re-fetches a transcript that is already on screen. It starts null so a
+   * cold load of /c/<id> is a change and does fetch.
+   */
+  const syncedRef = useRef<string | null>(null);
+  useEffect(() => {
+    const want = openId ?? null;
+    if (want === syncedRef.current) return;
+    syncedRef.current = want;
+    if (want) void openSession(want);
+    else clearThread();
+    // openSession and clearThread are redefined every render and stable in
+    // behaviour; depending on them would re-run this on every keystroke.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [openId]);
+
   const endRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
   /** Whether to keep following the streaming answer; false once the reader scrolls up. */
@@ -188,6 +219,21 @@ export function Chat({
   async function openSession(id: string): Promise<void> {
     try {
       const res = await fetch(`/api/sessions/${encodeURIComponent(id)}`);
+      /*
+        An id that is not yours, or not anything.
+
+        Only reachable since conversations got addresses — the register could
+        only ever offer your own. Left alone it would seat the reader in an
+        empty transcript that still carried the foreign id, and their next
+        question would be posted into somebody else's conversation. Start a
+        fresh one instead, and put the address right.
+      */
+      if (!res.ok) {
+        syncedRef.current = null;
+        clearThread();
+        onOpenSession?.(null, true);
+        return;
+      }
       const data = (await res.json()) as { messages?: { role: string; content: string }[] };
       setSessionId(id);
       setTurns(
@@ -347,7 +393,19 @@ export function Chat({
           } else if (m[1] === 'delta') {
             pending += payload.text ?? '';
           } else if (m[1] === 'done') {
-            if (payload.sessionId) setSessionId(payload.sessionId);
+            if (payload.sessionId) {
+              setSessionId(payload.sessionId);
+              /*
+                Give it its address, by REPLACING. It is the same screen the
+                reader is already looking at, merely one that now has a name —
+                pushing would make the back button walk into the blank
+                consultation they had just left behind.
+              */
+              if (payload.sessionId !== syncedRef.current) {
+                syncedRef.current = payload.sessionId;
+                onOpenSession?.(payload.sessionId, true);
+              }
+            }
             // Deliberately does NOT set `text`: the pacer is still draining
             // `pending`, and overwriting it here would jump the answer to its
             // final state mid-animation.
@@ -383,7 +441,8 @@ export function Chat({
     }
   }
 
-  function reset(): void {
+  /** Wipe the screen. Says nothing about the address — see `reset`. */
+  function clearThread(): void {
     setSessionId(null);
     setTurns([]);
     setError(null);
@@ -391,6 +450,23 @@ export function Chat({
     // Starting a new consultation from halfway down a long register would
     // otherwise leave the fresh, empty screen scrolled past.
     window.scrollTo({ top: 0 });
+  }
+
+  /**
+   * A fresh consultation.
+   *
+   * Asks for the move and lets it come back as `openId`, so a new conversation
+   * is reached the same way as every other — and the back button returns to the
+   * one you left. Without a caller listening, it just clears.
+   */
+  function reset(): void {
+    if (onOpenSession) {
+      syncedRef.current = null;
+      clearThread();
+      onOpenSession(null);
+      return;
+    }
+    clearThread();
   }
 
   // Which turn's apparatus is on screen.
@@ -476,7 +552,7 @@ export function Chat({
         <div className="register-rule" />
         <Sessions
           currentId={sessionId}
-          onOpen={(id) => void openSession(id)}
+          onOpen={(id) => (onOpenSession ? onOpenSession(id) : void openSession(id))}
           reloadKey={reloadKey}
           // Deleting the conversation being read has to clear the reader too,
           // or the transcript stays on screen with nothing behind it.
@@ -487,12 +563,12 @@ export function Chat({
           display:none and the masthead carries the same control instead — CSS
           shows exactly one, so sign-out is never off the page.
         */}
-        {account?.user && onAccountChanged && onSignOut && onOpenWorkspace ? (
+        {account?.user && onSignOut && onOpenWorkspace ? (
           <AccountMenu
             account={account}
             placement="rail"
-            onChanged={onAccountChanged}
             onSignOut={onSignOut}
+            onOpenProfile={onOpenProfile ?? (() => {})}
             onOpenWorkspace={onOpenWorkspace}
           />
         ) : null}
