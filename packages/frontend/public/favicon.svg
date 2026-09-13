@@ -11,11 +11,29 @@
     at 64. Nothing here is thinner than 5 units, and the finial is gone —
     it merged into the beam at small sizes and only added noise.
 
+    No hue. It was crimson on cream, which were the two palette colours that
+    no longer exist — and a mark that carries the accent has to be redrawn
+    every time the accent moves. Ink and paper carry no such debt, and the one
+    blue in this design is better spent on things a person can press.
+
     Filled tile, because the tab strip is light in one theme and near-black in
-    the other and a transparent mark disappears into one of them.
+    the other and a transparent mark disappears into one of them. The tile and
+    the glyph swap under prefers-color-scheme rather than picking a middle grey
+    that is weak against both: an SVG favicon is a document, so its own media
+    query is honoured by every browser that supports one at all.
+
+    Used twice — the browser tab, and the 26px mark in the collapsed sidebar.
   -->
-  <rect width="64" height="64" rx="14" fill="#A8142B"/>
-  <g fill="#EDE8DC">
+  <style>
+    .tile { fill: #111418; }
+    .mark { fill: #F7F8FA; }
+    @media (prefers-color-scheme: dark) {
+      .tile { fill: #F7F8FA; }
+      .mark { fill: #111418; }
+    }
+  </style>
+  <rect class="tile" width="64" height="64" rx="14"/>
+  <g class="mark">
     <rect x="12" y="16" width="40" height="5.5" rx="2.75"/>
     <rect x="29" y="16" width="6" height="31"/>
     <rect x="17" y="46" width="30" height="6" rx="3"/>
