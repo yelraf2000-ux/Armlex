@@ -20,7 +20,7 @@
      Anything that sits at the bottom of the window — the composer, the account
      block, the sidebar's own padding — stands on top of this rather than
      behind it. */
-  --footer-h: 52px;
+  --footer-h: 57px;
 
   --paper:   #F6F0E8;  /* uncoated cream */
   --glow:    #FFFDF6;  /* the same paper, lit    — see the body gradient below */
