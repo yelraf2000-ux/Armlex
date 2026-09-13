@@ -1,0 +1,14 @@
+-- Sessions that can actually be ended.
+--
+-- The session cookie is stateless — user id, expiry, HMAC — which means there
+-- has never been anything on the server to revoke. Signing out cleared the
+-- browser's copy and nothing more: a cookie copied off a shared machine stayed
+-- valid until it expired on its own, and an account whose laptop was lost could
+-- not be shut out at all.
+--
+-- This is the smallest fix that keeps the cookie stateless in the sense that
+-- matters — no session table, no row read per request beyond the one the
+-- request already does. The cookie carries this number; a request is refused
+-- when the two disagree. Signing out increments it, which invalidates every
+-- copy of that account's cookie at once.
+ALTER TABLE users ADD COLUMN session_version int NOT NULL DEFAULT 0;

@@ -129,6 +129,7 @@ describe('effectivePlan', () => {
     email: 'a@b.c',
     name: null,
     plan: 'pro',
+    session_version: 0,
     password_hash: null,
     google_sub: null,
     plan_expires_at: null,

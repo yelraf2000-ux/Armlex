@@ -11,7 +11,7 @@
 import { test, describe, before } from 'node:test';
 import assert from 'node:assert/strict';
 import { hashPassword, verifyPassword, MIN_PASSWORD } from './password.js';
-import { issue, verify, readCookie, COOKIE } from './cookie.js';
+import { issue, refreshed, verify, readCookie, COOKIE } from './cookie.js';
 import { issueState, verifyState } from './google.js';
 
 const USER = '3f1a2b4c-5d6e-4f70-8a91-b2c3d4e5f607';
@@ -62,33 +62,50 @@ describe('password hashing', () => {
 });
 
 describe('session cookie', () => {
-  test('a freshly issued cookie names its user', () => {
-    assert.equal(verify(issue(USER)), USER);
+  test('a freshly issued cookie names its user and its version', () => {
+    assert.deepEqual(
+      { userId: verify(issue(USER, 3))?.userId, version: verify(issue(USER, 3))?.version },
+      { userId: USER, version: 3 },
+    );
   });
 
   test('a tampered user id is rejected', () => {
-    const [, expires, mac] = issue(USER).split('.');
+    const [, version, expires, mac] = issue(USER).split('.');
     const other = '00000000-0000-4000-8000-000000000000';
-    assert.equal(verify(`${other}.${expires}.${mac}`), null);
+    assert.equal(verify(`${other}.${version}.${expires}.${mac}`), null);
+  });
+
+  test('a tampered version is rejected', () => {
+    // The whole point of the version: a cookie retired by signing out must not
+    // be revivable by editing the number it carries.
+    const [id, , expires, mac] = issue(USER, 2).split('.');
+    assert.equal(verify(`${id}.7.${expires}.${mac}`), null);
   });
 
   test('an extended expiry is rejected', () => {
     // The expiry is inside the signature, so pushing it out invalidates it —
-    // otherwise a 30-day cookie becomes a permanent one.
-    const [id, , mac] = issue(USER).split('.');
-    assert.equal(verify(`${id}.${Date.now() + 10 ** 12}.${mac}`), null);
+    // otherwise a seven-day cookie becomes a permanent one.
+    const [id, version, , mac] = issue(USER).split('.');
+    assert.equal(verify(`${id}.${version}.${Date.now() + 10 ** 12}.${mac}`), null);
   });
 
   test('an expired cookie is rejected even though the signature is good', () => {
     // Signed under the real secret, with a past expiry — the check has to be
     // on time as well as on the signature.
     const past = Date.now() - 1000;
-    const good = issue(USER);
-    const [id] = good.split('.');
-    // Re-sign honestly by issuing, then swapping in an already-past expiry is
-    // not possible without the secret, so assert the shape instead: a cookie
-    // whose expiry has passed must never verify.
-    assert.equal(verify(`${id}.${past}.deadbeef`), null);
+    const [id] = issue(USER).split('.');
+    // Re-signing honestly with a past expiry is not possible without the
+    // secret, so assert the shape instead: a cookie whose expiry has passed
+    // must never verify.
+    assert.equal(verify(`${id}.0.${past}.deadbeef`), null);
+  });
+
+  test('a cookie in the old three-part format is rejected', () => {
+    // Sessions became revocable when the version joined the payload. Honouring
+    // the old shape would leave unrevokable cookies in circulation for the
+    // length of their own window, which is the thing that change fixed.
+    const [id, , expires, mac] = issue(USER).split('.');
+    assert.equal(verify(`${id}.${expires}.${mac}`), null);
   });
 
   test('a cookie signed with a different secret is rejected', () => {
@@ -99,9 +116,33 @@ describe('session cookie', () => {
   });
 
   test('malformed values are rejected, not thrown on', () => {
-    for (const bad of [undefined, '', 'a', 'a.b', 'a.b.c.d', '....']) {
+    for (const bad of [undefined, '', 'a', 'a.b', 'a.b.c', 'a.b.c.d', '....']) {
       assert.equal(verify(bad as string | undefined), null);
     }
+  });
+
+  test('a fresh cookie is not reissued, one past halfway is', () => {
+    const WEEK = 7 * 24 * 60 * 60 * 1000;
+    const fresh = verify(issue(USER))!;
+    assert.equal(refreshed(fresh, USER, 0), null, 'a cookie issued moments ago needs nothing');
+
+    // Four days in: past the halfway mark, so using the tool pushes the window
+    // out again rather than letting it run down to a sign-in form.
+    const older = { ...fresh, expiresAt: Date.now() + WEEK - 4 * 24 * 60 * 60 * 1000 };
+    const header = refreshed(older, USER, 0);
+    assert.ok(header, 'a cookie past halfway is reissued');
+    assert.ok(header!.includes(COOKIE), 'and it is the session cookie that is set');
+  });
+
+  test('a reissued cookie carries the account\'s CURRENT version', () => {
+    // Not the one in the old cookie: refreshing a session must never hand back
+    // a version that has since been retired.
+    const WEEK = 7 * 24 * 60 * 60 * 1000;
+    const old = verify(issue(USER, 1))!;
+    const stale = { ...old, expiresAt: Date.now() + WEEK / 4 };
+    const header = refreshed(stale, USER, 5)!;
+    const value = header.slice(header.indexOf('=') + 1, header.indexOf(';'));
+    assert.equal(verify(value)?.version, 5);
   });
 
   test('cookies are read out of a header with several values', () => {

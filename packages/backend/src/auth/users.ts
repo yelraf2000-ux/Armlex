@@ -27,6 +27,8 @@ export interface User {
   bonus_questions: number;
   /** The firm this account belongs to. Null only for a row the backfill missed. */
   workspace_id: string | null;
+  /** Bumped to invalidate every cookie this account has ever been issued. */
+  session_version: number;
 }
 
 export interface CompanyProfile {
@@ -76,7 +78,8 @@ export function normaliseEmail(raw: string): string {
 export async function findByEmail(email: string): Promise<User | null> {
   const rows = await db()<User[]>`
     SELECT id, email, name, plan, password_hash, google_sub, plan_expires_at,
-           company_name, company_size, bonus_questions, workspace_id
+           company_name, company_size, bonus_questions, workspace_id,
+           session_version
       FROM users WHERE email = ${normaliseEmail(email)} LIMIT 1`;
   return rows[0] ?? null;
 }
@@ -84,7 +87,8 @@ export async function findByEmail(email: string): Promise<User | null> {
 export async function findById(id: string): Promise<User | null> {
   const rows = await db()<User[]>`
     SELECT id, email, name, plan, password_hash, google_sub, plan_expires_at,
-           company_name, company_size, bonus_questions, workspace_id
+           company_name, company_size, bonus_questions, workspace_id,
+           session_version
       FROM users WHERE id = ${id} LIMIT 1`;
   return rows[0] ?? null;
 }
@@ -101,7 +105,8 @@ export async function createWithPassword(
     VALUES (${normaliseEmail(email)}, ${name}, ${hash},
             ${profile.companyName ?? null}, ${validSize(profile.companySize)})
     RETURNING id, email, name, plan, password_hash, google_sub, plan_expires_at,
-              company_name, company_size, bonus_questions, workspace_id`;
+              company_name, company_size, bonus_questions, workspace_id,
+           session_version`;
   return rows[0]!;
 }
 
@@ -124,7 +129,8 @@ export async function fillProfile(id: string, profile: CompanyProfile): Promise<
            company_size = COALESCE(company_size, ${validSize(profile.companySize)})
      WHERE id = ${id}
     RETURNING id, email, name, plan, password_hash, google_sub, plan_expires_at,
-              company_name, company_size, bonus_questions, workspace_id`;
+              company_name, company_size, bonus_questions, workspace_id,
+           session_version`;
   return rows[0] ?? null;
 }
 
@@ -155,7 +161,8 @@ export async function updateProfile(
              company_size)
      WHERE id = ${id}
     RETURNING id, email, name, plan, password_hash, google_sub, plan_expires_at,
-              company_name, company_size, bonus_questions, workspace_id`;
+              company_name, company_size, bonus_questions, workspace_id,
+           session_version`;
   return rows[0] ?? null;
 }
 
@@ -178,7 +185,8 @@ export async function upsertGoogleUser(
 
   const bySub = await db()<User[]>`
     SELECT id, email, name, plan, password_hash, google_sub, plan_expires_at,
-           company_name, company_size, bonus_questions, workspace_id
+           company_name, company_size, bonus_questions, workspace_id,
+           session_version
       FROM users WHERE google_sub = ${sub} LIMIT 1`;
   if (bySub[0]) return bySub[0];
 
@@ -203,6 +211,21 @@ export async function upsertGoogleUser(
     VALUES (${address}, ${name}, ${sub}, now())
     RETURNING id, email, name, plan, password_hash, google_sub, plan_expires_at, company_name, company_size, bonus_questions, workspace_id`;
   return rows[0]!;
+}
+
+/**
+ * End every session this account has.
+ *
+ * Signing out used to clear one browser's cookie and nothing else, because
+ * there was nothing on the server that said a session had ended. Incrementing
+ * the number the cookie carries retires all of them at once — the one in this
+ * browser, the one on the machine at the office, and any copy taken off either.
+ */
+export async function endAllSessions(id: string): Promise<number> {
+  const rows = await db()<{ session_version: number }[]>`
+    UPDATE users SET session_version = session_version + 1
+     WHERE id = ${id} RETURNING session_version`;
+  return rows[0]?.session_version ?? 0;
 }
 
 export async function touchLastSeen(id: string): Promise<void> {

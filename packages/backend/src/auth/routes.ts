@@ -6,7 +6,7 @@
  * session cookie except the handful of paths listed below.
  */
 import type { FastifyReply, FastifyRequest } from 'fastify';
-import { clearCookie, readCookie, setCookie, verify } from './cookie.js';
+import { clearCookie, readCookie, refreshed, setCookie, verify } from './cookie.js';
 import { MIN_PASSWORD, verifyPassword } from './password.js';
 import {
   createWithPassword,
@@ -15,6 +15,7 @@ import {
   findById,
   monthlyUsage,
   normaliseEmail,
+  endAllSessions,
   touchLastSeen,
   updateProfile,
   upsertGoogleUser,
@@ -141,19 +142,43 @@ export async function requireAuth(req: FastifyRequest, reply: FastifyReply): Pro
   if (!path.startsWith('/api/')) return;
   if (PUBLIC_PATHS.has(path) || PUBLIC_PREFIXES.some((p) => path.startsWith(p))) return;
 
-  const userId = verify(readCookie(req.headers.cookie));
-  if (!userId) {
+  const session = verify(readCookie(req.headers.cookie));
+  if (!session) {
     await reply.code(401).send({ error: 'unauthorized' });
     return;
   }
 
-  const user = await findById(userId);
+  const user = await findById(session.userId);
   if (!user) {
     // Signed cookie for an account that no longer exists — clear it rather than
     // leaving the browser to present it on every request forever.
     await reply.header('Set-Cookie', clearCookie()).code(401).send({ error: 'unauthorized' });
     return;
   }
+
+  /*
+   * A cookie from before the last sign-out.
+   *
+   * This is what makes signing out mean something: the number rides in the
+   * cookie, the account holds the current one, and they stop matching the
+   * moment anybody signs out. Cleared as well as refused, so the browser
+   * holding a retired cookie stops presenting it.
+   */
+  if (session.version !== user.session_version) {
+    await reply.header('Set-Cookie', clearCookie()).code(401).send({ error: 'unauthorized' });
+    return;
+  }
+
+  /*
+   * Using the tool is what keeps you signed in.
+   *
+   * The window is seven days of NOT being here; any request past its halfway
+   * point pushes it out again. Most requests return null from `refreshed` and
+   * set no header at all.
+   */
+  const fresh = refreshed(session, user.id, user.session_version);
+  if (fresh) void reply.header('Set-Cookie', fresh);
+
   req.user = user;
 }
 
@@ -234,7 +259,7 @@ export async function register(req: FastifyRequest, reply: FastifyReply): Promis
   }
 
   return reply
-    .header('Set-Cookie', setCookie(fresh.id))
+    .header('Set-Cookie', setCookie(fresh.id, fresh.session_version))
     .send({
       user: publicUser(fresh),
       usage: await monthlyUsage(fresh),
@@ -272,7 +297,7 @@ export async function login(req: FastifyRequest, reply: FastifyReply): Promise<v
 
   await touchLastSeen(user.id);
   return reply
-    .header('Set-Cookie', setCookie(user.id))
+    .header('Set-Cookie', setCookie(user.id, user.session_version))
     .send({ user: publicUser(user), usage: await monthlyUsage(user) });
 }
 
@@ -294,7 +319,7 @@ export async function verifyEmail(req: FastifyRequest, reply: FastifyReply): Pro
 
   await touchLastSeen(user.id);
   return reply
-    .header('Set-Cookie', setCookie(user.id))
+    .header('Set-Cookie', setCookie(user.id, user.session_version))
     .send({ user: publicUser(user), usage: await monthlyUsage(user) });
 }
 
@@ -346,7 +371,7 @@ export async function resetPassword(req: FastifyRequest, reply: FastifyReply): P
 
   await touchLastSeen(user.id);
   return reply
-    .header('Set-Cookie', setCookie(user.id))
+    .header('Set-Cookie', setCookie(user.id, user.session_version))
     .send({ user: publicUser(user), usage: await workspaceQuota(user) });
 }
 
@@ -402,7 +427,7 @@ export async function acceptInvite(req: FastifyRequest, reply: FastifyReply): Pr
   }
 
   return reply
-    .header('Set-Cookie', setCookie(user.id))
+    .header('Set-Cookie', setCookie(user.id, user.session_version))
     .send({ user: publicUser(user), usage: await monthlyUsage(user) });
 }
 
@@ -430,7 +455,18 @@ export async function resendVerification(
   return reply.send({ ok: true });
 }
 
-export async function logout(_req: FastifyRequest, reply: FastifyReply): Promise<void> {
+/**
+ * Sign out — everywhere, not just here.
+ *
+ * Clearing the cookie only ever emptied this browser's pocket; a copy taken
+ * off a shared machine kept working until it expired on its own. Bumping the
+ * account's session version retires every cookie ever issued to it, which is
+ * what someone who has just signed out on a borrowed computer is entitled to
+ * assume happened.
+ */
+export async function logout(req: FastifyRequest, reply: FastifyReply): Promise<void> {
+  const session = verify(readCookie(req.headers.cookie));
+  if (session) await endAllSessions(session.userId);
   return reply.header('Set-Cookie', clearCookie()).send({ ok: true });
 }
 
@@ -605,9 +641,13 @@ export async function patchWorkspace(req: FastifyRequest, reply: FastifyReply): 
 
 /** Who am I, and how much of this month's allowance is left? */
 export async function me(req: FastifyRequest, reply: FastifyReply): Promise<void> {
-  const userId = verify(readCookie(req.headers.cookie));
-  const user = userId ? await findById(userId) : null;
-  if (!user) return reply.send({ user: null, google: googleEnabled() });
+  const session = verify(readCookie(req.headers.cookie));
+  const user = session ? await findById(session.userId) : null;
+  // Signed out elsewhere counts as signed out here, on the one route that is
+  // reachable without the gate above having already checked it.
+  if (!user || session!.version !== user.session_version) {
+    return reply.send({ user: null, google: googleEnabled() });
+  }
   const view = await readWorkspace(user);
   return reply.send({
     user: publicUser(user),
@@ -673,5 +713,5 @@ export async function googleCallback(req: FastifyRequest, reply: FastifyReply): 
   if (!before) await claimInvitation(user.id, identity.email);
   await workspaceIdFor((await findById(user.id)) ?? user);
   await touchLastSeen(user.id);
-  return reply.header('Set-Cookie', setCookie(user.id)).redirect('/');
+  return reply.header('Set-Cookie', setCookie(user.id, user.session_version)).redirect('/');
 }
