@@ -564,9 +564,10 @@ export async function patchWorkspaceMember(
   }
   const admin = (req.body as { admin?: unknown } | undefined)?.admin === true;
 
-  if (!(await setMemberAdmin(workspaceId, req.params.id, admin))) {
-    // Also the answer when the target is the owner: there is nothing to change,
-    // and saying "not found" is truthful about the row this could have altered.
+  if (!(await setMemberAdmin(workspaceId, req.params.id, admin, req.user!.id))) {
+    // Also the answer when the target is the owner, or the caller themselves:
+    // neither can have their role changed, and "not found" is truthful about
+    // the row this could have altered.
     return reply.code(404).send({ error: 'not_found' });
   }
   return reply.send(await readWorkspace(req.user!));
@@ -582,10 +583,9 @@ export async function deleteWorkspaceMember(
   if (!/^[0-9a-f-]{36}$/i.test(req.params.id)) {
     return reply.code(400).send({ error: 'invalid_id' });
   }
-  // Also the answer when the target IS the admin: removing the owner would
-  // leave a workspace nobody can administer, and nothing here can appoint a
-  // replacement yet.
-  if (!(await removeMember(workspaceId, req.params.id))) {
+  // Also the answer when the target is the caller: an admin may remove anyone
+  // in the firm, its creator included, but never themselves.
+  if (!(await removeMember(workspaceId, req.params.id, req.user!.id))) {
     return reply.code(404).send({ error: 'not_found' });
   }
   return reply.send(await readWorkspace(req.user!));

@@ -97,15 +97,23 @@ export async function isAdmin(userId: string, workspaceId: string): Promise<bool
 /**
  * Promote or demote a colleague.
  *
- * The owner is refused in both directions: demoting them could leave a
- * workspace with no admin and no way to appoint one, and promoting them is a
- * no-op that only invites the UI to offer a button that does nothing.
+ * Never YOURSELF. An admin who could demote themselves could do it as the last
+ * admin and lock the firm out of its own workspace; and a self-demotion is
+ * indistinguishable from a misclick with no way back.
+ *
+ * The owner is refused in both directions: they are an admin by virtue of
+ * owning the workspace, so demoting them changes nothing and promoting them is
+ * a no-op — either would only invite a button that appears to do something.
+ * Removing the owner IS allowed (see `removeMember`), which passes ownership on
+ * rather than leaving the role vacant.
  */
 export async function setMemberAdmin(
   workspaceId: string,
   memberId: string,
   admin: boolean,
+  actorId: string,
 ): Promise<boolean> {
+  if (memberId === actorId) return false;
   const rows = await db()<{ id: string }[]>`
     UPDATE users u
        SET is_workspace_admin = ${admin}
@@ -421,18 +429,43 @@ export async function revokeInvite(workspaceId: string, inviteId: string): Promi
  * they are the admin. Deleting the account instead would let one admin destroy
  * a colleague's work, which is not what "remove from workspace" says.
  *
- * The owner cannot be removed: a workspace with no admin is unadministrable,
- * and nothing in this UI can appoint a new one yet.
+ * ANY admin may remove ANY colleague, the workspace's creator included. What
+ * nobody may do is remove themselves: a firm must always be left with someone
+ * able to administer it, and self-removal is the one move that can empty the
+ * room — every other removal leaves the person who performed it behind.
+ *
+ * Removing the owner hands ownership to the admin who did it. Ownership is not
+ * a decoration: `workspaceQuota` reads the OWNER's plan to size the firm's
+ * weekly allowance, and `setMemberAdmin` refuses to demote them. Left pointing
+ * at someone who has just been removed, the firm's quota would be computed
+ * from an outsider's plan and no member would be protected from demotion.
  */
-export async function removeMember(workspaceId: string, memberId: string): Promise<boolean> {
+export async function removeMember(
+  workspaceId: string,
+  memberId: string,
+  actorId: string,
+): Promise<boolean> {
+  if (memberId === actorId) return false;
+
   const owner = await db()<{ owner_id: string }[]>`
     SELECT owner_id FROM workspaces WHERE id = ${workspaceId}`;
-  if (!owner[0] || owner[0].owner_id === memberId) return false;
+  if (!owner[0]) return false;
 
+  /*
+    Membership is checked BEFORE ownership moves. The other order transfers the
+    workspace and then returns false when the target turns out not to be a
+    member — a half-applied change reported to the caller as "not found".
+  */
   const inWorkspace = await db()<{ id: string; company_name: string | null }[]>`
     SELECT id, company_name FROM users
      WHERE id = ${memberId} AND workspace_id = ${workspaceId}`;
   if (!inWorkspace[0]) return false;
+
+  if (owner[0].owner_id === memberId) {
+    await db()`
+      UPDATE workspaces SET owner_id = ${actorId}
+       WHERE id = ${workspaceId} AND owner_id = ${memberId}`;
+  }
 
   const fresh = await db()<{ id: string }[]>`
     INSERT INTO workspaces (owner_id, name)
