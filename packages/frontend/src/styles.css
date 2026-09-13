@@ -1890,8 +1890,11 @@ body:has(.rail-mini) .page { padding-left: 56px; }
 
 .landing { padding-top: 1.5rem; }
 /* The doors sit on the mark's line, so the line centres rather than sitting on
-   a shared baseline that a 24px display face and a 13px UI face do not share. */
-.provenance .masthead-top { align-items: center; }
+   a shared baseline that a 24px display face and a 13px UI face do not share.
+   The min-height is what keeps the mark at the same height on all three
+   screens: without it the sign-in form, whose masthead holds nothing but the
+   mark, sat five pixels above the landing and the signed-in page. */
+.provenance .masthead-top { align-items: center; min-height: 38px; }
 /* A masthead stands above the form now; 12vh of air under it is a hole. */
 .page .login { margin-top: 5vh; }
 
