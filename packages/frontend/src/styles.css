@@ -116,6 +116,11 @@
 
 * { box-sizing: border-box; }
 
+/* Form controls do not inherit the page font on their own — a button that
+   sets no family gets the browser's, which is how the send arrow ended up
+   asking for Arial. Family only: sizes stay where each rule puts them. */
+button, input, textarea, select { font-family: inherit; }
+
 /*
  * The ground is lit, not tinted.
  *
