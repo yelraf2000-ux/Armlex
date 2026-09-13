@@ -279,7 +279,7 @@ interface CorpusInfo {
   lastChecked: string | null;
 }
 
-function Workbench() {
+function Workbench({ onSynced }: { onSynced: (synced: string | null) => void }) {
   const { t } = useSettings();
   const [mode, setMode] = useState<Mode>('chat');
   /** Bumped to remount the active mode, which is how "go home" clears it. */
@@ -398,6 +398,13 @@ function Workbench() {
   const synced = corpus?.lastChecked
     ? corpus.lastChecked.slice(0, 10).split('-').reverse().join('.')
     : null;
+
+  /* Handed up to the colophon at the root, which is the only place it is
+     printed. It is fetched here because the endpoint is behind the sign-in
+     gate and this is the component that knows whether we are through it. */
+  useEffect(() => {
+    onSynced(synced);
+  }, [synced, onSynced]);
 
   /**
    * Back to a clean Dialogue, from wherever you are.
@@ -575,38 +582,36 @@ function Workbench() {
       {!showWorkspace && mode === 'ask' ? <AskMode key={homeKey} corpusSynced={synced} /> : null}
       {!showWorkspace && mode === 'search' ? <SearchMode key={homeKey} /> : null}
 
-      {/* The colophon: how current this is. The "checked against ARLIS" date
-          moved here from the masthead — it is the imprint of the edition, not
-          running head. The not-legal-advice line that stood above it is now
-          fixed to the foot of the window (see Disclaimer), where it is read
-          instead of scrolled past. The corpus counts ("33 acts · 1737
-          fragments") that once sat here are gone for good: they meant
-          something to whoever built the index and nothing to an accountant
-          reading an answer. */}
-      <footer className="colophon">
-        {corpus && synced ? (
-          <div className="colophon-synced">
-            {t('corpus.synced')} <span className="num">{synced}</span>
-          </div>
-        ) : null}
-      </footer>
     </div>
   );
 }
 
 /**
- * The disclaimer, fixed to the foot of the window.
+ * The colophon, fixed to the foot of the window: what this is, and how current.
  *
- * It used to be the last line of each screen's own flow, which meant that on
- * every screen long enough to scroll — which is every screen with an answer on
- * it — it was below the fold, and the one sentence this product is legally
- * obliged to keep in front of a reader was the one thing they had to go looking
- * for. Mounted here rather than per screen, so there is one of it and it cannot
- * be forgotten on a new page.
+ * Both lines used to be the last thing in each screen's own flow, which meant
+ * that on every screen long enough to scroll — which is every screen with an
+ * answer on it — they were below the fold. The sentence this product is obliged
+ * to keep in front of a reader, and the date that says whether the law it is
+ * quoting is the law in force, were the two things you had to go looking for.
+ *
+ * Mounted here rather than per screen, so there is one of it and it cannot be
+ * forgotten on a new page. The date appears once it is known — it comes from a
+ * route behind the sign-in gate, so a visitor who has not signed in sees the
+ * disclaimer alone.
  */
-function Disclaimer() {
+function Colophon({ synced }: { synced: string | null }) {
   const { t } = useSettings();
-  return <div className="disclaimer">{t('corpus.disclaimer')}</div>;
+  return (
+    <footer className="colophon">
+      <div className="colophon-disclaimer">{t('corpus.disclaimer')}</div>
+      {synced ? (
+        <div className="colophon-synced">
+          {t('corpus.synced')} <span className="num">{synced}</span>
+        </div>
+      ) : null}
+    </footer>
+  );
 }
 
 /**
@@ -614,10 +619,13 @@ function Disclaimer() {
  * past the password gate should still be able to read it in their own language.
  */
 export function App() {
+  /* Lifted only so the fixed colophon can print it: the fetch stays inside
+     Workbench, which is the part that knows whether anyone is signed in. */
+  const [synced, setSynced] = useState<string | null>(null);
   return (
     <SettingsProvider>
-      <Workbench />
-      <Disclaimer />
+      <Workbench onSynced={setSynced} />
+      <Colophon synced={synced} />
     </SettingsProvider>
   );
 }

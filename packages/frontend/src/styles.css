@@ -16,10 +16,11 @@
 :root {
   color-scheme: light dark;
 
-  /* The fixed disclaimer's height. Anything that sits at the bottom of the
-     window — the composer, the account block, the sidebar's own padding —
-     stands on top of this rather than behind it. */
-  --footer-h: 34px;
+  /* The fixed colophon's height — two lines, the disclaimer and the date.
+     Anything that sits at the bottom of the window — the composer, the account
+     block, the sidebar's own padding — stands on top of this rather than
+     behind it. */
+  --footer-h: 52px;
 
   --paper:   #F6F0E8;  /* uncoated cream */
   --glow:    #FFFDF6;  /* the same paper, lit    — see the body gradient below */
@@ -232,41 +233,34 @@ a { color: var(--accent); }
  * one thing that belongs there — how current the corpus is — and were read
  * past every day.
  */
-.colophon {
-  text-align: center;
-  padding: 24px 20px 30px;
-  margin-top: 26px;
-}
 /*
- * The not-legal-advice line, fixed to the foot of the window on every screen.
+ * Fixed to the foot of the window, on every screen.
  *
- * Opaque, and painted with the page's own ground so the text it covers reads
- * as having run off the bottom of the page rather than as having slid under a
- * bar. Below the account menu and every popup in the stack, above the page.
+ * Opaque, and painted with the page's own ground, so text passing under it
+ * reads as having run off the bottom of the page rather than as having slid
+ * beneath a bar. Below the account menu and every popup in the stack, above
+ * the page itself.
  */
-.disclaimer {
+.colophon {
   position: fixed;
   left: 0;
   right: 0;
   bottom: 0;
   z-index: 15;
   text-align: center;
-  padding: 8px 20px;
-  font-size: 12.5px;
-  font-style: italic;
-  line-height: 1.4;
-  color: var(--accent);
+  padding: 7px 20px 8px;
   background-color: var(--paper);
   background-image: var(--ground);
   background-attachment: fixed;
 }
+.colophon-disclaimer { line-height: 1.4; }
 /* "Checked against ARLIS <date>", under the disclaimer — quiet small caps. */
 .colophon-synced {
   font-size: 11px;
   letter-spacing: 0.14em;
   text-transform: uppercase;
   color: var(--ink-3);
-  margin-top: 8px;
+  margin-top: 3px;
 }
 .colophon-synced .num { color: var(--ink-3); }
 
