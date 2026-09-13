@@ -598,30 +598,35 @@ export function Chat({
 
       {turns.map((turn, i) => {
         const sources = sourcesOf(turn);
+        /* Waiting on the first word. The typing line names the speaker itself,
+           so the standing role label would only say MatyanAI a second time. */
+        const typing = turn.role === 'assistant' && !!turn.stage && !turn.text;
         return (
         <div key={i} className={`turn ${turn.role} measure`}>
-          <div className="turn-role">
-            {turn.role === 'user' ? t('turn.question') : BRAND}
-            {/*
-              Share sits on the FIRST question of a saved conversation, which is
-              where someone looks for it — the earlier placement was an unlabelled
-              icon revealed by hovering the sidebar list, and the first person to
-              use it could not find it at all. One control, named, in the thread
-              it acts on.
-            */}
-            {turn.role === 'user' && i === 0 && sessionId ? (
-              <button className="turn-share" onClick={() => setShareOpen(true)} title={t('share.share')}>
-                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-                  <path d="M4 12v7a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-7" />
-                  <path d="M12 15V3M8 7l4-4 4 4" />
-                </svg>
-                {t('share.share')}
-              </button>
-            ) : null}
-            {turn.role === 'user' && i === 0 && shareOpen && sessionId ? (
-              <SharePopup sessionId={sessionId} onClose={() => setShareOpen(false)} />
-            ) : null}
-          </div>
+          {typing ? null : (
+            <div className="turn-role">
+              {turn.role === 'user' ? t('turn.question') : BRAND}
+              {/*
+                Share sits on the FIRST question of a saved conversation, which is
+                where someone looks for it — the earlier placement was an unlabelled
+                icon revealed by hovering the sidebar list, and the first person to
+                use it could not find it at all. One control, named, in the thread
+                it acts on.
+              */}
+              {turn.role === 'user' && i === 0 && sessionId ? (
+                <button className="turn-share" onClick={() => setShareOpen(true)} title={t('share.share')}>
+                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                    <path d="M4 12v7a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-7" />
+                    <path d="M12 15V3M8 7l4-4 4 4" />
+                  </svg>
+                  {t('share.share')}
+                </button>
+              ) : null}
+              {turn.role === 'user' && i === 0 && shareOpen && sessionId ? (
+                <SharePopup sessionId={sessionId} onClose={() => setShareOpen(false)} />
+              ) : null}
+            </div>
+          )}
           {turn.coverage && COVERAGE_KEY[turn.coverage] ? (
             <div className={`coverage ${turn.coverage}`}>
               <div className="coverage-body">{t(COVERAGE_KEY[turn.coverage]!)}</div>
@@ -641,13 +646,19 @@ export function Chat({
                 reads as a hung request. Once text is streaming the words are
                 the feedback and this goes away.
 
-                aria-hidden, because the stage line beside it already says what
-                is happening and a screen reader announcing a decorative
-                animation twice is worse than not announcing it at all.
+                Shaped like the typing indicator every messaging app uses: who
+                is answering, then dots that say they are still at it. The dots
+                are aria-hidden — the stage line beside them already says what
+                is happening, and a screen reader announcing a decorative
+                animation on top of that is worse than not announcing it.
               */}
-              <span className="stage-figure" aria-hidden="true" />
+              <span className="stage-who">{BRAND}</span>
+              <span className="stage-dots" aria-hidden="true">
+                <i />
+                <i />
+                <i />
+              </span>
               <span className="stage-line">
-                <span className="stage-pulse" />
                 {STAGE_KEY[turn.stage] ? t(STAGE_KEY[turn.stage]!) : turn.stage}
               </span>
             </div>

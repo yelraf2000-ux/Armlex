@@ -119,6 +119,7 @@ a { color: var(--accent); }
 /* A small-caps label. Used for every section heading in the edition. */
 .panel-title,
 .turn-role,
+.stage-who,
 .src-label {
   font-size: 11px;
   letter-spacing: 0.16em;
@@ -583,62 +584,52 @@ a { color: var(--accent); }
 .stage {
   display: flex;
   align-items: center;
-  gap: 16px;
-  padding: 4px 0 8px;
+  gap: 10px;
+  padding: 4px 0 10px;
   font-style: italic;
   font-size: 16px;
   color: var(--ink-2);
   animation: stage-in 240ms ease-out;
 }
-.stage-line { display: flex; align-items: baseline; gap: 11px; }
+/* The name takes the role label's setting but not its margin: here it sits IN
+   the line rather than above it. */
+.stage-who { margin: 0; font-style: normal; }
+.stage-line { font-size: 15px; color: var(--ink-3); }
 
 /*
- * The figure that waits with you.
+ * Three dots that float, the way every messaging app says someone is writing.
  *
- * A stepped sprite sheet, not a GIF. The source GIF carried a grey studio
- * backdrop it could not shed — GIF has one transparent palette index, and that
- * backdrop spans 32 shades — so it sat on the paper as a rectangle. The sheet
- * is 24-bit colour with a real alpha channel, so the subject's edge feathers
- * into the page (about 8% of its pixels are partial alpha) and the frames keep
- * their full 62-step rate instead of being thinned to fit a file budget.
- *
- * 107x186 per frame, shown at 71x124 — 1.5x density, so it stays sharp on a
- * retina screen. 62 frames at 70ms is the source's own timing.
+ * They replace a 62-frame sprite sheet of a thinking figure: 1.2 MB fetched on
+ * a first visit, 124px tall, and the largest thing on screen during the one
+ * stretch when nothing has been said yet. The dots cost nothing, sit on the
+ * line beside the name, and carry a meaning everyone already knows.
  */
-.stage-figure {
-  width: 71px;
-  height: 124px;
-  flex: 0 0 auto;
-  background-image: url(/thinking.png);
-  background-repeat: no-repeat;
-  background-size: 71px 7688px;
-  animation: thinking 4.34s steps(62) infinite;
+.stage-dots { display: inline-flex; align-items: center; gap: 4px; flex: 0 0 auto; }
+.stage-dots i {
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: var(--ink-3);
+  animation: float-dot 1.25s ease-in-out infinite;
 }
-@keyframes thinking { to { background-position: 0 -7688px; } }
+.stage-dots i:nth-child(2) { animation-delay: 0.16s; }
+.stage-dots i:nth-child(3) { animation-delay: 0.32s; }
+@keyframes float-dot {
+  0%, 62%, 100% { transform: translateY(0); opacity: 0.3; }
+  31%           { transform: translateY(-4px); opacity: 1; }
+}
 @keyframes stage-in {
   from { opacity: 0; transform: translateY(4px); }
   to   { opacity: 1; transform: none; }
 }
-.stage-pulse {
-  width: 7px;
-  height: 7px;
-  background: var(--accent);
-  flex: 0 0 auto;
-  transform: translateY(-2px);
-  animation: pulse 1.4s ease-in-out infinite;
-}
-@keyframes pulse { 0%, 100% { opacity: 0.25; } 50% { opacity: 1; } }
-
 .sources, .rewrite { animation: fade-in 280ms ease-out; }
 @keyframes fade-in { from { opacity: 0; } to { opacity: 1; } }
 
 @media (prefers-reduced-motion: reduce) {
-  .stage, .stage-pulse, .caret, .sources, .rewrite, .coverage { animation: none; }
-  .stage-pulse { opacity: 0.7; }
-  /* Now that it is a CSS animation rather than a GIF it can simply be stopped,
-     so a reader who asked for less motion still gets the figure — standing
-     still on its first frame instead of vanishing. */
-  .stage-figure { animation: none; }
+  .stage, .caret, .sources, .rewrite, .coverage { animation: none; }
+  /* The dots stay — they are what says an answer is coming — but they stop
+     moving and simply sit there at full strength. */
+  .stage-dots i { animation: none; opacity: 0.7; }
 }
 
 /*
