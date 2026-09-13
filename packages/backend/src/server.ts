@@ -512,7 +512,55 @@ app.get<{ Params: { id: string } }>('/api/sessions/:id', async (req, reply) => {
     WHERE session_id = ${id} AND role IN ('user','assistant')
     ORDER BY id ASC
   `;
-  return { sessionId: id, messages: rows };
+
+  /*
+   * The articles each answer was built on, so reopening a conversation
+   * restores what you were reading rather than a bare transcript.
+   *
+   * Without this, a conversation you came back to had no sources column and no
+   * citations under its answers — the same words in a different, wider layout,
+   * which read as the page having changed rather than as anything being
+   * missing. `session_chunks` has held this all along; nothing was asking.
+   *
+   * `turn_added` is the 1-based question number, so the Nth answer takes the
+   * Nth bucket. Score order matches what the reader saw the first time.
+   */
+  const chunkRows = await db()<
+    {
+      turn_added: number;
+      id: string;
+      title_hy: string;
+      arlis_id: number;
+      article_number: string;
+      text_hy: string;
+      doc_type: string;
+      act_number: string | null;
+      score: number;
+    }[]
+  >`
+    SELECT sc.turn_added, a.id, d.title_hy, d.arlis_id, a.article_number,
+           a.text_hy, d.doc_type::text AS doc_type, d.act_number, sc.score
+      FROM session_chunks sc
+      JOIN articles a ON a.id = sc.article_id
+      JOIN documents d ON d.id = a.document_id
+     WHERE sc.session_id = ${id}
+     ORDER BY sc.turn_added ASC, sc.score DESC`;
+
+  const chunksByTurn: Record<string, unknown[]> = {};
+  for (const r of chunkRows) {
+    (chunksByTurn[String(r.turn_added)] ??= []).push({
+      articleId: String(r.id),
+      documentTitle: r.title_hy,
+      arlisId: r.arlis_id,
+      ref: r.article_number,
+      score: Number(r.score),
+      text: r.text_hy,
+      docType: r.doc_type,
+      actNumber: r.act_number,
+    });
+  }
+
+  return { sessionId: id, messages: rows, chunksByTurn };
 });
 
 /**

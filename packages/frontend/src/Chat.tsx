@@ -235,13 +235,34 @@ export function Chat({
         onOpenSession?.(null, true);
         return;
       }
-      const data = (await res.json()) as { messages?: { role: string; content: string }[] };
+      const data = (await res.json()) as {
+        messages?: { role: string; content: string }[];
+        chunksByTurn?: Record<string, Chunk[]>;
+      };
       setSessionId(id);
+      /*
+        The articles come back with the transcript.
+
+        They used to be dropped — only the words were restored — so a
+        conversation you returned to had no sources column and no citations
+        under its answers. The apparatus vanishing also collapsed the grid from
+        three columns to two, which moved the whole reading column a quarter of
+        the window to the right: the same text, in a place it had not been,
+        which reads as the page having changed size.
+      */
+      let answered = 0;
       setTurns(
-        (data.messages ?? []).map((m) => ({
-          role: m.role === 'user' ? ('user' as const) : ('assistant' as const),
-          text: m.content,
-        })),
+        (data.messages ?? []).map((m) => {
+          if (m.role === 'user') return { role: 'user' as const, text: m.content };
+          answered += 1;
+          return {
+            role: 'assistant' as const,
+            text: m.content,
+            // turn_added is the 1-based question number, so the Nth answer
+            // takes the Nth bucket.
+            fresh: data.chunksByTurn?.[String(answered)] ?? [],
+          };
+        }),
       );
       setSelectedId(null);
       setError(null);
