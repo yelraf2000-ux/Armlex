@@ -48,6 +48,7 @@ interface Turn {
 /** Fields any SSE frame may carry; each event uses a subset. */
 interface StreamPayload {
   stage?: string;
+  title?: string;
   chunks?: Chunk[];
   text?: string;
   sessionId?: string;
@@ -385,7 +386,28 @@ export function Chat({
           if (!m) continue;
           const payload = JSON.parse(m[2]!) as StreamPayload;
 
-          if (m[1] === 'stage') {
+          if (m[1] === 'session') {
+            /*
+              The conversation now exists, and its question is already stored —
+              so it is in the register and has an address, both long before the
+              answer is finished. It used to get neither until the last token
+              had landed, which is the better part of a minute spent looking at
+              a screen with no evidence that anything had been kept.
+            */
+            if (payload.sessionId && payload.sessionId !== syncedRef.current) {
+              setSessionId(payload.sessionId);
+              syncedRef.current = payload.sessionId;
+              // REPLACE: the same screen the reader is already on, now with a
+              // name. Pushing would make Back walk into the blank consultation
+              // they had just left.
+              onOpenSession?.(payload.sessionId, true);
+              setReloadKey((k) => k + 1);
+            }
+          } else if (m[1] === 'title') {
+            // A name arrived for it. Only the register shows one, so this is
+            // the whole of the update.
+            setReloadKey((k) => k + 1);
+          } else if (m[1] === 'stage') {
             patchLast({ stage: payload.stage });
           } else if (m[1] === 'chunks') {
             // Articles are known ~1-2s before the first word of the answer.

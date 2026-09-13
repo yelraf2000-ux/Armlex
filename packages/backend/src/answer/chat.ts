@@ -19,6 +19,7 @@ import { retrieve } from '../retrieval/retrieve.js';
 import type { RetrievedChunk } from '../retrieval/retrieve.js';
 import { generationDocument } from '../retrieval/rerank.js';
 import { contextualize } from './contextualize.js';
+import { titleFor } from './title.js';
 import { QuoteStreamGate } from './streamGate.js';
 import { validateNumbers } from './validateNumbers.js';
 import { CoverageParser } from './coverage.js';
@@ -352,6 +353,26 @@ export type OnChunks = (chunks: RetrievedChunk[]) => void;
 export type ChatStage = 'understanding' | 'searching' | 'reading' | 'writing';
 export type OnStage = (stage: ChatStage) => void;
 
+/**
+ * Undo a turn that failed.
+ *
+ * The question is written down before the answer is generated, which is what
+ * puts a new conversation in the register immediately. If generation then
+ * throws, that row would stand as a question nobody ever answered — and the
+ * weekly allowance counts stored user messages, so it would also have been
+ * paid for.
+ *
+ * Deletes the session's LAST message, and only if it is still a question. Once
+ * the answer has been persisted the last row is the answer, and this does
+ * nothing — which is the behaviour a retry after a partial failure needs.
+ */
+export async function discardFailedTurn(sessionId: string): Promise<void> {
+  await db()`
+    DELETE FROM messages
+     WHERE id = (SELECT max(id) FROM messages WHERE session_id = ${sessionId})
+       AND role = 'user'`;
+}
+
 export async function chat(
   sessionIdIn: string | undefined,
   message: string,
@@ -364,6 +385,10 @@ export async function chat(
    * deliberately create ownerless sessions.
    */
   userId?: string,
+  /** A name for a brand-new conversation, as soon as one exists. */
+  onTitle?: (title: string) => void,
+  /** The conversation's id, the moment there is one — long before the answer. */
+  onSession?: (sessionId: string) => void,
 ): Promise<ChatResult> {
   const tStart = Date.now();
   onStage?.('understanding');
@@ -375,6 +400,9 @@ export async function chat(
         INSERT INTO sessions (user_id) VALUES (${userId ?? null}) RETURNING id`
     )[0]!
       .id;
+  // Announced before anything slow happens, so the browser can put the
+  // conversation at its own address while the answer is still being written.
+  onSession?.(sessionId);
 
   // Both reads are independent — awaiting them in sequence paid two Neon round
   // trips before the contextualiser could even start.
@@ -386,6 +414,53 @@ export async function chat(
   ]);
   const turnNumber = history.filter((t) => t.role === 'user').length + 1;
   const tLoaded = Date.now();
+
+  /*
+   * The question is written down NOW, not with the answer.
+   *
+   * A conversation used to appear in the register only when its first answer
+   * finished — the register hides a session with no messages, and both rows
+   * were written in one transaction at the end. That is the better part of a
+   * minute during which someone who had just asked something saw no trace of
+   * it, and clicking away meant wondering whether it had been lost.
+   *
+   * AFTER loadHistory, which must see the turns BEFORE this one: the
+   * contextualiser is handed the history and the new message separately, and
+   * a message that appeared in both would read as having been asked twice.
+   *
+   * It is deleted again if the turn fails (see the catch below), so a failed
+   * question costs nothing from the weekly allowance — which counts stored
+   * user messages — and leaves no half a conversation behind.
+   */
+  const asked = await db()<{ id: string }[]>`
+    INSERT INTO messages (session_id, role, content)
+    VALUES (${sessionId}, 'user', ${message}) RETURNING id`;
+  const askedId = asked[0]!.id;
+
+  /*
+   * And a name for it, if this is the first thing anyone has said.
+   *
+   * Fired here and never awaited on the critical path: the answer streams
+   * whether or not a name has arrived, and `titleFor` swallows its own
+   * failures. onTitle lets the caller tell the browser the moment it lands,
+   * so the register renames itself without the reader doing anything.
+   */
+  if (turnNumber === 1) {
+    void titleFor(message).then(async (title) => {
+      if (!title) return;
+      try {
+        // Only if nobody has named it in the meantime — the reader may have
+        // renamed it by hand while the first answer was still being written,
+        // and their name beats ours.
+        const named = await db()<{ id: string }[]>`
+          UPDATE sessions SET title = ${title}
+           WHERE id = ${sessionId} AND title IS NULL RETURNING id`;
+        if (named[0]) onTitle?.(title);
+      } catch {
+        // A name is a convenience. Never let it take the turn down with it.
+      }
+    });
+  }
 
   const ctx = await contextualize(history, message, sessionRows[0]?.fact_summary ?? '');
   const tContextualized = Date.now();
@@ -524,12 +599,12 @@ export async function chat(
     }
   }
 
-  // Persist the turn. The stored user message is the ORIGINAL text, not the
-  // rewritten query — history must reflect what the user actually said.
+  // The answer. The question was stored before generation began (see above),
+  // which is what puts the conversation in the register straight away.
   await db().begin(async (tx) => {
     await tx`
       INSERT INTO messages (session_id, role, content)
-      VALUES (${sessionId}, 'user', ${message}), (${sessionId}, 'assistant', ${answer})
+      VALUES (${sessionId}, 'assistant', ${answer})
     `;
     await tx`
       UPDATE sessions SET fact_summary = ${ctx.factSummary || null}

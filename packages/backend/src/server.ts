@@ -37,7 +37,7 @@ import { startCheckout, webhook } from './billing/routes.js';
 import { retrieve, warmRetrieval, VectorLegUnavailableError } from './retrieval/retrieve.js';
 import { db } from './db/pool.js';
 import { ask, isConfigured } from './answer/ask.js';
-import { chat } from './answer/chat.js';
+import { chat, discardFailedTurn } from './answer/chat.js';
 import { DEFAULT_MODEL } from './answer/llm.js';
 
 const app = Fastify({
@@ -257,6 +257,10 @@ app.post<{ Body: ChatBody }>('/api/chat/stream', async (req, reply) => {
     reply.raw.write(`event: ${event}\ndata: ${JSON.stringify(data)}\n\n`);
   };
 
+  /* Remembered so a failed turn can be taken back off the register. For a new
+     conversation the id does not exist until `chat` makes one. */
+  let openedId: string | undefined = sessionId;
+
   try {
     const result = await chat(
       sessionId,
@@ -267,6 +271,14 @@ app.post<{ Body: ChatBody }>('/api/chat/stream', async (req, reply) => {
       (chunks) => send('chunks', { chunks }),
       (stage) => send('stage', { stage }),
       req.user!.id,
+      // Both arrive long before the answer does: the name a moment after the
+      // question, the id immediately. The browser uses them to seat the
+      // conversation in the register and at its own address straight away.
+      (title) => send('title', { title }),
+      (id) => {
+        openedId = id;
+        send('session', { sessionId: id });
+      },
     );
     // The final event carries everything the streamed deltas could not: which
     // chunks were used, token accounting, and the rejected-quote count.
@@ -285,6 +297,21 @@ app.post<{ Body: ChatBody }>('/api/chat/stream', async (req, reply) => {
   } catch (err) {
     const e = err as { status?: number; message?: string };
     req.log.error({ err }, 'chat stream failed');
+
+    /*
+      Take the question back off the register.
+
+      It was written down before generation started, which is what makes a new
+      conversation appear the moment it is asked. A turn that then failed must
+      not leave a question standing with no answer under it — and must not be
+      charged, since the weekly allowance counts stored questions. Best effort:
+      a cleanup that throws would replace the real error with its own.
+    */
+    if (openedId) {
+      await discardFailedTurn(openedId).catch((e2) =>
+        req.log.error({ err: e2, sessionId: openedId }, 'could not discard failed turn'),
+      );
+    }
 
     // Search being down is not "chat failed" — it is the one failure that must
     // never be mistaken for an answer. On 2026-08-25 the embedding balance ran
