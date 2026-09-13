@@ -84,7 +84,6 @@ export function Shared({ token }: { token: string }) {
         <div className="shared-cta">
           {t('share.ownQuestion')} <a href="/">{t('share.openTool')}</a>
         </div>
-        <div className="login-disclaimer">{t('corpus.disclaimer')}</div>
       </div>
     </div>
   );

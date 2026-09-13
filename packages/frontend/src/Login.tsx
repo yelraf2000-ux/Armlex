@@ -721,7 +721,6 @@ export function Login({
 
       )}
 
-      <div className="login-disclaimer">{t('corpus.disclaimer')}</div>
     </div>
   );
 }

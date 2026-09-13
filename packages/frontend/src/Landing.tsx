@@ -364,7 +364,6 @@ export function Landing({
           </div>
         ) : null}
 
-        <div className="login-disclaimer">{t('corpus.disclaimer')}</div>
       </div>
     </div>
   );

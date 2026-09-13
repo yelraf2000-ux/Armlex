@@ -226,7 +226,6 @@ export function Invite({ token, onAccepted }: { token: string; onAccepted: () =>
         </button>
       </div>
 
-      <div className="login-disclaimer">{t('corpus.disclaimer')}</div>
     </div>
   );
 }

@@ -564,14 +564,15 @@ function Workbench() {
       {!showWorkspace && mode === 'ask' ? <AskMode key={homeKey} corpusSynced={synced} /> : null}
       {!showWorkspace && mode === 'search' ? <SearchMode key={homeKey} /> : null}
 
-      {/* The colophon: what this is, and how current it is. The "checked
-          against ARLIS" date moved here from the masthead — it is the imprint
-          of the edition, like the disclaimer above it, not running head. The
-          corpus counts ("33 acts · 1737 fragments") that once sat here are
-          gone for good: they meant something to whoever built the index and
-          nothing to an accountant reading an answer. */}
+      {/* The colophon: how current this is. The "checked against ARLIS" date
+          moved here from the masthead — it is the imprint of the edition, not
+          running head. The not-legal-advice line that stood above it is now
+          fixed to the foot of the window (see Disclaimer), where it is read
+          instead of scrolled past. The corpus counts ("33 acts · 1737
+          fragments") that once sat here are gone for good: they meant
+          something to whoever built the index and nothing to an accountant
+          reading an answer. */}
       <footer className="colophon">
-        <div className="colophon-disclaimer">{t('corpus.disclaimer')}</div>
         {corpus && synced ? (
           <div className="colophon-synced">
             {t('corpus.synced')} <span className="num">{synced}</span>
@@ -583,6 +584,21 @@ function Workbench() {
 }
 
 /**
+ * The disclaimer, fixed to the foot of the window.
+ *
+ * It used to be the last line of each screen's own flow, which meant that on
+ * every screen long enough to scroll — which is every screen with an answer on
+ * it — it was below the fold, and the one sentence this product is legally
+ * obliged to keep in front of a reader was the one thing they had to go looking
+ * for. Mounted here rather than per screen, so there is one of it and it cannot
+ * be forgotten on a new page.
+ */
+function Disclaimer() {
+  const { t } = useSettings();
+  return <div className="disclaimer">{t('corpus.disclaimer')}</div>;
+}
+
+/**
  * Settings wrap everything, including the login screen — someone who cannot get
  * past the password gate should still be able to read it in their own language.
  */
@@ -590,6 +606,7 @@ export function App() {
   return (
     <SettingsProvider>
       <Workbench />
+      <Disclaimer />
     </SettingsProvider>
   );
 }

@@ -16,6 +16,11 @@
 :root {
   color-scheme: light dark;
 
+  /* The fixed disclaimer's height. Anything that sits at the bottom of the
+     window — the composer, the account block, the sidebar's own padding —
+     stands on top of this rather than behind it. */
+  --footer-h: 34px;
+
   --paper:   #F6F0E8;  /* uncoated cream */
   --glow:    #FFFDF6;  /* the same paper, lit    — see the body gradient below */
   --shade:   #EDE7D8;  /* the same paper, shaded — the far end of that gradient */
@@ -164,7 +169,7 @@ a { color: var(--accent); }
   }
 }
 
-.page { display: flex; flex-direction: column; min-height: 100vh; }
+.page { display: flex; flex-direction: column; min-height: 100vh; padding-bottom: var(--footer-h); }
 .page > .provenance,
 .page > .colophon { flex: 0 0 auto; }
 .page > .workbench,
@@ -232,7 +237,29 @@ a { color: var(--accent); }
   padding: 24px 20px 30px;
   margin-top: 26px;
 }
-.colophon-disclaimer { font-size: 12.5px; font-style: italic; color: var(--accent); }
+/*
+ * The not-legal-advice line, fixed to the foot of the window on every screen.
+ *
+ * Opaque, and painted with the page's own ground so the text it covers reads
+ * as having run off the bottom of the page rather than as having slid under a
+ * bar. Below the account menu and every popup in the stack, above the page.
+ */
+.disclaimer {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 15;
+  text-align: center;
+  padding: 8px 20px;
+  font-size: 12.5px;
+  font-style: italic;
+  line-height: 1.4;
+  color: var(--accent);
+  background-color: var(--paper);
+  background-image: var(--ground);
+  background-attachment: fixed;
+}
 /* "Checked against ARLIS <date>", under the disclaimer — quiet small caps. */
 .colophon-synced {
   font-size: 11px;
@@ -316,7 +343,7 @@ a { color: var(--accent); }
   /* Bottom padding clears the account block, which is pinned to the
      window's lower-left corner (see .account-rail) — without it the last
      conversation in a long list could never scroll out from underneath it. */
-  padding: 22px 22px 96px 44px;
+  padding: 22px 22px calc(96px + var(--footer-h)) 44px;
   /*
     Stretch to the full grid row, not `start`.
 
@@ -883,7 +910,7 @@ a { color: var(--accent); }
  */
 .composer {
   position: sticky;
-  bottom: 0;
+  bottom: var(--footer-h);
   display: flex;
   gap: 12px;
   align-items: flex-end;
@@ -982,7 +1009,9 @@ a { color: var(--accent); }
    One-shot modes (Search / Ask)
    --------------------------------------------------------------------------- */
 
-.wrap { max-width: 104ch; margin: 0 auto; padding: 26px 44px 60px; }
+/* The bottom padding clears the fixed disclaimer for the screens that are a
+   bare .wrap — verify, invite, reset — and leaves the same air under the rest. */
+.wrap { max-width: 104ch; margin: 0 auto; padding: 26px 44px calc(30px + var(--footer-h)); }
 
 .controls { display: flex; gap: 12px; align-items: flex-end; }
 .controls input {
@@ -1167,7 +1196,7 @@ a { color: var(--accent); }
   position: fixed;
   top: 0;
   left: 0;
-  bottom: 0;
+  bottom: var(--footer-h);
   z-index: 20;
   width: 56px;
   box-sizing: border-box;
@@ -1354,14 +1383,6 @@ body:has(.rail-mini) .page { padding-left: 56px; }
   text-transform: uppercase;
   color: var(--ink-3);
 }
-.login-disclaimer {
-  text-align: center;
-  font-size: 12.5px;
-  font-style: italic;
-  color: var(--accent);
-  margin-top: 12px;
-}
-
 /* ---------------------------------------------------------------------------
    Narrow screens
 
@@ -1519,7 +1540,7 @@ body:has(.rail-mini) .page { padding-left: 56px; }
 .account-rail {
   position: fixed;
   left: 0;
-  bottom: 0;
+  bottom: var(--footer-h);
   z-index: 20;
   width: 244px;
   box-sizing: border-box;
