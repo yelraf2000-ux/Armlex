@@ -91,30 +91,18 @@ const COVERAGE_KEY: Record<string, string> = {
   none: 'coverage.none',
 };
 
-/**
- * Starter questions.
+/*
+ * No starter questions on the empty screen.
  *
- * Chosen to span the corpus rather than to flatter it: one that retrieval
- * handles well (VAT rate), one colloquial (opening a kiosk), one that needs the
- * micro-business rules, and one transliterated — the input style Armenian users
- * actually type when they lack an Armenian keyboard.
+ * They were a nudge for a stranger, and inside an account there are no
+ * strangers: everyone here has already asked at least one question to get an
+ * account at all. What they met instead was a prompt to pick from a list of
+ * two, every time they started a consultation. The landing page keeps its
+ * examples, where the reader genuinely has not seen this work yet.
+ *
+ * `example.1` and `example.2` stay in the dictionaries — the landing uses the
+ * same idea, and deleting strings is how a translation quietly goes missing.
  */
-/**
- * Starter questions. Three, not five: the list is a nudge for an empty screen,
- * not a catalogue, and it disappears for good after the first question.
- *
- * They live in the dictionary rather than as literals, so an example is always
- * in the language the reader is being addressed in. They used to be Russian
- * regardless — which read as an oversight in an Armenian interface, and would
- * again the moment the language switcher comes back.
- *
- * Two, one per code: a tax question and a labour question, since the corpus
- * stopped being tax-only.
- */
-const EXAMPLE_KEYS = ['example.1', 'example.2'];
-
-/** Figures for the example list — this is an edition, so it numbers in roman. */
-const ROMAN = ['I', 'II', 'III', 'IV', 'V'];
 
 /** Grow the composer to fit its content, up to a ceiling. */
 function autoGrow(el: HTMLTextAreaElement): void {
@@ -671,10 +659,10 @@ export function Chat({
 
       <section className={turns.length === 0 ? 'thread thread-blank' : 'thread'}>
       {/*
-        The empty state carries a heading and examples — and nothing else.
-        It used to carry a lede and a caution paragraph as well: onboarding read
-        once, then read past every day by someone who already knows what the
-        tool is. The masthead already states the corpus and the disclaimer.
+        The empty state carries a heading and nothing else. It used to carry a
+        lede, a caution paragraph and two example questions as well: onboarding
+        read once, then read past every day by someone who already knows what
+        the tool is. The colophon already states the disclaimer.
       */}
       {turns.length === 0 ? (
         <div className="intro measure">
@@ -691,27 +679,6 @@ export function Chat({
                 i === 0 ? [part] : [<span key={i} className="brand-name">{BRAND}</span>, part],
               )}
           </h1>
-
-          <div className="panel-title">{t('intro.start')}</div>
-          <div className="examples-rule" />
-          <div className="examples">
-            {EXAMPLE_KEYS.map((key, i) => {
-              const q = t(key);
-              return (
-                <button
-                  key={key}
-                  className="example"
-                  onClick={() => {
-                    setInput(q);
-                    inputRef.current?.focus();
-                  }}
-                >
-                  <span className="example-n">{ROMAN[i]}</span>
-                  <span className="example-q">{q}</span>
-                </button>
-              );
-            })}
-          </div>
         </div>
       ) : null}
 
