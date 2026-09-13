@@ -603,9 +603,6 @@ export function Login({
               : t('auth.skip')}
           </button>
 
-          <button className="linkish" onClick={() => setStep(1)}>
-            {t('auth.backStep')}
-          </button>
         </div>
       ) : null}
 
@@ -658,11 +655,6 @@ export function Login({
           {busy ? '…' : tab === 'signin' ? t('login.enter') : t('auth.createAccount')}
         </button>
 
-        {tab === 'register' ? (
-          <button className="linkish" onClick={() => setStep(2)}>
-            {t('auth.backStep')}
-          </button>
-        ) : null}
 
         {/*
           Sign-in only. On the register tab there is no password to have

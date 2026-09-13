@@ -52,7 +52,11 @@ interface UsageView {
 
 type Section = 'members' | 'usage';
 
-export function Workspace({ onClose, meId }: { onClose: () => void; meId: string }) {
+/**
+ * No Back button of its own: the masthead is the way home from here, as it is
+ * from anywhere else in the app (`goHome` in App.tsx closes this page).
+ */
+export function Workspace({ meId }: { meId: string }) {
   const { t, lang } = useSettings();
   const [section, setSection] = useState<Section>('members');
   const [view, setView] = useState<WorkspaceView | null>(null);
@@ -159,9 +163,6 @@ export function Workspace({ onClose, meId }: { onClose: () => void; meId: string
   return (
     <div className="ws">
       <div className="ws-head">
-        <button className="ws-back" onClick={onClose}>
-          ← {t('ws.back')}
-        </button>
         <h1 className="ws-title">{view?.name || t('account.workspace')}</h1>
       </div>
 
@@ -242,13 +243,17 @@ export function Workspace({ onClose, meId }: { onClose: () => void; meId: string
                       </td>
                       <td className="ws-act">
                         {/*
-                          The OWNER is untouchable — not removable, not
-                          demotable — so no control is offered for them. A
-                          disabled button invites the click that teaches you it
-                          does nothing. Other admins can be demoted, which is
-                          what makes promotion safe to offer at all.
+                          Your OWN row carries no controls: you may not remove
+                          yourself or change your own rank, and a disabled
+                          button invites the click that teaches you so.
+
+                          Everyone else can be removed, the workspace's creator
+                          included — ownership passes to whoever removes them.
+                          The creator's RANK is still not offered: owning the
+                          workspace makes them an admin, so the button would
+                          appear to do something and do nothing.
                         */}
-                        {isAdmin && !m.owner ? (
+                        {isAdmin && m.id !== meId ? (
                           confirming === m.id ? (
                             <span className="ws-confirm">
                               <button className="danger" onClick={() => void drop(`/api/workspace/members/${m.id}`)}>
@@ -258,12 +263,14 @@ export function Workspace({ onClose, meId }: { onClose: () => void; meId: string
                             </span>
                           ) : (
                             <span className="ws-confirm">
-                              <button
-                                className="ws-role-set"
-                                onClick={() => void setRole(m.id, m.role !== 'admin')}
-                              >
-                                {m.role === 'admin' ? t('ws.demote') : t('ws.promote')}
-                              </button>
+                              {m.owner ? null : (
+                                <button
+                                  className="ws-role-set"
+                                  onClick={() => void setRole(m.id, m.role !== 'admin')}
+                                >
+                                  {m.role === 'admin' ? t('ws.demote') : t('ws.promote')}
+                                </button>
+                              )}
                               <button className="ws-remove" onClick={() => setConfirming(m.id)}>
                                 {t('ws.remove')}
                               </button>

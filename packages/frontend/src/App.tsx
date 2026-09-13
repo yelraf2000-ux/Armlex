@@ -372,8 +372,16 @@ function Workbench() {
     ? corpus.lastChecked.slice(0, 10).split('-').reverse().join('.')
     : null;
 
-  /** Back to a clean Dialogue, from wherever you are. */
+  /**
+   * Back to a clean Dialogue, from wherever you are.
+   *
+   * "Wherever" now includes the workspace page. It used to leave
+   * `showWorkspace` standing, so the masthead — the way home on any site —
+   * did nothing there, and the page's own Back button was the only exit. That
+   * button is gone; this is what replaces it.
+   */
   function goHome(): void {
+    setShowWorkspace(false);
     setMode('chat');
     setHomeKey((k) => k + 1);
     window.scrollTo({ top: 0 });
@@ -502,7 +510,7 @@ function Workbench() {
       </header>
 
       {showWorkspace && account?.user ? (
-        <Workspace meId={account.user.id} onClose={() => setShowWorkspace(false)} />
+        <Workspace meId={account.user.id} />
       ) : null}
 
       {!showWorkspace && mode === 'chat' ? (

@@ -46,7 +46,6 @@ const hy: Dict = {
   'account.upgrade': 'Ընդլայնել սակագինը',
   'account.upgradeSoon': 'Վճարումները դեռ միացված չեն։',
   'account.questions': 'Հարցեր այս շաբաթ',
-  'ws.back': 'Հետ',
   'ws.members': 'Անդամներ',
   'ws.invitees': 'Հրավիրվածներ',
   'ws.usage': 'Օգտագործում',
@@ -124,7 +123,6 @@ const hy: Dict = {
   'auth.companyName': 'Ընկերության անվանում',
   'auth.companySize': 'Ընկերության չափը',
   'auth.next': 'Շարունակել',
-  'auth.backStep': '← Հետ',
   'auth.inviteOffer':
     'Հրավիրեք գործընկերներին և ստացեք +{n} հարց։ Յուրաքանչյուր գրանցվողի համար՝ ևս +{m}։',
   'auth.inviteNote':
@@ -251,7 +249,6 @@ const ru: Dict = {
   'account.upgrade': 'Расширить тариф',
   'account.upgradeSoon': 'Оплата пока не подключена.',
   'account.questions': 'Вопросов на этой неделе',
-  'ws.back': 'Назад',
   'ws.members': 'Участники',
   'ws.invitees': 'Приглашённые',
   'ws.usage': 'Использование',
@@ -328,7 +325,6 @@ const ru: Dict = {
   'auth.companyName': 'Название компании',
   'auth.companySize': 'Размер компании',
   'auth.next': 'Продолжить',
-  'auth.backStep': '← Назад',
   'auth.inviteOffer':
     'Пригласите коллег и получите +{n} вопросов. За каждого зарегистрировавшегося — ещё +{m}.',
   'auth.inviteNote':
@@ -455,7 +451,6 @@ const en: Dict = {
   'account.upgrade': 'Upgrade plan',
   'account.upgradeSoon': 'Payments are not switched on yet.',
   'account.questions': 'Questions this week',
-  'ws.back': 'Back',
   'ws.members': 'Members',
   'ws.invitees': 'Invitees',
   'ws.usage': 'Usage',
@@ -532,7 +527,6 @@ const en: Dict = {
   'auth.companyName': 'Company name',
   'auth.companySize': 'Company size',
   'auth.next': 'Continue',
-  'auth.backStep': '← Back',
   'auth.inviteOffer':
     'Invite colleagues and get +{n} questions. Another +{m} for each one who registers.',
   'auth.inviteNote':
