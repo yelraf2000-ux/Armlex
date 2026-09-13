@@ -45,16 +45,20 @@ function blurLines(shown: string): string[] {
   const words = shown
     .replace(/[#*_`>[\]()|]/g, ' ')
     .split(/\s+/)
-    .filter((w) => w.length > 1);
+    // Numbers and list markers out: "1." survives a blur as a recognisable
+    // shape and gives the block away as chopped-up markdown.
+    .filter((w) => w.length > 1 && !/\d/.test(w));
   if (words.length < 8) return [];
 
   const lines: string[] = [];
   let n = 0;
   // Uneven lengths, ending short: an even block of text reads as a placeholder.
-  for (const count of [9, 11, 8, 10, 9, 11, 7, 4]) {
+  for (const [row, count] of [9, 11, 8, 10, 9, 11, 7, 4].entries()) {
     const line: string[] = [];
     for (let i = 0; i < count; i++) {
-      line.push(words[(n * 7 + 3) % words.length]!);
+      // The row offset matters when the answer is short: on a single stride the
+      // sequence cycles and every line repeats the tail of the one above it.
+      line.push(words[(n * 7 + row * 5 + 3) % words.length]!);
       n++;
     }
     lines.push(line.join(' '));
