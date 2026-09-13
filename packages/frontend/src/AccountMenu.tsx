@@ -14,10 +14,8 @@
  */
 import { useEffect, useRef, useState } from 'react';
 import { useSettings } from './Settings.js';
+import { Popup } from './Popup.js';
 import type { Account } from './Login.js';
-
-/** Which panel the popup is showing; `null` is the menu itself. */
-type Panel = 'profile' | null;
 
 export function AccountMenu({
   account,
@@ -38,7 +36,7 @@ export function AccountMenu({
 }) {
   const { t } = useSettings();
   const [open, setOpen] = useState(false);
-  const [panel, setPanel] = useState<Panel>(null);
+  const [editing, setEditing] = useState(false);
   const [name, setName] = useState('');
   const [busy, setBusy] = useState(false);
   const [upgradeError, setUpgradeError] = useState<string | null>(null);
@@ -65,9 +63,10 @@ export function AccountMenu({
     };
   }, [open]);
 
+  /* Only the menu. The name popup is a dialog of its own and outlives it: it
+     is opened BY closing the menu, and dismisses on its own backdrop or Escape. */
   function close(): void {
     setOpen(false);
-    setPanel(null);
     setUpgradeError(null);
   }
 
@@ -88,7 +87,7 @@ export function AccountMenu({
       if (res.ok) {
         const data = (await res.json()) as Account;
         onChanged({ ...account, ...data });
-        setPanel(null);
+        setEditing(false);
       }
     } finally {
       setBusy(false);
@@ -142,102 +141,108 @@ export function AccountMenu({
             <div className="account-who-mail">{user.email}</div>
           </div>
 
-          {panel === null ? (
-            <>
-              {/*
-                The allowance, where the person can see it before they spend it.
-                Shown only on a capped plan — an "unlimited" counter is
-                furniture, the same reason the coverage badge stays off
-                confident answers.
-              */}
-              {usage && usage.limit !== null ? (
-                <div className="account-quota">
-                  <div className="account-quota-line">
-                    <span>{t('account.questions')}</span>
-                    <span className="num">
-                      {usage.used} / {usage.limit}
-                    </span>
-                  </div>
-                  <div className="account-bar" aria-hidden="true">
-                    <div
-                      className="account-bar-fill"
-                      style={{ width: `${Math.min(100, (usage.used / usage.limit) * 100)}%` }}
-                    />
-                  </div>
-                </div>
-              ) : null}
-
-              <button
-                role="menuitem"
-                onClick={() => {
-                  setName(user.name ?? '');
-                  setPanel('profile');
-                }}
-              >
-                {t('account.profile')}
-              </button>
-              <button
-                role="menuitem"
-                onClick={() => {
-                  close();
-                  onOpenWorkspace();
-                }}
-              >
-                {t('account.workspace')}
-              </button>
-              {/*
-                Admins only. The plan is bought for the firm, so a member
-                following this would land on a checkout for a subscription that
-                is not theirs to buy — and if they did buy it, the firm would be
-                paying twice for one pool.
-              */}
-              {account.role !== 'member' ? (
-                <>
-                  <button
-                    role="menuitem"
-                    className="account-upgrade"
-                    onClick={() => void upgrade()}
-                  >
-                    {t('account.upgrade')}
-                  </button>
-                  {upgradeError ? <p className="account-note">{upgradeError}</p> : null}
-                </>
-              ) : null}
-
-              <div className="account-rule" />
-
-              <button role="menuitem" className="account-signout" onClick={onSignOut}>
-                {t('auth.signOut')}
-              </button>
-            </>
-          ) : null}
-
-          {panel === 'profile' ? (
-            <div className="account-panel">
-              <label htmlFor="account-fullname">{t('auth.fullName')}</label>
-              <input
-                id="account-fullname"
-                value={name}
-                autoFocus
-                onChange={(e) => setName(e.target.value)}
-                onKeyDown={(e) => {
-                  if (e.key === 'Enter' && name.trim()) void save({ name });
-                }}
-              />
-              <div className="account-panel-actions">
-                <button onClick={() => setPanel(null)}>{t('nav.cancel')}</button>
-                <button
-                  className="primary"
-                  disabled={busy || !name.trim()}
-                  onClick={() => void save({ name })}
-                >
-                  {t('nav.save')}
-                </button>
+          {/*
+            The allowance, where the person can see it before they spend it.
+            Shown only on a capped plan — an "unlimited" counter is
+            furniture, the same reason the coverage badge stays off
+            confident answers.
+          */}
+          {usage && usage.limit !== null ? (
+            <div className="account-quota">
+              <div className="account-quota-line">
+                <span>{t('account.questions')}</span>
+                <span className="num">
+                  {usage.used} / {usage.limit}
+                </span>
+              </div>
+              <div className="account-bar" aria-hidden="true">
+                <div
+                  className="account-bar-fill"
+                  style={{ width: `${Math.min(100, (usage.used / usage.limit) * 100)}%` }}
+                />
               </div>
             </div>
           ) : null}
 
+          <button
+            role="menuitem"
+            onClick={() => {
+              setName(user.name ?? '');
+              close();
+              setEditing(true);
+            }}
+          >
+            {t('account.profile')}
+          </button>
+          <button
+            role="menuitem"
+            onClick={() => {
+              close();
+              onOpenWorkspace();
+            }}
+          >
+            {t('account.workspace')}
+          </button>
+          {/*
+            Admins only. The plan is bought for the firm, so a member
+            following this would land on a checkout for a subscription that
+            is not theirs to buy — and if they did buy it, the firm would be
+            paying twice for one pool.
+          */}
+          {account.role !== 'member' ? (
+            <>
+              <button
+                role="menuitem"
+                className="account-upgrade"
+                onClick={() => void upgrade()}
+              >
+                {t('account.upgrade')}
+              </button>
+              {upgradeError ? <p className="account-note">{upgradeError}</p> : null}
+            </>
+          ) : null}
+
+          <div className="account-rule" />
+
+          <button role="menuitem" className="account-signout" onClick={onSignOut}>
+            {t('auth.signOut')}
+          </button>
         </div>
+      ) : null}
+
+      {/*
+        Changing the name is a popup, like renaming a conversation. The menu is
+        190px of stacked menu items; a labelled field and two buttons growing
+        inside it made the menu the shape of a form while still reading as a
+        menu, and left no room to say what the name is for.
+      */}
+      {editing ? (
+        <Popup title={t('account.profileTitle')} onClose={() => setEditing(false)}>
+          <p className="popup-hint">{t('account.profileHint')}</p>
+          <div className="popup-row">
+            <input
+              autoFocus
+              value={name}
+              aria-label={t('auth.fullName')}
+              onChange={(e) => setName(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' && name.trim()) void save({ name });
+              }}
+            />
+          </div>
+          <div className="popup-actions">
+            <button className="popup-secondary" onClick={() => setEditing(false)}>
+              {t('nav.cancel')}
+            </button>
+            <button
+              className="popup-primary"
+              disabled={busy || !name.trim()}
+              onClick={() => void save({ name })}
+            >
+              {t('nav.save')}
+            </button>
+          </div>
+        </Popup>
       ) : null}
     </div>
   );
