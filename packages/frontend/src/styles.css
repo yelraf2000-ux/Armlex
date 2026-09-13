@@ -2186,6 +2186,12 @@ body:has(.rail-mini) .page { padding-left: 56px; }
   padding: 0 0 1.25rem;
 }
 
+/* Out of the baseline row: their 38px tap targets seat their text lower than
+   the mark's baseline, and a baseline-aligned row would drag the mark down
+   with them — three pixels below where it sits on every other screen. */
+.masthead-top .landing-signin,
+.masthead-top .landing-signup { align-self: center; }
+
 .landing-signin,
 .landing-signup {
   font-family: var(--body);
