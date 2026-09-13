@@ -423,6 +423,24 @@ a { color: var(--accent); }
    small caps so they read as the same kind of label as the rail's own title,
    with space above so each starts a visibly new group. */
 .rail .panel-title.sessions-group { margin-top: 16px; margin-bottom: 4px; }
+/* The "…" that opens the rest of the pinned conversations, and closes them
+   again. Sized and aligned like a row so it reads as part of the list rather
+   than as a control bolted under it. */
+.sessions-more {
+  display: block;
+  width: 100%;
+  text-align: left;
+  padding: 6px 6px 6px 0;
+  border: 0;
+  background: none;
+  color: var(--ink-3);
+  font: inherit;
+  font-family: var(--body);
+  font-size: 13px;
+  line-height: 1;
+  cursor: pointer;
+}
+.sessions-more:hover { background: var(--leaf); color: var(--ink); }
 .sessions-empty {
   color: var(--ink-3);
   font-size: 13px;
@@ -2172,11 +2190,22 @@ body:has(.rail-mini) .page { padding-left: 56px; }
   color: var(--ink-3);
 }
 
+/* A line of explanation ABOVE a field — the note under the share link sits
+   below what it describes, this sits above it. */
+.popup-hint {
+  margin: 0 0 12px;
+  font-size: 0.8rem;
+  line-height: 1.45;
+  color: var(--ink-3);
+}
+
 .popup-actions {
   display: flex;
   justify-content: flex-end;
   gap: 8px;
 }
+/* .popup-body carries its own bottom margin; a field does not. */
+.popup-row + .popup-actions { margin-top: 16px; }
 
 .popup-primary,
 .popup-secondary,

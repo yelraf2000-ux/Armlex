@@ -46,6 +46,13 @@ function Icon({ d }: { d: string[] }) {
   );
 }
 
+/**
+ * How many pinned conversations the section shows before collapsing the rest
+ * behind a "…". Three, because a shortlist that fills the column is not a
+ * shortlist — it just pushes the register below the fold.
+ */
+const PINNED_SHOWN = 3;
+
 const PIN = ['M12 17v5', 'M9 2h6l-1 6 3 3v2H7v-2l3-3-1-6z'];
 const PENCIL = ['M4 20h4L19 9a2.1 2.1 0 0 0-3-3L5 17v3z', 'M14.5 6.5l3 3'];
 const SHARE = ['M4 12v7a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-7', 'M12 15V3M8 7l4-4 4 4'];
@@ -71,6 +78,14 @@ export function Sessions({
   /** Which row's menu is open — at most one, so a stray menu cannot be left behind. */
   const [menuFor, setMenuFor] = useState<string | null>(null);
   const [renaming, setRenaming] = useState<string | null>(null);
+  /**
+   * Whether the pinned section is showing all of its conversations.
+   *
+   * Pinning is for the few things you return to; a pinned section that grows
+   * without limit pushes the rest of the register off the screen and stops
+   * being a shortlist. Past three it shows the three and a "…".
+   */
+  const [pinnedOpen, setPinnedOpen] = useState(false);
   const [draft, setDraft] = useState('');
   /** Delete asks once, in place. A modal for a list row is heavier than the act. */
   const [confirming, setConfirming] = useState<string | null>(null);
@@ -234,21 +249,6 @@ export function Sessions({
             `${menuFor === s.id ? ' menu-open' : ''}`
           }
         >
-          {renaming === s.id ? (
-            <input
-              className="session-rename"
-              value={draft}
-              autoFocus
-              aria-label={t('nav.rename')}
-              onChange={(e) => setDraft(e.target.value)}
-              onBlur={() => void saveRename(s)}
-              onKeyDown={(e) => {
-                if (e.key === 'Enter') void saveRename(s);
-                // Escape abandons the edit; without it, blur would save it.
-                if (e.key === 'Escape') setRenaming(null);
-              }}
-            />
-          ) : (
             <button
               className="session-item"
               onClick={() => onOpen(s.id)}
@@ -264,7 +264,36 @@ export function Sessions({
               */}
               {s.snippet ? <span className="session-snippet">{s.snippet}</span> : null}
             </button>
-          )}
+
+          {/*
+            Renaming is a popup, like sharing and deleting — the row is 244px
+            wide and editing in place gave the name less room than reading it,
+            with no space to say what an empty name does.
+          */}
+          {renaming === s.id ? (
+            <Popup title={t('nav.renameTitle')} onClose={() => setRenaming(null)}>
+              <p className="popup-hint">{t('nav.renameHint')}</p>
+              <div className="popup-row">
+                <input
+                  autoFocus
+                  value={draft}
+                  aria-label={t('nav.renameTitle')}
+                  onChange={(e) => setDraft(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter') void saveRename(s);
+                  }}
+                />
+              </div>
+              <div className="popup-actions">
+                <button className="popup-secondary" onClick={() => setRenaming(null)}>
+                  {t('nav.cancel')}
+                </button>
+                <button className="popup-primary" onClick={() => void saveRename(s)}>
+                  {t('nav.save')}
+                </button>
+              </div>
+            </Popup>
+          ) : null}
 
           {sharingFor === s.id ? (
             <SharePopup sessionId={s.id} onClose={() => setSharingFor(null)} />
@@ -375,7 +404,18 @@ export function Sessions({
       {pinned.length > 0 ? (
         <>
           <div className="panel-title sessions-group">{t('nav.pinned')}</div>
-          {pinned.map(row)}
+          {(pinnedOpen ? pinned : pinned.slice(0, PINNED_SHOWN)).map(row)}
+          {pinned.length > PINNED_SHOWN ? (
+            <button
+              className="sessions-more"
+              onClick={() => setPinnedOpen((v) => !v)}
+              aria-expanded={pinnedOpen}
+              aria-label={pinnedOpen ? t('nav.showLess') : t('nav.showAllPinned')}
+              title={pinnedOpen ? t('nav.showLess') : t('nav.showAllPinned')}
+            >
+              {pinnedOpen ? t('nav.showLess') : '…'}
+            </button>
+          ) : null}
           {rest.length > 0 ? (
             <div className="panel-title sessions-group">{t('nav.recent')}</div>
           ) : null}
