@@ -16,6 +16,7 @@ import { Login, type Tab } from './Login.js';
 import { MarkdownView } from './MarkdownView.js';
 import { BrandLine } from './BrandLine.js';
 import { useSettings } from './Settings.js';
+import { navigate, usePath } from './router.js';
 
 export const PENDING_QUESTION = 'matyan.pendingQuestion';
 export const PENDING_PREVIEW = 'matyan.pendingPreview';
@@ -114,14 +115,20 @@ export function Landing({
   const [askedText, setAskedText] = useState<string | null>(null);
   const [preview, setPreview] = useState<PreviewResult | null>(null);
   const [error, setError] = useState<string | null>(null);
-  /**
-   * Which form to show, if any.
+/*
+   * Which form to show is read off the address — /login and /registration —
+   * rather than held in state.
    *
-   * A returning user should never have to ask a question to find the way back
-   * in — so the header carries both doors, and the tab that opens matches the
-   * one they pressed.
+   * As state, the form had no address of its own: a reload dropped the visitor
+   * back on the landing, a link to "register here" could not be sent, and the
+   * back button walked out of the site instead of out of the form. The header
+   * still carries both doors, so a returning user never has to ask a question
+   * to find the way in.
    */
-  const [showAuth, setShowAuth] = useState<Tab | null>(null);
+  const path = usePath();
+  const showAuth: Tab | null =
+    path === '/login' ? 'signin' : path === '/registration' ? 'register' : null;
+  const openForm = (tab: Tab): void => navigate(tab === 'signin' ? '/login' : '/registration');
 
   /**
    * The outcome of a Google round trip, read once on first render.
@@ -140,8 +147,11 @@ export function Landing({
     const code = new URLSearchParams(window.location.search).get('auth');
     if (!code) return null;
     // Clear it immediately: a reload should not replay a stale complaint, and
-    // the parameter would otherwise survive into any link they share.
-    window.history.replaceState(null, '', window.location.pathname);
+    // the parameter would otherwise survive into any link they share. And put
+    // them at the form's own address while doing it: `no_account` proved they
+    // have a Google account and no account here, so registration is the only
+    // useful next door; everything else reopens sign-in, where they were.
+    window.history.replaceState(null, '', code === 'no_account' ? '/registration' : '/login');
     return code;
   });
 
@@ -152,9 +162,8 @@ export function Landing({
     unverified: t('auth.oauth.unverified'),
   };
   const oauthError = oauth ? (OAUTH_MESSAGES[oauth] ?? t('auth.oauth.failed')) : undefined;
-  const oauthTab: Tab | null = oauth ? (oauth === 'no_account' ? 'register' : 'signin') : null;
 
-  const openAuth = showAuth ?? oauthTab;
+  const openAuth = showAuth;
 
   /** A question is in flight, or its answer is on screen. */
   const answering = busy || preview !== null;
@@ -170,12 +179,11 @@ export function Landing({
    * A preview request still in flight is left to land in state nobody renders.
    */
   function goHome(): void {
-    setShowAuth(null);
     setPreview(null);
     setAskedText(null);
     setError(null);
     setQuestion('');
-    if (window.location.pathname !== '/') window.history.replaceState(null, '', '/');
+    navigate('/');
     window.scrollTo({ top: 0 });
   }
 
@@ -197,7 +205,7 @@ export function Landing({
         setError(body.detail ?? t('preview.failed'));
         // Out of free previews is the one error that should still lead
         // somewhere: registering is exactly the answer to it.
-        if (res.status === 429) setShowAuth('register');
+        if (res.status === 429) openForm('register');
         return;
       }
       setPreview(body);
@@ -227,9 +235,15 @@ export function Landing({
           onSuccess={onAuthed}
           initialTab={openAuth}
           initialError={oauthError}
+          // Switching between the two forms REPLACES the address: it is the
+          // same door, turned the other way, and pushing would make the back
+          // button walk the reader through every flip.
+          onTabChange={(tab) =>
+            navigate(tab === 'signin' ? '/login' : '/registration', { replace: true })
+          }
         />
         <div className="measure landing-back">
-          <button className="linkish" onClick={() => setShowAuth(null)}>
+          <button className="linkish" onClick={() => navigate('/')}>
             {/*
               Going back must not lose the preview they were reading — the state
               is held here, not in the form, so returning restores it intact.
@@ -259,10 +273,10 @@ export function Landing({
             {BRAND}
           </button>
           <span className="spacer" />
-          <button className="landing-signin" onClick={() => setShowAuth('signin')}>
+          <button className="landing-signin" onClick={() => openForm('signin')}>
             {t('auth.signIn')}
           </button>
-          <button className="landing-signup" onClick={() => setShowAuth('register')}>
+          <button className="landing-signup" onClick={() => openForm('register')}>
             {t('auth.register')}
           </button>
         </div>
@@ -368,7 +382,7 @@ export function Landing({
                       </span>
                     ) : null}
                   </div>
-                  <button className="preview-cta-button" onClick={() => setShowAuth('register')}>
+                  <button className="preview-cta-button" onClick={() => openForm('register')}>
                     {t('preview.unlock')}
                   </button>
                   <div className="preview-cta-note">{t('preview.free')}</div>

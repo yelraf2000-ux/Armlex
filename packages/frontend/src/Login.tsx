@@ -9,7 +9,7 @@
  * Still a title page rather than a bare form: the first thing anyone sees of
  * the edition should say what it is.
  */
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { BRAND } from './brand.js';
 import { BrandLine } from './BrandLine.js';
 import { useSettings } from './Settings.js';
@@ -188,8 +188,11 @@ export function Login({
   googleEnabled,
   initialTab,
   initialError,
+  onTabChange,
 }: {
   onSuccess: () => void;
+  /** The reader switched forms. The caller owns the address, so it moves it. */
+  onTabChange?: ((tab: Tab) => void) | undefined;
   googleEnabled?: boolean | undefined;
   /** An outcome from the OAuth round trip, which has no other way back here —
    *  the redirect destroys component state, so it arrives as a query
@@ -202,6 +205,17 @@ export function Login({
 }) {
   const { t, lang } = useSettings();
   const [tab, setTab] = useState<Tab>(initialTab ?? 'signin');
+  /* The address can change without this form doing anything — the back and
+     forward buttons move between /login and /registration — so the tab follows
+     it rather than keeping whichever it opened on. */
+  useEffect(() => {
+    if (initialTab) setTab(initialTab);
+  }, [initialTab]);
+  /** Switch forms, and tell whoever owns the address. */
+  const switchTab = (next: Tab): void => {
+    setTab(next);
+    onTabChange?.(next);
+  };
   /**
    * Set when an address needs proving. Replaces the whole form rather than
    * sitting beside it: the next act is in their inbox, and leaving the fields
@@ -442,7 +456,7 @@ export function Login({
             setPending(null);
             setResent(false);
             setError(null);
-            setTab('signin');
+            switchTab('signin');
           }}
         >
           {t('auth.verify.toSignIn')}
@@ -752,7 +766,7 @@ export function Login({
           type="button"
           className="auth-switch-link"
           onClick={() => {
-            setTab(tab === 'signin' ? 'register' : 'signin');
+            switchTab(tab === 'signin' ? 'register' : 'signin');
             setError(null);
             // The arrival message described the door they came from, not the
             // one they just chose.

@@ -380,6 +380,20 @@ function Workbench() {
     void loadAccount();
   }, [loadAccount]);
 
+  /*
+   * Signed in, and standing on a sign-in or registration address.
+   *
+   * That is where a successful sign-in leaves them — the form lived at /login
+   * the moment before — and where a bookmark of the form lands someone who is
+   * still signed in. Either way there is nothing to fill in, so they go home,
+   * by replacing: the form should not be a step the back button returns to.
+   */
+  useEffect(() => {
+    if (authed && (path === '/login' || path === '/registration')) {
+      navigate('/', { replace: true });
+    }
+  }, [authed, path]);
+
   // Corpus provenance for the banner. A legal tool that doesn't say how current
   // it is invites the reader to assume it is current. Waits for auth, since the
   // endpoint is behind the gate.
