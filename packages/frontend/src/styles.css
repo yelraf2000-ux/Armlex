@@ -2457,9 +2457,12 @@ body:has(.rail-mini) .page { padding-left: 56px; }
 }
 
 /* Same exemption for the "back a step" link. */
+/* Centred with everything else in the card, rather than the one thing
+   hanging off its left edge. */
 .login-row .linkish {
+  display: block;
   width: auto;
-  margin-top: 0.8rem;
+  margin: 0.8rem auto 0;
   padding: 0;
   background: none;
   font-size: 0.82rem;
