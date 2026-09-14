@@ -219,7 +219,11 @@ export function Workspace({
               <div className="ws-section-head">
                 <h2>{t('ws.members')}</h2>
                 {isAdmin ? (
-                  <button className="ws-add" onClick={() => setAdding((a) => !a)}>
+                  <button
+                    className={adding ? 'ws-add on' : 'ws-add'}
+                    aria-expanded={adding}
+                    onClick={() => setAdding((a) => !a)}
+                  >
                     + {t('ws.newMember')}
                   </button>
                 ) : null}

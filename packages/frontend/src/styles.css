@@ -2673,6 +2673,16 @@ body:has(.rail-mini) .page { padding-left: 56px; }
   cursor: pointer;
 }
 .ws-add:hover { border-color: var(--ink-3); color: var(--ink); }
+/* Pressed while its form is open, the way the nav marks the section you are
+   in — so the button reads as the thing that opened the form, and as the way
+   to close it again. */
+.ws-add.on,
+.ws-add.on:hover {
+  border-color: var(--accent);
+  background: var(--leaf);
+  color: var(--accent);
+  font-weight: 600;
+}
 
 .ws-invite {
   display: flex;
