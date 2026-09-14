@@ -279,7 +279,7 @@ interface CorpusInfo {
   lastChecked: string | null;
 }
 
-function Workbench({ onSynced }: { onSynced: (synced: string | null) => void }) {
+function Workbench() {
   const { t } = useSettings();
   const [mode, setMode] = useState<Mode>('chat');
   /** Bumped to remount the active mode, which is how "go home" clears it. */
@@ -398,13 +398,6 @@ function Workbench({ onSynced }: { onSynced: (synced: string | null) => void }) 
   const synced = corpus?.lastChecked
     ? corpus.lastChecked.slice(0, 10).split('-').reverse().join('.')
     : null;
-
-  /* Handed up to the colophon at the root, which is the only place it is
-     printed. It is fetched here because the endpoint is behind the sign-in
-     gate and this is the component that knows whether we are through it. */
-  useEffect(() => {
-    onSynced(synced);
-  }, [synced, onSynced]);
 
   /**
    * Back to a clean Dialogue, from wherever you are.
@@ -587,29 +580,23 @@ function Workbench({ onSynced }: { onSynced: (synced: string | null) => void }) 
 }
 
 /**
- * The colophon, fixed to the foot of the window: what this is, and how current.
+ * The colophon, fixed to the foot of the window: the not-legal-advice note.
  *
- * Both lines used to be the last thing in each screen's own flow, which meant
- * that on every screen long enough to scroll — which is every screen with an
- * answer on it — they were below the fold. The sentence this product is obliged
- * to keep in front of a reader, and the date that says whether the law it is
- * quoting is the law in force, were the two things you had to go looking for.
+ * It used to be the last thing in each screen's own flow, which put it below
+ * the fold on every screen long enough to scroll — which is every screen with
+ * an answer on it. Mounted here rather than per screen, so there is one of it
+ * and it cannot be forgotten on a new page.
  *
- * Mounted here rather than per screen, so there is one of it and it cannot be
- * forgotten on a new page. The date appears once it is known — it comes from a
- * route behind the sign-in gate, so a visitor who has not signed in sees the
- * disclaimer alone.
+ * The "checked against ARLIS" date stood under it and was taken off on request.
+ * Nothing is lost by that: every article in the sources panel carries its own
+ * checked date, which is where a reader deciding whether to trust a provision
+ * actually needs it.
  */
-function Colophon({ synced }: { synced: string | null }) {
+function Colophon() {
   const { t } = useSettings();
   return (
     <footer className="colophon">
       <div className="colophon-disclaimer">{t('corpus.disclaimer')}</div>
-      {synced ? (
-        <div className="colophon-synced">
-          {t('corpus.synced')} <span className="num">{synced}</span>
-        </div>
-      ) : null}
     </footer>
   );
 }
@@ -619,13 +606,10 @@ function Colophon({ synced }: { synced: string | null }) {
  * past the password gate should still be able to read it in their own language.
  */
 export function App() {
-  /* Lifted only so the fixed colophon can print it: the fetch stays inside
-     Workbench, which is the part that knows whether anyone is signed in. */
-  const [synced, setSynced] = useState<string | null>(null);
   return (
     <SettingsProvider>
-      <Workbench onSynced={setSynced} />
-      <Colophon synced={synced} />
+      <Workbench />
+      <Colophon />
     </SettingsProvider>
   );
 }

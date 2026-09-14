@@ -16,11 +16,11 @@
 :root {
   color-scheme: light dark;
 
-  /* The fixed colophon's height — two lines, the disclaimer and the date.
-     Anything that sits at the bottom of the window — the composer, the account
-     block, the sidebar's own padding — stands on top of this rather than
-     behind it. */
-  --footer-h: 57px;
+  /* The fixed colophon's height — one line, the disclaimer. Anything that
+     sits at the bottom of the window — the composer, the account block, the
+     sidebar's own padding — stands on top of this rather than behind it.
+     Measured, not estimated: guessing it once left the composer 5px inside. */
+  --footer-h: 33px;
   /* The masthead's height, for anything that has to fill the window beneath
      it — the empty consultation screen centres in exactly that space. */
   --masthead-h: 56px;
@@ -314,25 +314,22 @@ a { color: var(--accent); }
   background-image: var(--ground);
   background-attachment: fixed;
 }
-/* Set as a caution, and small: it stands on every screen, so it has to be
-   legible without competing with the page it sits under. The italic and the
-   size were lost when the two footers became one fixed bar; this restores
-   them, in the red that now means caution rather than brand. */
+/*
+ * A note, in grey.
+ *
+ * It was red, and red in this design is kept for what changes or destroys
+ * something — the confirm in a removal popup, a delete. A line that stands on
+ * every screen of the product and asks for nothing cannot share that colour
+ * without teaching the eye to ignore it, and then the one red that matters
+ * reads as more of the same. `--ink-2` rather than the lighter grey: this is
+ * small italic text, and the lighter one falls short of readable contrast.
+ */
 .colophon-disclaimer {
   font-size: 12.5px;
   font-style: italic;
   line-height: 1.4;
-  color: var(--danger);
+  color: var(--ink-2);
 }
-/* "Checked against ARLIS <date>", under the disclaimer — quiet small caps. */
-.colophon-synced {
-  font-size: 11px;
-  letter-spacing: 0.14em;
-  text-transform: uppercase;
-  color: var(--ink-3);
-  margin-top: 3px;
-}
-.colophon-synced .num { color: var(--ink-3); }
 
 /*
  * The double rule under a masthead. Two elements would be one too many, so the
