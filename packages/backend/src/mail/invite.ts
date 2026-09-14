@@ -52,7 +52,7 @@ const COPY: Record<Lang, Copy> = {
     what: 'MatyanAI-ն պատասխանում է ՀՀ հարկային և աշխատանքային օրենսդրության հարցերին՝ հենվելով օրենքի իրական տեքստի վրա, հոդվածների հղումներով։',
     button: 'Ընդունել հրավերը',
     useThis: 'Կմնա միայն գաղտնաբառ ընտրել — անունն ու հասցեն արդեն լրացված են։',
-    free: 'Անվճար փաթեթը ներառում է ամսական 5 հարց։',
+    free: 'Միանալով՝ թիմի ընդհանուր հարցերին կավելացնեք շաբաթական 5 հարց։',
     ignore: 'Եթե սա Ձեզ չի վերաբերում, պարզապես անտեսեք այս նամակը։',
   },
   ru: {
@@ -63,7 +63,7 @@ const COPY: Record<Lang, Copy> = {
     what: 'MatyanAI отвечает на вопросы по налоговому и трудовому законодательству РА, опираясь на реальный текст закона, со ссылками на статьи.',
     button: 'Принять приглашение',
     useThis: 'Останется только выбрать пароль — имя и адрес уже заполнены.',
-    free: 'Бесплатный тариф включает 5 вопросов в месяц.',
+    free: 'Присоединившись, вы добавите к общим вопросам команды 5 вопросов в неделю.',
     ignore: 'Если это не к вам, просто проигнорируйте письмо.',
   },
   en: {
@@ -74,7 +74,7 @@ const COPY: Record<Lang, Copy> = {
     what: 'MatyanAI answers questions on Armenian tax and labour law, grounded in the actual text of the law, with links to the articles.',
     button: 'Accept the invitation',
     useThis: 'All that is left is choosing a password — the name and address are already filled in.',
-    free: 'The free plan includes 5 questions a month.',
+    free: 'By joining, you add 5 questions a week to your team\'s shared allowance.',
     ignore: 'If this is not for you, simply ignore this message.',
   },
 };

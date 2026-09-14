@@ -265,19 +265,26 @@ export async function workspaceQuota(user: User): Promise<{ used: number; limit:
       plan: string;
       plan_expires_at: string | null;
       bonus_questions: number;
+      is_owner: boolean;
     }[]
   >`
-    SELECT plan, plan_expires_at::text, bonus_questions
-      FROM users WHERE workspace_id = ${id}`;
+    SELECT u.plan, u.plan_expires_at::text, u.bonus_questions,
+           (u.id = w.owner_id) AS is_owner
+      FROM users u
+      JOIN workspaces w ON w.id = u.workspace_id
+     WHERE u.workspace_id = ${id}`;
 
   // A workspace with nobody in it cannot happen through the product, but a
   // zero ceiling would refuse every question rather than fail visibly — so
   // fall back to this member's own allowance.
   if (rows.length === 0) {
-    return { used: 0, limit: allowanceFor(user.plan, user.plan_expires_at, user.bonus_questions) };
+    // Alone in a workspace means owning it.
+    return { used: 0, limit: allowanceFor(user.plan, user.plan_expires_at, user.bonus_questions, true) };
   }
 
-  const seats = rows.map((r) => allowanceFor(r.plan, r.plan_expires_at, r.bonus_questions));
+  const seats = rows.map((r) =>
+    allowanceFor(r.plan, r.plan_expires_at, r.bonus_questions, r.is_owner),
+  );
   const limit = seats.some((s) => s === null)
     ? null
     : seats.reduce((n: number, s) => n + (s ?? 0), 0);

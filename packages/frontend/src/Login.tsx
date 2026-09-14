@@ -51,8 +51,8 @@ interface Profile {
 
 /** Kept in step with the server; the form promises these numbers to the user. */
 export const MAX_INVITES = 4;
-export const BONUS_FOR_INVITING = 10;
-export const BONUS_PER_ACCEPTED = 5;
+/** What each colleague who joins adds to the firm's weekly questions — their seat. */
+export const SEAT_PER_COLLEAGUE = 5;
 
 interface Invite {
   name: string;
@@ -277,7 +277,42 @@ export function Login({
    * Step 2: colleagues to invite. Optional, and visibly so.
    */
   const [invites, setInvites] = useState<Invite[]>(ONE_INVITE);
-  const filledInvites = invites.filter((i) => LOOKS_LIKE_EMAIL.test(i.email.trim()));
+  /** A row nobody has typed in. Empty rows are simply not invitations. */
+  const rowEmpty = (i: Invite): boolean => !i.name.trim() && !i.email.trim();
+  /** A usable invitation: both a name and an address that looks like one. */
+  const rowValid = (i: Invite): boolean =>
+    Boolean(i.name.trim()) && LOOKS_LIKE_EMAIL.test(i.email.trim());
+  const filledInvites = invites.filter(rowValid);
+  /**
+   * Whether Continue has been pressed over a half-filled row. Until then no
+   * field is marked wrong — a row someone is still typing into is not an error
+   * yet. After, the marks follow the fields live and clear as they are fixed.
+   */
+  const [inviteCheck, setInviteCheck] = useState(false);
+  const invalidRows = invites.filter((i) => !rowEmpty(i) && !rowValid(i)).length;
+  const lastInvite = invites[invites.length - 1];
+  /** Another row only once the last one has something in it. */
+  const canAddInvite =
+    invites.length < MAX_INVITES && lastInvite !== undefined && !rowEmpty(lastInvite);
+
+  /**
+   * The step's only button.
+   *
+   * Nothing typed: it skips, because inviting is optional and a separate Skip
+   * button beside a Continue button made the reader choose between two ways of
+   * moving forward. Something typed: every non-empty row must be a name and a
+   * real-looking address, or it stops and says so — silently dropping a row
+   * with a typo would leave someone believing they had invited a colleague who
+   * never hears about it.
+   */
+  function continueFromInvites(): void {
+    if (invalidRows > 0) {
+      setInviteCheck(true);
+      return;
+    }
+    setInviteCheck(false);
+    setStep(3);
+  }
 
   /**
    * Complain when a typed character DIVERGES, not merely when the second field
@@ -566,9 +601,7 @@ export function Login({
       {tab === 'register' && step === 2 ? (
         <div className="login-row">
           <p className="invite-offer">
-            {t('auth.inviteOffer')
-              .replace('{n}', String(BONUS_FOR_INVITING))
-              .replace('{m}', String(BONUS_PER_ACCEPTED))}
+            {t('auth.inviteOffer').replace('{m}', String(SEAT_PER_COLLEAGUE))}
           </p>
 
           <div className="invite-rows">
@@ -577,6 +610,7 @@ export function Login({
                 <input
                   type="text"
                   aria-label={`${t('auth.fullName')} ${i + 1}`}
+                  aria-invalid={inviteCheck && !rowEmpty(invite) && !invite.name.trim()}
                   placeholder={t('auth.fullName')}
                   value={invite.name}
                   onChange={(e) =>
@@ -588,6 +622,9 @@ export function Login({
                 <input
                   type="email"
                   aria-label={`${t('auth.email')} ${i + 1}`}
+                  aria-invalid={
+                    inviteCheck && !rowEmpty(invite) && !LOOKS_LIKE_EMAIL.test(invite.email.trim())
+                  }
                   placeholder={t('auth.email')}
                   value={invite.email}
                   onChange={(e) =>
@@ -601,16 +638,22 @@ export function Login({
                   moment it could be earned. A total at the bottom would say the
                   same thing while making the reader do the attribution.
                 */}
-                <span className="invite-bonus" aria-hidden={!LOOKS_LIKE_EMAIL.test(invite.email.trim())}>
-                  {LOOKS_LIKE_EMAIL.test(invite.email.trim()) ? `+${BONUS_PER_ACCEPTED}` : ''}
+                <span className="invite-bonus" aria-hidden={!rowValid(invite)}>
+                  {rowValid(invite) ? `+${SEAT_PER_COLLEAGUE}` : ''}
                 </span>
               </div>
             ))}
           </div>
 
+          {/*
+            Shown while there is room, but usable only once the last row has
+            something in it — a stack of empty rows asks for work nobody has
+            decided to do.
+          */}
           {invites.length < MAX_INVITES ? (
             <button
               className="invite-add"
+              disabled={!canAddInvite}
               onClick={() => setInvites((list) => [...list, { name: '', email: '' }])}
             >
               + {t('auth.inviteAnother')}
@@ -623,14 +666,16 @@ export function Login({
             would be a number the product then has to take back.
           */}
           <p className="login-why">
-            {t('auth.inviteNote').replace('{m}', String(BONUS_PER_ACCEPTED))}
+            {t('auth.inviteNote').replace('{m}', String(SEAT_PER_COLLEAGUE))}
           </p>
 
-          <button onClick={() => setStep(3)}>
-            {filledInvites.length > 0
-              ? t('auth.next')
-              : t('auth.skip')}
-          </button>
+          {inviteCheck && invalidRows > 0 ? (
+            <div className="error" role="alert">
+              {t('auth.inviteFix')}
+            </div>
+          ) : null}
+
+          <button onClick={continueFromInvites}>{t('auth.next')}</button>
 
         </div>
       ) : null}

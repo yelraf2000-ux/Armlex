@@ -86,11 +86,16 @@ export async function readInvitation(token: string): Promise<InvitationView | nu
 /** Most invitations one account may record. */
 export const MAX_INVITES = 4;
 
-/** Paid once, for completing the step with at least one invitation. */
-export const BONUS_FOR_INVITING = 10;
-
-/** Paid per invitation, when that address registers. */
-export const BONUS_PER_ACCEPTED = 5;
+/*
+ * No referral bonuses.
+ *
+ * There used to be two: +10 once for completing the invite step, and +5 to the
+ * inviter each time an invitee registered. The allowance is now the firm's
+ * pool — the creator's 10 plus each colleague's own 5-question seat — so a
+ * colleague who joins adds 5 by being there. Paying the referral on top made
+ * each person worth 10 and a firm of three worth 35 against a specified 20.
+ * Bonuses already credited stay in `bonus_questions`; nothing new is paid.
+ */
 
 export interface InviteInput {
   email: string;
@@ -151,10 +156,9 @@ export async function recordInvites(
     if (rows.length > 0) await mailInvite(inviterId, invite.email, token, lang);
   }
 
-  await db()`
-    UPDATE users SET bonus_questions = bonus_questions + ${BONUS_FOR_INVITING}
-     WHERE id = ${inviterId}`;
-  return BONUS_FOR_INVITING;
+  // Nothing paid for sending: the colleague's seat is the reward, and it
+  // arrives when they join.
+  return 0;
 }
 
 /**
@@ -253,9 +257,8 @@ export async function claimInvitation(newUserId: string, email: string): Promise
   if (!inviter) return;
   const asAdmin = claimed[0]!.as_admin;
 
-  await db()`
-    UPDATE users SET bonus_questions = bonus_questions + ${BONUS_PER_ACCEPTED}
-     WHERE id = ${inviter}`;
+  // No referral payment: joining the inviter's workspace below is what adds
+  // this colleague's 5 to the firm's pool.
 
   /*
     And join the inviter's firm.

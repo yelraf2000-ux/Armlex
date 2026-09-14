@@ -71,6 +71,20 @@ const ALLOWANCE: Record<string, number | null> = {
   unlimited: null,
 };
 
+/*
+ * The free seat of the person who created the workspace.
+ *
+ * A firm on the free plan is its creator's 10 plus 5 for every colleague who
+ * joins — "admin 10 + user 5 + user 5 = 20", in the terms it was specified.
+ * The 5 per colleague IS their own seat; there is no separate referral payment
+ * on top, or each person would add 10 and a firm of three would reach 35.
+ *
+ * Owner, not "first to register": ownership is what the workspace records,
+ * and it moves when an owner is removed (see removeMember), so the larger seat
+ * follows whoever is actually running the firm.
+ */
+const FREE_OWNER = 10;
+
 export function normaliseEmail(raw: string): string {
   return raw.trim().toLowerCase();
 }
@@ -274,13 +288,21 @@ export function allowanceFor(
   plan: string,
   planExpiresAt: string | null,
   bonus: number,
+  /** Whether this seat belongs to the workspace's owner — see FREE_OWNER. */
+  owner = false,
 ): number | null {
-  const base = ALLOWANCE[effectivePlan({ plan, plan_expires_at: planExpiresAt } as User)] ?? null;
+  const effective = effectivePlan({ plan, plan_expires_at: planExpiresAt } as User);
+  const base = effective === 'free' && owner ? FREE_OWNER : (ALLOWANCE[effective] ?? null);
   return base === null ? null : base + (bonus ?? 0);
 }
 
 export async function monthlyUsage(user: User): Promise<Usage> {
-  const base = ALLOWANCE[effectivePlan(user)] ?? null;
+  // The same owner rule the firm's pool applies, so a single account's own
+  // counter never disagrees with the seat it contributes.
+  const owns = await db()<{ id: string }[]>`
+    SELECT id FROM workspaces WHERE owner_id = ${user.id} LIMIT 1`;
+  const effective = effectivePlan(user);
+  const base = effective === 'free' && owns[0] ? FREE_OWNER : (ALLOWANCE[effective] ?? null);
   /*
     Bonus questions from invitations sit on top of the plan, and recur monthly
     rather than being spent once. That is the generous reading, chosen because

@@ -2591,7 +2591,21 @@ body:has(.rail-mini) .page { padding-left: 56px; }
   text-transform: none;
 }
 
-.login-row .invite-add:hover { color: var(--accent); }
+.login-row .invite-add:hover:not(:disabled) { color: var(--accent); }
+/* Beats `.login-row button:disabled`, which would paint it as a greyed-out
+   primary button rather than a quiet link that is not available yet. */
+.login-row .invite-add:disabled {
+  background: none;
+  color: var(--ink-3);
+  opacity: 0.45;
+  cursor: default;
+}
+
+/* A field Continue found wrong. Red, because it is the thing stopping them. */
+.login-row .invite-row input[aria-invalid="true"] {
+  border-color: var(--danger);
+  box-shadow: 0 0 0 1px var(--danger);
+}
 
 @media (max-width: 480px) {
   .invite-row { grid-template-columns: minmax(0, 1fr) 2.2rem; }

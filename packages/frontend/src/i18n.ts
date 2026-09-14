@@ -132,7 +132,7 @@ const hy: Dict = {
   'auth.noAccount': 'Դեռ չունե՞ք հաշիվ։',
   'auth.signInNote':
     'Մուտք գործեք՝ Ձեր զրույցները տեսնելու համար։ Յուրաքանչյուրը տեսնում է միայն իրենը։',
-  'auth.registerNote': 'Ստեղծեք հաշիվ։ Անվճար փաթեթը ներառում է շաբաթական 5 հարց։',
+  'auth.registerNote': 'Ստեղծեք հաշիվ։ Անվճար փաթեթը ներառում է շաբաթական 10 հարց։',
   'auth.email': 'Էլ. փոստ',
   'auth.name': 'Անուն',
   'auth.fullName': 'Անուն Ազգանուն',
@@ -140,10 +140,10 @@ const hy: Dict = {
   'auth.companySize': 'Ընկերության չափը',
   'auth.next': 'Շարունակել',
   'auth.inviteOffer':
-    'Հրավիրեք գործընկերներին և ստացեք +{n} հարց։ Յուրաքանչյուր գրանցվողի համար՝ ևս +{m}։',
+    'Հրավիրեք գործընկերներին։ Յուրաքանչյուր միացողը Ձեր թիմին ավելացնում է շաբաթական +{m} հարց։',
   'auth.inviteNote':
     'Ըստ ցանկության։ +{m} հարցը ավելանում է այն պահին, երբ գործընկերը գրանցվում է։ Հասցեները չենք փոխանցում երրորդ անձանց։',
-  'auth.skip': 'Բաց թողնել',
+  'auth.inviteFix': 'Յուրաքանչյուր լրացված տողում պետք է լինի անուն և ճիշտ էլ. փոստ։ Ուղղեք կամ դատարկեք տողը։',
   'auth.inviteAnother': 'Ավելացնել ևս մեկը',
   'auth.whyWeAsk':
     'Այս տվյալները օգտագործում ենք միայն Ձեզ համապատասխան փաթեթը առաջարկելու և պատասխանները Ձեր գործունեությանը հարմարեցնելու համար։ Երրորդ անձանց չենք փոխանցում։',
@@ -208,7 +208,7 @@ const hy: Dict = {
   'preview.rest': 'Պատասխանի մնացած մասը՝ հոդվածներով և բառացի մեջբերումներով',
   'preview.sources': 'հոդված',
   'preview.unlock': 'Գրանցվել և տեսնել ամբողջը',
-  'preview.free': 'Անվճար · շաբաթական 5 հարց',
+  'preview.free': 'Անվճար · շաբաթական 10 հարց',
   'preview.failed': 'Չհաջողվեց ստանալ պատասխանը։',
   'preview.resuming': 'Պատրաստում եմ Ձեր ամբողջական պատասխանը…',
 
@@ -348,7 +348,7 @@ const ru: Dict = {
   'auth.haveAccount': 'Уже есть аккаунт?',
   'auth.noAccount': 'Ещё нет аккаунта?',
   'auth.signInNote': 'Войдите, чтобы увидеть свои консультации. Каждый видит только свои.',
-  'auth.registerNote': 'Создайте аккаунт. Бесплатный тариф включает 5 вопросов в неделю.',
+  'auth.registerNote': 'Создайте аккаунт. Бесплатный тариф включает 10 вопросов в неделю.',
   'auth.email': 'Эл. почта',
   'auth.name': 'Имя',
   'auth.fullName': 'Имя и фамилия',
@@ -356,10 +356,10 @@ const ru: Dict = {
   'auth.companySize': 'Размер компании',
   'auth.next': 'Продолжить',
   'auth.inviteOffer':
-    'Пригласите коллег и получите +{n} вопросов. За каждого зарегистрировавшегося — ещё +{m}.',
+    'Пригласите коллег. Каждый, кто присоединится, добавит вашей команде +{m} вопросов в неделю.',
   'auth.inviteNote':
     'По желанию. +{m} начисляются в момент регистрации коллеги. Адреса третьим лицам не передаём.',
-  'auth.skip': 'Пропустить',
+  'auth.inviteFix': 'В каждой заполненной строке нужны имя и правильный email. Исправьте или очистите строку.',
   'auth.inviteAnother': 'Добавить ещё',
   'auth.whyWeAsk':
     'Эти данные нужны только чтобы предложить вам подходящий тариф и адаптировать ответы под вашу работу. Третьим лицам не передаём.',
@@ -424,7 +424,7 @@ const ru: Dict = {
   'preview.rest': 'Остальная часть ответа — со статьями и дословными цитатами',
   'preview.sources': 'статей',
   'preview.unlock': 'Зарегистрироваться и увидеть всё',
-  'preview.free': 'Бесплатно · 5 вопросов в неделю',
+  'preview.free': 'Бесплатно · 10 вопросов в неделю',
   'preview.failed': 'Не удалось получить ответ.',
   'preview.resuming': 'Готовлю ваш полный ответ…',
 
@@ -564,7 +564,7 @@ const en: Dict = {
   'auth.haveAccount': 'Already have an account?',
   'auth.noAccount': 'No account yet?',
   'auth.signInNote': 'Sign in to see your consultations. Each account sees only its own.',
-  'auth.registerNote': 'Create an account. The free plan includes 5 questions a week.',
+  'auth.registerNote': 'Create an account. The free plan includes 10 questions a week.',
   'auth.email': 'Email',
   'auth.name': 'Name',
   'auth.fullName': 'Full name',
@@ -572,10 +572,10 @@ const en: Dict = {
   'auth.companySize': 'Company size',
   'auth.next': 'Continue',
   'auth.inviteOffer':
-    'Invite colleagues and get +{n} questions. Another +{m} for each one who registers.',
+    'Invite colleagues. Each one who joins adds +{m} questions a week to your team.',
   'auth.inviteNote':
     'Optional. The +{m} arrives when your colleague registers. Addresses are never shared with anyone else.',
-  'auth.skip': 'Skip',
+  'auth.inviteFix': 'Every filled-in row needs a name and a valid email. Correct the row or clear it.',
   'auth.inviteAnother': 'Add another',
   'auth.whyWeAsk':
     'We use this only to suggest the right plan and keep answers relevant to your work. Never shared with anyone else.',
@@ -640,7 +640,7 @@ const en: Dict = {
   'preview.rest': 'The rest of the answer — with the articles and verbatim quotes',
   'preview.sources': 'articles',
   'preview.unlock': 'Register and see it all',
-  'preview.free': 'Free · 5 questions a week',
+  'preview.free': 'Free · 10 questions a week',
   'preview.failed': 'Could not get an answer.',
   'preview.resuming': 'Preparing your full answer…',
 

@@ -14,12 +14,8 @@
  */
 import { test, describe } from 'node:test';
 import assert from 'node:assert/strict';
-import {
-  parseInvites,
-  MAX_INVITES,
-  BONUS_FOR_INVITING,
-  BONUS_PER_ACCEPTED,
-} from './invitations.js';
+import { parseInvites, MAX_INVITES } from './invitations.js';
+import { allowanceFor } from './users.js';
 
 describe('parseInvites', () => {
   test('keeps well-formed invitations, with names', () => {
@@ -72,16 +68,43 @@ describe('parseInvites', () => {
     assert.equal(parseInvites([{ email: 'a@firm.am', name: '   ' }])[0]!.name, null);
   });
 
-  test('the rewards are the advertised numbers', () => {
-    // The form promises these to the user; a drift here makes the product lie.
-    assert.equal(BONUS_FOR_INVITING, 10);
-    assert.equal(BONUS_PER_ACCEPTED, 5);
+  test('one signup may invite at most four colleagues', () => {
     assert.equal(MAX_INVITES, 4);
   });
+});
 
-  test('the most anyone can earn from one signup is bounded', () => {
-    // 10 for inviting + 5 x 4 if every invitee joins = 30. Worth stating as a
-    // test, because this number is the exposure per account.
-    assert.equal(BONUS_FOR_INVITING + BONUS_PER_ACCEPTED * MAX_INVITES, 30);
+/*
+ * The free allowance, as specified: the creator 10, every colleague 5, and the
+ * firm's weekly pool is the sum. The form and the landing promise these
+ * numbers, so a drift here makes the product say something untrue.
+ */
+describe('free seats', () => {
+  test('the creator of a workspace gets 10 a week', () => {
+    assert.equal(allowanceFor('free', null, 0, true), 10);
+  });
+
+  test('a colleague who joins gets 5', () => {
+    assert.equal(allowanceFor('free', null, 0, false), 5);
+  });
+
+  test('admin 10 + user 5 + user 5 = 20, the example it was specified by', () => {
+    const seats = [true, false, false].map((owner) => allowanceFor('free', null, 0, owner)!);
+    assert.equal(seats.reduce((a, b) => a + b, 0), 20);
+  });
+
+  test('a full signup — creator plus four colleagues — is bounded at 30', () => {
+    // The exposure per account once every invitee joins: no referral bonus
+    // stacks on top of the seats any more.
+    const seats = [true, false, false, false, false].map((o) => allowanceFor('free', null, 0, o)!);
+    assert.equal(seats.reduce((a, b) => a + b, 0), 10 + 5 * MAX_INVITES);
+  });
+
+  test('ownership only changes the FREE seat', () => {
+    assert.equal(allowanceFor('pro', null, 0, true), 50);
+    assert.equal(allowanceFor('pro', null, 0, false), 50);
+  });
+
+  test('bonuses already credited still count on top of the seat', () => {
+    assert.equal(allowanceFor('free', null, 15, true), 25);
   });
 });
