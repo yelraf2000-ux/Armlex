@@ -159,6 +159,26 @@ export function Landing({
   /** A question is in flight, or its answer is on screen. */
   const answering = busy || preview !== null;
 
+  /*
+   * The main page, from anywhere a visitor can be.
+   *
+   * The mark goes home on every screen of this product. Here it did nothing on
+   * the landing itself — a span, so a visitor looking at a preview had no way
+   * back to a fresh question except the browser — and on the sign-in form it
+   * only closed the form, returning them to whatever preview was still open.
+   * Home is the landing as it first appears: no preview, no question, no form.
+   * A preview request still in flight is left to land in state nobody renders.
+   */
+  function goHome(): void {
+    setShowAuth(null);
+    setPreview(null);
+    setAskedText(null);
+    setError(null);
+    setQuestion('');
+    if (window.location.pathname !== '/') window.history.replaceState(null, '', '/');
+    window.scrollTo({ top: 0 });
+  }
+
   async function ask(q: string): Promise<void> {
     const text = q.trim();
     if (!text || busy) return;
@@ -197,7 +217,7 @@ export function Landing({
             are signed in — and in the same corner, at the same size. */}
         <header className="provenance">
           <div className="masthead-top">
-            <button className="brand" onClick={() => setShowAuth(null)}>
+            <button className="brand" onClick={goHome}>
               {BRAND}
             </button>
           </div>
@@ -235,7 +255,9 @@ export function Landing({
     <div className="page">
       <header className="provenance">
         <div className="masthead-top">
-          <span className="brand">{BRAND}</span>
+          <button className="brand" onClick={goHome}>
+            {BRAND}
+          </button>
           <span className="spacer" />
           <button className="landing-signin" onClick={() => setShowAuth('signin')}>
             {t('auth.signIn')}

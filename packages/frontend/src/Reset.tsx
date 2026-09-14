@@ -6,7 +6,7 @@
  * and offers one more chance to mistype it.
  */
 import { useState } from 'react';
-import { BRAND } from './brand.js';
+import { AuthPage } from './AuthPage.js';
 import { useSettings } from './Settings.js';
 
 const MIN_PASSWORD = 8;
@@ -60,11 +60,7 @@ export function Reset({ token, onDone }: { token: string; onDone: () => void }) 
   }
 
   return (
-    <div className="login">
-      <div className="login-head">
-        <h1 className="login-title">{BRAND}</h1>
-        <div className="masthead-rule" />
-      </div>
+    <AuthPage>
 
       <p className="login-note">{t('reset.chooseNew')}</p>
 
@@ -128,6 +124,6 @@ export function Reset({ token, onDone }: { token: string; onDone: () => void }) 
       <button className="linkish" onClick={() => window.location.assign('/')}>
         {t('auth.verify.toSignIn')}
       </button>
-    </div>
+    </AuthPage>
   );
 }

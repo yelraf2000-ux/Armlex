@@ -276,6 +276,9 @@ a { color: var(--accent); }
   cursor: pointer;
   line-height: 1.2;
 }
+/* Shared by the button and the link forms of the mark — the card pages use a
+   real link, and a link would otherwise take the underline links carry. */
+.provenance .brand { text-decoration: none; }
 .provenance .brand:hover { color: var(--accent); }
 .provenance .brand:focus-visible { outline: 1px solid var(--accent); outline-offset: 4px; }
 
@@ -1344,14 +1347,6 @@ body:has(.rail-mini) .page { padding-left: 56px; }
 /* On the landing the head is the subtitle alone — the mark is in the masthead
    above it, where it also sits once you are signed in. */
 .landing .login-head { margin-bottom: 22px; }
-.login-title {
-  font-family: var(--display);
-  font-size: 42px;
-  font-weight: 400;
-  letter-spacing: 0.015em;
-  line-height: 1.1;
-  margin: 0;
-}
 .login-sub { font-size: 14px; font-style: italic; color: var(--ink-3); margin-top: 10px; line-height: 1.55; }
 .login-head .masthead-rule { margin-top: 22px; }
 .login-synced {
@@ -2050,6 +2045,9 @@ body:has(.rail-mini) .page { padding-left: 56px; }
    the one screen that has buttons beside it. */
 /* A masthead stands above the form now; 12vh of air under it is a hole. */
 .page .login { margin-top: 5vh; }
+/* Same air on the card pages, whose card follows the masthead directly rather
+   than sitting inside .page — and room at the foot for the fixed colophon. */
+.provenance + .login { margin-top: 5vh; margin-bottom: calc(40px + var(--footer-h)); }
 
 /* The question, then the dots, while the answer is being made. */
 .landing-thread { margin-top: 1.5rem; }

@@ -7,7 +7,7 @@
  * their address would be a step that proves nothing.
  */
 import { useEffect, useRef, useState } from 'react';
-import { BRAND } from './brand.js';
+import { AuthPage } from './AuthPage.js';
 import { useSettings } from './Settings.js';
 
 type State = 'working' | 'done' | 'invalid' | 'expired' | 'already_used' | 'failed';
@@ -65,17 +65,13 @@ export function Verify({ token, onVerified }: { token: string; onVerified: () =>
   };
 
   return (
-    <div className="login">
-      <div className="login-head">
-        <h1 className="login-title">{BRAND}</h1>
-        <div className="masthead-rule" />
-      </div>
+    <AuthPage>
       <div className="login-row">
         <p className="login-verify-body">{message[state]}</p>
         {state !== 'working' && state !== 'done' ? (
           <button onClick={() => window.location.assign('/')}>{t('auth.verify.toSignIn')}</button>
         ) : null}
       </div>
-    </div>
+    </AuthPage>
   );
 }

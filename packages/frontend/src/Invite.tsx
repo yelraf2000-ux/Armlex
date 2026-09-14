@@ -10,7 +10,7 @@
  * they are accepting and to what address, before they choose a password for it.
  */
 import { useEffect, useState } from 'react';
-import { BRAND } from './brand.js';
+import { AuthPage } from './AuthPage.js';
 import { BrandLine } from './BrandLine.js';
 import { useSettings } from './Settings.js';
 
@@ -96,56 +96,42 @@ export function Invite({ token, onAccepted }: { token: string; onAccepted: () =>
 
   if (state === 'loading') {
     return (
-      <div className="login">
-        <div className="login-head">
-          <h1 className="login-title">{BRAND}</h1>
-          <div className="masthead-rule" />
-        </div>
+      <AuthPage>
         <p className="login-verify-body">{t('invite.loading')}</p>
-      </div>
+      </AuthPage>
     );
   }
 
   if (state === 'gone') {
     return (
-      <div className="login">
-        <div className="login-head">
-          <h1 className="login-title">{BRAND}</h1>
-          <div className="masthead-rule" />
-        </div>
+      <AuthPage>
         <div className="login-row">
           <p className="login-verify-body">{t('invite.gone')}</p>
           <button onClick={() => window.location.assign('/')}>{t('auth.verify.toSignIn')}</button>
         </div>
-      </div>
+      </AuthPage>
     );
   }
 
   if (sent) {
     return (
-      <div className="login">
-        <div className="login-head">
-          <h1 className="login-title">{BRAND}</h1>
-          <div className="masthead-rule" />
-        </div>
+      <AuthPage>
         <div className="login-row">
           <h2 className="login-verify-title">{t('auth.verify.title')}</h2>
           <p className="login-verify-body">{t('auth.verify.body')}</p>
           <p className="login-verify-email">{sent}</p>
           <p className="login-verify-hint">{t('invite.thenMember')}</p>
         </div>
-      </div>
+      </AuthPage>
     );
   }
 
   return (
-    <div className="login">
+    <AuthPage>
       <div className="login-head">
-        <h1 className="login-title">{BRAND}</h1>
         <div className="login-sub">
           <BrandLine text={t('masthead.sub')} />
         </div>
-        <div className="masthead-rule" />
       </div>
 
       <p className="login-note">
@@ -229,6 +215,6 @@ export function Invite({ token, onAccepted }: { token: string; onAccepted: () =>
         </button>
       </div>
 
-    </div>
+    </AuthPage>
   );
 }
