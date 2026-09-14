@@ -2136,7 +2136,19 @@ body:has(.rail-mini) .page { padding-left: 56px; }
 
 .preview { margin: 0 auto; }
 
-.preview-gate { position: relative; margin-top: 0.5rem; }
+/*
+ * The prompt is a card laid ON the blurred text, not a block above it.
+ *
+ * Both children share one grid cell, so they overlap without absolute
+ * positioning: the blurred text sets the height, the card centres inside it,
+ * and if the card is ever the taller of the two — a phone, a long translation —
+ * the cell simply grows to hold it instead of the card spilling out.
+ */
+.preview-gate {
+  display: grid;
+  margin-top: 0.5rem;
+}
+.preview-gate > * { grid-area: 1 / 1; }
 
 /*
  * Blurred PROSE, not bars — but not the withheld answer either.
@@ -2161,20 +2173,40 @@ body:has(.rail-mini) .page { padding-left: 56px; }
   opacity: 0.72;
   user-select: none;
   pointer-events: none;
-  -webkit-mask-image: linear-gradient(to bottom, #000 58%, transparent);
-  mask-image: linear-gradient(to bottom, #000 58%, transparent);
+  -webkit-mask-image: linear-gradient(to bottom, #000 72%, transparent);
+  mask-image: linear-gradient(to bottom, #000 72%, transparent);
 }
 
+/*
+ * A lifted card: solid ground, a hairline edge and a soft shadow, so it reads
+ * as sitting above the blurred page rather than printed on it. Two shadows —
+ * a wide faint one for lift, a tight one for the edge — because one shadow
+ * large enough to lift the card is too diffuse to define where it ends.
+ *
+ * The shadow is a fixed near-black rather than a token: a shadow is the
+ * absence of light, and --ink turns pale in the dark theme, which would make
+ * it glow instead.
+ *
+ * z-index lifts it over the blurred text, which comes later in the markup and
+ * would otherwise paint on top of it in the shared grid cell.
+ */
 .preview-cta {
-  position: relative;
-  margin-top: 0.4rem;
-  margin-bottom: 0.6rem;
-  padding: 1.25rem;
+  z-index: 1;
+  align-self: center;
+  justify-self: center;
+  width: min(440px, calc(100% - 32px));
+  padding: 22px 24px 20px;
   display: flex;
   flex-direction: column;
   align-items: center;
   gap: 0.7rem;
   text-align: center;
+  background: var(--glow);
+  border: 1px solid var(--rule);
+  border-radius: var(--radius);
+  box-shadow:
+    0 12px 32px rgba(17, 20, 24, 0.12),
+    0 2px 8px rgba(17, 20, 24, 0.06);
 }
 
 .preview-cta-text {

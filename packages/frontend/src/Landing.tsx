@@ -54,7 +54,9 @@ function blurLines(shown: string): string[] {
   const lines: string[] = [];
   let n = 0;
   // Uneven lengths, ending short: an even block of text reads as a placeholder.
-  for (const [row, count] of [9, 11, 8, 10, 9, 11, 7, 4].entries()) {
+  // Twelve lines, so the card laid over them has blurred text above and below
+  // it rather than covering the whole block.
+  for (const [row, count] of [9, 11, 8, 10, 9, 11, 7, 10, 9, 11, 8, 4].entries()) {
     const line: string[] = [];
     for (let i = 0; i < count; i++) {
       // The row offset matters when the answer is short: on a single stride the
@@ -351,10 +353,12 @@ export function Landing({
                 </div>
 
                 {/*
-                  Under the prompt, not above it: the offer is what the visitor
-                  needs to read, and the blurred remainder is the evidence that
-                  there is something behind it. See `blurLines` for why this is
-                  reordered words rather than the withheld text itself.
+                  Behind the prompt, which sits on it as a card: the offer is
+                  what the visitor needs to read, and the blurred text showing
+                  around its edges is the evidence that there is more behind
+                  it. First in the markup regardless, so a screen reader reaches
+                  the offer and never the decoration. See `blurLines` for why
+                  this is reordered words rather than the withheld text itself.
                 */}
                 <div className="preview-blur" aria-hidden="true">
                   {blurLines(preview.shown).map((line, i) => (
