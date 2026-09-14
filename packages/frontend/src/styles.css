@@ -21,6 +21,9 @@
      block, the sidebar's own padding — stands on top of this rather than
      behind it. */
   --footer-h: 57px;
+  /* The masthead's height, for anything that has to fill the window beneath
+     it — the empty consultation screen centres in exactly that space. */
+  --masthead-h: 56px;
 
   /*
    * Cool white and a working blue.
@@ -450,30 +453,40 @@ a { color: var(--accent); }
 .measure { max-width: 81ch; width: 100%; margin-inline: auto; }
 
 /*
- * Before the first question there is nothing to read, so the one thing there
- * IS to do sits in the middle of the column instead of in its top-left corner
- * above a screen of empty paper. The composer leaves the bottom edge and joins
- * that group; it returns to the foot of the column as soon as a conversation
- * exists to scroll.
- */
-/* The empty screen gets a wider block than the reading measure, so the greeting
-   fits on one line and the rule under it grows to match. A transcript keeps the
-   62ch measure — that limit is about reading long prose, which this is not. */
-/*
- * No vertical justification at all — the block simply starts at the top, with
- * the spacing `.intro` already carries.
+ * Before the first question, the greeting and the box sit in the middle of the
+ * window — the way every assistant opens — rather than pinned to the top of an
+ * otherwise empty page. The composer leaves the bottom edge and joins that
+ * group; it returns to the foot of the column as soon as a conversation exists.
  *
- * It used to centre, which was right while the columns were capped to the
- * viewport. Uncapped, the register sets the row height — 1764px with a full
- * register — so "centred" put the greeting and the composer some 900px down,
- * off screen. A fresh page and a new consultation both have to open with the
- * thing you type into already in view.
+ * Centred in the WINDOW, not in the grid row, and that distinction is the whole
+ * rule. This screen centred once before and was changed to top-aligned for a
+ * good reason: the thread stretches to the height of its row, and the register
+ * beside it sets that height — 1764px with a full list of conversations — so
+ * "centred" put the box some 900px down, below the fold. `align-self: start`
+ * stops the stretch, and the min-height gives the column exactly the visible
+ * height between the masthead and the fixed colophon to centre inside.
+ *
+ * The bottom padding lifts it slightly above true centre. Content placed at
+ * the mathematical middle of a screen reads as sitting low, because the eye
+ * weights the top; every chat product nudges it up the same way.
  */
+.thread-blank {
+  align-self: start;
+  min-height: calc(100vh - var(--masthead-h) - var(--footer-h));
+  justify-content: center;
+  padding-bottom: 8vh;
+}
+/* The empty screen gets a wider block than the reading measure, so the greeting
+   fits on one line. A transcript keeps the reading measure — that limit is
+   about long prose, which this is not. */
 .thread-blank .measure { max-width: 880px; }
+/* Centring places the group, so the top padding a transcript needs goes. */
+.thread-blank .intro { padding-top: 0; }
+.thread-blank .intro-title { text-align: center; margin-bottom: 24px; }
 /* Only its position changes with the state; its appearance must not. */
 .thread-blank .composer {
   position: static;
-  padding-top: 20px;
+  padding-top: 0;
 }
 
 /* ---------------------------------------------------------------------------
