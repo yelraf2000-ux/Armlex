@@ -2117,7 +2117,6 @@ body:has(.rail-mini) .page { padding-left: 56px; }
 
 .landing-ask textarea:focus { outline: none; border-color: var(--accent); }
 
-.landing-back { text-align: center; margin-top: 1.5rem; }
 
 .linkish {
   background: none;

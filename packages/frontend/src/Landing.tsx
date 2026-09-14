@@ -242,15 +242,6 @@ export function Landing({
             navigate(tab === 'signin' ? '/login' : '/registration', { replace: true })
           }
         />
-        <div className="measure landing-back">
-          <button className="linkish" onClick={() => navigate('/')}>
-            {/*
-              Going back must not lose the preview they were reading — the state
-              is held here, not in the form, so returning restores it intact.
-            */}
-            {preview ? t('preview.back') : t('preview.backHome')}
-          </button>
-        </div>
       </div>
     );
   }
