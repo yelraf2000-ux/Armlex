@@ -11,6 +11,7 @@
  */
 import { useCallback, useEffect, useState } from 'react';
 import { useSettings } from './Settings.js';
+import { Popup } from './Popup.js';
 
 interface Member {
   id: string;
@@ -85,7 +86,14 @@ export function Workspace({
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   /** Which row is asking "are you sure" — removal is not undoable from here. */
-  const [confirming, setConfirming] = useState<string | null>(null);
+  const [confirming, setConfirming] = useState<{
+    kind: 'member' | 'invite';
+    id: string;
+    name: string | null;
+    email: string;
+    /** The workspace's creator: removing them hands ownership to you. */
+    owner: boolean;
+  } | null>(null);
 
   const load = useCallback(async (): Promise<void> => {
     const res = await fetch('/api/workspace');
@@ -298,28 +306,30 @@ export function Workspace({
                           appear to do something and do nothing.
                         */}
                         {isAdmin && m.id !== meId ? (
-                          confirming === m.id ? (
-                            <span className="ws-confirm">
-                              <button className="danger" onClick={() => void drop(`/api/workspace/members/${m.id}`)}>
-                                {t('ws.removeYes')}
+                          <span className="ws-confirm">
+                            {m.owner ? null : (
+                              <button
+                                className="ws-role-set"
+                                onClick={() => void setRole(m.id, m.role !== 'admin')}
+                              >
+                                {m.role === 'admin' ? t('ws.demote') : t('ws.promote')}
                               </button>
-                              <button onClick={() => setConfirming(null)}>{t('nav.cancel')}</button>
-                            </span>
-                          ) : (
-                            <span className="ws-confirm">
-                              {m.owner ? null : (
-                                <button
-                                  className="ws-role-set"
-                                  onClick={() => void setRole(m.id, m.role !== 'admin')}
-                                >
-                                  {m.role === 'admin' ? t('ws.demote') : t('ws.promote')}
-                                </button>
-                              )}
-                              <button className="ws-remove" onClick={() => setConfirming(m.id)}>
-                                {t('ws.remove')}
-                              </button>
-                            </span>
-                          )
+                            )}
+                            <button
+                              className="ws-remove"
+                              onClick={() =>
+                                setConfirming({
+                                  kind: 'member',
+                                  id: m.id,
+                                  name: m.name,
+                                  email: m.email,
+                                  owner: m.owner,
+                                })
+                              }
+                            >
+                              {t('ws.remove')}
+                            </button>
+                          </span>
                         ) : null}
                       </td>
                     </tr>
@@ -355,18 +365,20 @@ export function Workspace({
                           </td>
                           <td className="ws-act">
                             {isAdmin ? (
-                              confirming === i.id ? (
-                                <span className="ws-confirm">
-                                  <button className="danger" onClick={() => void drop(`/api/workspace/invites/${i.id}`)}>
-                                    {t('ws.removeYes')}
-                                  </button>
-                                  <button onClick={() => setConfirming(null)}>{t('nav.cancel')}</button>
-                                </span>
-                              ) : (
-                                <button className="ws-remove" onClick={() => setConfirming(i.id)}>
-                                  {t('ws.remove')}
-                                </button>
-                              )
+                              <button
+                                className="ws-remove"
+                                onClick={() =>
+                                  setConfirming({
+                                    kind: 'invite',
+                                    id: i.id,
+                                    name: i.name,
+                                    email: i.email,
+                                    owner: false,
+                                  })
+                                }
+                              >
+                                {t('ws.remove')}
+                              </button>
                             ) : null}
                           </td>
                         </tr>
@@ -444,6 +456,49 @@ export function Workspace({
           ) : null}
         </div>
       </div>
+
+      {/*
+        Removal asks in a popup, not in the row.
+
+        The inline pair of buttons it replaces swapped "Remove" for "Confirm"
+        in the same spot, so a double click removed someone — and it said
+        nothing about what removal does, which is the one thing an admin needs
+        to know before doing it. The popup names the person and says plainly
+        what they keep and what they lose. The action is red because it is the
+        destructive choice; Cancel is the default-looking one.
+      */}
+      {confirming ? (
+        <Popup
+          title={confirming.kind === 'member' ? t('ws.removeMemberTitle') : t('ws.removeInviteTitle')}
+          onClose={() => setConfirming(null)}
+        >
+          <p className="popup-who">
+            <strong>{confirming.name || confirming.email}</strong>
+            {confirming.name ? <span className="popup-who-mail"> · {confirming.email}</span> : null}
+          </p>
+          <p className="popup-body">
+            {confirming.kind === 'member' ? t('ws.removeMemberBody') : t('ws.removeInviteBody')}
+          </p>
+          {confirming.owner ? <p className="popup-body">{t('ws.removeOwnerNote')}</p> : null}
+          <div className="popup-actions">
+            <button className="popup-secondary" onClick={() => setConfirming(null)}>
+              {t('nav.cancel')}
+            </button>
+            <button
+              className="popup-danger"
+              onClick={() =>
+                void drop(
+                  confirming.kind === 'member'
+                    ? `/api/workspace/members/${confirming.id}`
+                    : `/api/workspace/invites/${confirming.id}`,
+                )
+              }
+            >
+              {t('ws.remove')}
+            </button>
+          </div>
+        </Popup>
+      ) : null}
     </div>
   );
 }

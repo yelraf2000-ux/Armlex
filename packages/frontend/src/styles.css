@@ -2281,6 +2281,10 @@ body:has(.rail-mini) .page { padding-left: 56px; }
   line-height: 1.5;
 }
 
+/* Who a destructive popup is about, above what it will do to them. */
+.popup-who { margin: 0 0 10px; font-size: 0.95rem; color: var(--ink); }
+.popup-who-mail { color: var(--ink-3); }
+
 /* The public-link warning. Quiet, but not hidden: it is the one sentence in
    the share popup that changes what someone should do with the link. */
 .popup-note {
@@ -2791,11 +2795,6 @@ body:has(.rail-mini) .page { padding-left: 56px; }
   background: none;
   color: var(--ink-2);
   cursor: pointer;
-}
-.ws-confirm button.danger {
-  border-color: var(--danger);
-  background: var(--danger);
-  color: var(--paper);
 }
 
 .ws-note, .ws-empty {
