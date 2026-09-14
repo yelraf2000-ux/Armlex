@@ -6,7 +6,7 @@
  *   Ask    — one-shot grounded answer, no memory.
  *   Chat   — multi-turn with contextualisation and carried-over chunks.
  */
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react';
 import type { Chunk } from './types.js';
 import { ChunkCard } from './ChunkCard.js';
 import { BRAND } from './brand.js';
@@ -594,8 +594,37 @@ function Workbench() {
  */
 function Colophon() {
   const { t } = useSettings();
+  const ref = useRef<HTMLElement>(null);
+
+  /*
+   * Tell the page how tall this is, instead of the page guessing.
+   *
+   * Everything that stands at the bottom of the window — the composer, the
+   * account block — reserves --footer-h. A fixed value cannot be right: on a
+   * phone the note wraps to two lines, and Russian and English wrap at
+   * different widths from Armenian, so a number measured at one width left the
+   * question box 17px underneath the footer at another. The bar measures itself
+   * whenever its size changes and writes the real height. Rounded UP, so a
+   * 32.5px bar reserves 33 and nothing sits half a pixel inside it.
+   *
+   * Layout effect, so the first paint already has the right value.
+   */
+  useLayoutEffect(() => {
+    const el = ref.current;
+    if (!el) return;
+    const apply = (): void =>
+      document.documentElement.style.setProperty(
+        '--footer-h',
+        `${Math.ceil(el.getBoundingClientRect().height)}px`,
+      );
+    apply();
+    const watch = new ResizeObserver(apply);
+    watch.observe(el);
+    return () => watch.disconnect();
+  }, []);
+
   return (
-    <footer className="colophon">
+    <footer ref={ref} className="colophon">
       <div className="colophon-disclaimer">{t('corpus.disclaimer')}</div>
     </footer>
   );

@@ -19,7 +19,8 @@
   /* The fixed colophon's height — one line, the disclaimer. Anything that
      sits at the bottom of the window — the composer, the account block, the
      sidebar's own padding — stands on top of this rather than behind it.
-     Measured, not estimated: guessing it once left the composer 5px inside. */
+     This is only the value before the page has measured it: Colophon writes
+     the real height, which changes with screen width and language. */
   --footer-h: 33px;
   /* The masthead's height, for anything that has to fill the window beneath
      it — the empty consultation screen centres in exactly that space. */
