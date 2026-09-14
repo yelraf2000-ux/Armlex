@@ -1302,7 +1302,46 @@ body:has(.rail-mini) .page { padding-left: 56px; }
    Gate — a title page, not a login form
    --------------------------------------------------------------------------- */
 
-.login { max-width: 520px; margin: 12vh auto 0; padding: 0 24px; }
+/* A narrow card: a form of four short fields reads as one thing when the
+   fields are no wider than a name and an address need. */
+.login { max-width: 420px; margin: 12vh auto 0; padding: 0 24px; }
+
+/* The form says what it is — a bold title, one line under it. */
+.auth-head { text-align: center; margin-bottom: 28px; }
+.auth-title {
+  margin: 0;
+  font-family: var(--display);
+  font-size: 30px;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+  line-height: 1.2;
+  color: var(--ink);
+}
+.auth-sub {
+  margin: 8px 0 0;
+  font-size: 14.5px;
+  line-height: 1.5;
+  color: var(--ink-3);
+}
+
+/* "Already have an account? Sign in" — the other door, at the foot. */
+.auth-switch {
+  margin: 20px 0 0;
+  text-align: center;
+  font-size: 14px;
+  color: var(--ink-2);
+}
+.auth-switch-link {
+  padding: 0;
+  border: 0;
+  background: none;
+  font: inherit;
+  font-weight: 600;
+  color: var(--accent);
+  cursor: pointer;
+}
+.auth-switch-link:hover { text-decoration: underline; }
+.auth-switch-link:focus-visible { outline: 1px solid var(--accent); outline-offset: 3px; }
 .login-head { text-align: center; margin-bottom: 32px; }
 /* On the landing the head is the subtitle alone — the mark is in the masthead
    above it, where it also sits once you are signed in. */
@@ -1341,19 +1380,72 @@ body:has(.rail-mini) .page { padding-left: 56px; }
   color: var(--ink-3);
   margin-bottom: 8px;
 }
+/*
+ * Outlined boxes, not underlines.
+ *
+ * The underline and the wide letter-spacing belonged to the printed-edition
+ * design, where a form was set like a ledger. An outlined box is what every
+ * sign-up form a person has filled in looks like, and the whole field is
+ * visibly the place to click — an underline only marks where the text sits.
+ *
+ * Shared by invite and reset, which use the same row; they get the same boxes.
+ */
 .login-row input {
   width: 100%;
   font-family: var(--body);
-  font-size: 20px;
-  letter-spacing: 0.14em;
-  padding: 6px 2px 11px;
-  border: 0;
-  border-bottom: 2px solid var(--ink);
-  border-radius: 0;
-  background: none;
+  font-size: 15px;
+  letter-spacing: normal;
+  padding: 14px 14px;
+  border: 1px solid var(--rule-2);
+  border-radius: var(--radius);
+  background: var(--glow);
   color: var(--ink);
 }
-.login-row input:focus { outline: none; border-bottom-color: var(--accent); }
+.login-row input:focus {
+  outline: none;
+  border-color: var(--accent);
+  /* A second pixel of ring, so focus reads without the box changing size. */
+  box-shadow: 0 0 0 1px var(--accent);
+}
+
+/*
+ * The label that rides up onto the border.
+ *
+ * It rests inside the empty box like a placeholder, and moves onto the top
+ * border — smaller, and in the accent while focused — once the box is focused
+ * or holds anything. `:placeholder-shown` is how CSS tells empty from filled:
+ * the input carries a one-space placeholder purely so that selector works.
+ *
+ * The label's background is the field's own, so where it crosses the border
+ * the line is cut rather than drawn through the text.
+ */
+.field { position: relative; margin-bottom: 14px; }
+.login-row .field label {
+  position: absolute;
+  left: 10px;
+  top: 50%;
+  transform: translateY(-50%);
+  margin: 0;
+  padding: 0 5px;
+  font-size: 15px;
+  letter-spacing: normal;
+  text-transform: none;
+  line-height: 1;
+  color: var(--ink-3);
+  background: transparent;
+  pointer-events: none;
+  transition: top 0.15s ease, font-size 0.15s ease, color 0.15s ease;
+}
+.login-row .field input:focus + label,
+.login-row .field input:not(:placeholder-shown) + label {
+  top: 0;
+  font-size: 12px;
+  background: var(--glow);
+}
+.login-row .field input:focus + label { color: var(--accent); }
+@media (prefers-reduced-motion: reduce) {
+  .login-row .field label { transition: none; }
+}
 
 /*
  * Password field with a reveal toggle.
@@ -1376,20 +1468,21 @@ body:has(.rail-mini) .page { padding-left: 56px; }
 .password-box { position: relative; }
 .password-box input {
   /* Room for the eye, so a long password never runs underneath it. */
-  padding-right: 38px;
+  padding-right: 48px;
 }
 .login-row .password-eye,
 .password-eye {
   position: absolute;
-  right: 0;
-  /* Aligned to the text, not the box: the input's bottom padding is part of
-     the underline, and centring on the box would sit the eye visibly low. */
-  top: 1px;
+  right: 8px;
+  /* Centred on the box now the field is an outlined box: there is no
+     underline for the text to sit on any more. */
+  top: 50%;
+  transform: translateY(-50%);
   display: flex;
   align-items: center;
-  justify-content: flex-end;
+  justify-content: center;
   width: 34px;
-  height: 32px;
+  height: 34px;
   padding: 0;
   margin: 0;
   border: 0;
@@ -1404,21 +1497,26 @@ body:has(.rail-mini) .page { padding-left: 56px; }
 .password-eye:hover { color: var(--ink); }
 /* The icon is a fixed size; without this it is the flex item that gets eaten. */
 .password-eye svg { flex: none; }
+/* Sentence case at reading size: small spaced capitals were the edition's
+   voice, and a button that says what it does needs only to say it. */
 .login-row button {
   width: 100%;
-  margin-top: 26px;
-  padding: 15px 20px;
+  margin-top: 8px;
+  padding: 14px 20px;
   font-family: var(--body);
-  font-size: 13px;
+  font-size: 15px;
   font-weight: 600;
-  letter-spacing: 0.14em;
-  text-transform: uppercase;
+  letter-spacing: normal;
+  text-transform: none;
   cursor: pointer;
   border: 0;
   /* Same corner as every other primary action. */
   border-radius: var(--radius);
   background: var(--ink);
   color: var(--paper);
+}
+.login-row button:hover:not(:disabled) {
+  background: color-mix(in srgb, var(--ink) 86%, var(--paper));
 }
 .login-row button:disabled { background: var(--rule-2); color: var(--leaf); cursor: default; }
 .login-foot {
@@ -1501,34 +1599,21 @@ body:has(.rail-mini) .page { padding-left: 56px; }
  * is not worth a navigation, and someone who guesses wrong should be one click
  * from the right one rather than back at the start.
  */
-.login-tabs {
-  display: flex;
-  border-bottom: 1px solid var(--rule);
-  margin: 0 0 1.25rem;
-}
-
-.login-tabs button {
-  background: none;
-  border: none;
-  border-bottom: 2px solid transparent;
-  color: var(--ink-3);
-  font-family: var(--body);
-  font-size: 0.95rem;
-  padding: 0.55rem 1.1rem;
-  cursor: pointer;
-  margin-bottom: -1px;
-}
-
-.login-tabs button.on {
-  color: var(--accent);
-  border-bottom-color: var(--accent);
-}
 
 .login-or {
-  text-align: center;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  margin: 22px 0 14px;
   color: var(--ink-3);
-  font-size: 0.85rem;
-  margin: 0.9rem 0 0.6rem;
+  font-size: 13px;
+}
+.login-or::before,
+.login-or::after {
+  content: "";
+  flex: 1;
+  height: 1px;
+  background: var(--rule);
 }
 
 /*
@@ -1539,19 +1624,20 @@ body:has(.rail-mini) .page { padding-left: 56px; }
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 0.6rem;
-  padding: 0.7rem 1rem;
-  border: 1px solid var(--rule);
+  gap: 10px;
+  padding: 12px 16px;
+  border: 1px solid var(--rule-2);
   border-radius: var(--radius);
-  background: var(--leaf);
+  background: var(--glow);
   color: var(--ink);
   text-decoration: none;
-  font-size: 0.95rem;
-  min-height: 44px;
+  font-size: 15px;
+  font-weight: 500;
+  min-height: 48px;
   box-sizing: border-box;
 }
 
-.login-google:hover { border-color: var(--ink-3); }
+.login-google:hover { border-color: var(--ink-3); background: var(--leaf); }
 
 /* ── The account control ────────────────────────────────────────────────── */
 

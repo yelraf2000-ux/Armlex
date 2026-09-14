@@ -73,6 +73,40 @@ const ONE_INVITE: Invite[] = [{ name: '', email: '' }];
 const LOOKS_LIKE_EMAIL = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 /**
+ * An outlined field whose label sits inside it until there is something to
+ * make room for, then rides up onto the top border.
+ *
+ * The label is a real <label> in both positions, so it is what a screen reader
+ * announces and what a click on it focuses — a placeholder would vanish the
+ * moment someone typed, and take the only statement of what the box is for
+ * with it. The single-space placeholder is not decoration: `:placeholder-shown`
+ * is how the CSS tells an empty field from a filled one without any script.
+ *
+ * The label comes AFTER the input in the markup so the CSS can reach it with a
+ * sibling selector; it is positioned back on top of the field.
+ */
+function Field({
+  id,
+  label,
+  required,
+  ...input
+}: {
+  id: string;
+  label: string;
+  required?: boolean;
+} & React.InputHTMLAttributes<HTMLInputElement>) {
+  return (
+    <div className="field">
+      <input id={id} placeholder=" " {...input} />
+      <label htmlFor={id}>
+        {label}
+        {required ? <span className="req"> *</span> : null}
+      </label>
+    </div>
+  );
+}
+
+/**
  * The password field, with a reveal toggle.
  *
  * A password box that cannot be read back is the reason people mistype one and
@@ -106,18 +140,19 @@ function PasswordBox({
 }) {
   return (
     <>
-      <label htmlFor={id}>{label}</label>
-      <div className="password-box">
+      <div className="field password-box">
         <input
           id={id}
           type={reveal ? 'text' : 'password'}
           autoComplete={autoComplete}
+          placeholder=" "
           value={value}
           onChange={(e) => onChange(e.target.value)}
           onKeyDown={(e) => {
             if (e.key === 'Enter') onEnter();
           }}
         />
+        <label htmlFor={id}>{label}</label>
         {/*
           type="button" matters: inside a form this would otherwise submit, and
           pressing the eye would send a half-typed password.
@@ -418,43 +453,20 @@ export function Login({
 
   return (
     <div className="login">
-      <div className="login-head">
-        <div className="login-sub">
-          <BrandLine text={t('masthead.sub')} />
-        </div>
-        <div className="masthead-rule" />
-      </div>
+      {/*
+        A title and one line under it — the form says what it is, once, and the
+        way to the other form moves to the foot (see `auth-switch` below).
 
-      <div className="login-tabs" role="tablist">
-        <button
-          role="tab"
-          aria-selected={tab === 'signin'}
-          className={tab === 'signin' ? 'on' : ''}
-          onClick={() => {
-            setTab('signin');
-            setError(null);
-            // The arrival message described the door they came from, not the
-            // one they just chose.
-            setArrival(null);
-          }}
-        >
-          {t('auth.signIn')}
-        </button>
-        <button
-          role="tab"
-          aria-selected={tab === 'register'}
-          className={tab === 'register' ? 'on' : ''}
-          onClick={() => {
-            setTab('register');
-            setError(null);
-            setArrival(null);
-          }}
-        >
-          {t('auth.register')}
-        </button>
+        The tabs that stood here made the choice between signing in and
+        registering the first thing the page asked, before the reader had read
+        a word of either. The product introduction went too: it is on the
+        landing page they came from, and a form is a place to fill something
+        in, not to be told about the product again.
+      */}
+      <div className="auth-head">
+        <h1 className="auth-title">{tab === 'signin' ? t('auth.signIn') : t('auth.register')}</h1>
+        <p className="auth-sub">{tab === 'signin' ? t('auth.signInNote') : t('auth.registerNote')}</p>
       </div>
-
-      <p className="login-note">{tab === 'signin' ? t('auth.signInNote') : t('auth.registerNote')}</p>
 
       {/*
         Why the Google round trip sent them back. Sits here, above the steps,
@@ -467,11 +479,10 @@ export function Login({
       {/* Step 1 of registration: who you are and how big your firm is. */}
       {tab === 'register' && step === 1 ? (
         <div className="login-row">
-          <label htmlFor="armlex-name">
-            {t('auth.fullName')} <span className="req">*</span>
-          </label>
-          <input
+          <Field
             id="armlex-name"
+            label={t('auth.fullName')}
+            required
             type="text"
             autoComplete="name"
             autoFocus
@@ -479,11 +490,10 @@ export function Login({
             onChange={(e) => setProfile((p) => ({ ...p, fullName: e.target.value }))}
           />
 
-          <label htmlFor="armlex-company">
-            {t('auth.companyName')} <span className="req">*</span>
-          </label>
-          <input
+          <Field
             id="armlex-company"
+            label={t('auth.companyName')}
+            required
             type="text"
             autoComplete="organization"
             value={profile.companyName}
@@ -614,9 +624,9 @@ export function Login({
       {/* Step 3, and the whole of sign-in: the credentials. */}
       {tab === 'register' && step !== 3 ? null : (
       <div className="login-row">
-        <label htmlFor="armlex-email">{t('auth.email')}</label>
-        <input
+        <Field
           id="armlex-email"
+          label={t('auth.email')}
           type="email"
           autoComplete="email"
           autoFocus
@@ -690,7 +700,12 @@ export function Login({
 
         {googleEnabled ? (
           <>
-            <div className="login-or">{t('auth.or')}</div>
+            {/* Ruled either side, as the design has it: this is the one place
+                a line separates two genuinely different ways of doing the
+                same thing, rather than dressing up a page. */}
+            <div className="login-or">
+              <span>{t('auth.or')}</span>
+            </div>
             {/*
               A link, not a fetch: OAuth is a browser redirect to Google and
               back. The profile is stashed first, because that redirect destroys
@@ -726,6 +741,27 @@ export function Login({
 
       )}
 
+      {/*
+        The other door, at the foot where people look for it once they have
+        read what this form is — "already have an account?" is a question that
+        only arises after seeing that this one is for making one.
+      */}
+      <p className="auth-switch">
+        {tab === 'signin' ? t('auth.noAccount') : t('auth.haveAccount')}{' '}
+        <button
+          type="button"
+          className="auth-switch-link"
+          onClick={() => {
+            setTab(tab === 'signin' ? 'register' : 'signin');
+            setError(null);
+            // The arrival message described the door they came from, not the
+            // one they just chose.
+            setArrival(null);
+          }}
+        >
+          {tab === 'signin' ? t('auth.register') : t('auth.signIn')}
+        </button>
+      </p>
     </div>
   );
 }
