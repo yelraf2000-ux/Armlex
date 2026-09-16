@@ -37,15 +37,25 @@ const DISTINCTIVE = 8;
  * Bounded on the right, because «Հոդված 3» occurs inside «Հոդված 30» and the
  * wrong article presented as the basis of an answer is the failure that
  * matters most here. A digit may not follow the match.
+ *
+ * The end of an UNSETTLED answer is not a right boundary. A model typing
+ * «Հոդված 125» passes through «Հոդված 12», which names article 12 until the
+ * next character arrives and takes it back — an entry appearing and vanishing
+ * within a frame. While the text is still growing, a naming has to be followed
+ * by something that is not a digit before it counts.
  */
-function names(text: string, ref: string): boolean {
+function names(text: string, ref: string, settled = true): boolean {
   if (ref.length < DISTINCTIVE) return false;
   let from = 0;
   for (;;) {
     const at = text.indexOf(ref, from);
     if (at === -1) return false;
     const after = text[at + ref.length];
-    if (after === undefined || !/[0-9]/.test(after)) return true;
+    if (after === undefined) {
+      if (settled) return true;
+    } else if (!/[0-9]/.test(after)) {
+      return true;
+    }
     from = at + 1;
   }
 }
@@ -78,7 +88,7 @@ export function citedIndexes(
   const quoted = extractQuotes(answer);
   const used: number[] = [];
   candidates.forEach((c, i) => {
-    if (names(answer, c.ref) || quoted.some((q) => c.text.includes(q))) used.push(i);
+    if (names(answer, c.ref, settled) || quoted.some((q) => c.text.includes(q))) used.push(i);
   });
   return used.length > 0 || !settled ? used : all();
 }

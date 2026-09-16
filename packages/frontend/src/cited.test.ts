@@ -89,3 +89,42 @@ describe('citedIndexes while the answer is still being written', () => {
     assert.deepEqual(citedIndexes(candidates, 'Պատասխան առանց վկայակոչման։', true), [0, 1, 2]);
   });
 });
+
+describe('the end of a growing answer is not a right boundary', () => {
+  test('a half-typed number does not name the article it is a prefix of', () => {
+    // «Հոդված 125» passes through «Հոդված 12» on its way in. Counting that as
+    // a naming put article 12 in the column for one frame and took it away.
+    const candidates = [chunk('Հոդված 12'), chunk('Հոդված 125')];
+    assert.deepEqual(citedIndexes(candidates, 'տես Հոդված 12', false), []);
+    // And «Հոդված 125» at the tail waits too — it shows as soon as anything
+    // follows it, which in a streamed answer is the next frame.
+    assert.deepEqual(citedIndexes(candidates, 'տես Հոդված 125', false), []);
+    assert.deepEqual(citedIndexes(candidates, 'տես Հոդված 125-ով', false), [1]);
+  });
+
+  test('once something follows it, a naming at the end counts', () => {
+    const candidates = [chunk('Հոդված 12')];
+    assert.deepEqual(citedIndexes(candidates, 'տես Հոդված 12 ', false), [0]);
+  });
+
+  test('a finished answer ending on a citation still counts', () => {
+    // Nothing more is coming, so the end of the text IS a boundary.
+    const candidates = [chunk('Հոդված 12')];
+    assert.deepEqual(citedIndexes(candidates, 'տես Հոդված 12', true), [0]);
+  });
+
+  test('a whole streamed answer never takes an entry back', () => {
+    const candidates = [chunk('Հոդված 12'), chunk('Հոդված 125'), chunk('Հոդված 258')];
+    const full = 'Շահութահարկը սահմանված է Հոդված 125-ով, շրջանառության հարկը՝ Հոդված 258-ով։';
+    let previous: number[] = [];
+    for (let n = 0; n <= full.length; n++) {
+      const now = citedIndexes(candidates, full.slice(0, n), n === full.length);
+      assert.ok(
+        previous.every((i) => now.includes(i)),
+        `at ${n} chars: had ${previous}, now ${now}`,
+      );
+      previous = now;
+    }
+    assert.deepEqual(previous, [1, 2]);
+  });
+});
