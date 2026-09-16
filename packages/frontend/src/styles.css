@@ -888,6 +888,28 @@ a { color: var(--accent); }
 .rev { font-size: 11px; font-style: italic; color: var(--ink-3); white-space: nowrap; }
 .rev.recent { color: var(--accent); }
 
+/* The provision's own heading, from the act. Quiet: the reference above it is
+   what a reader looks for, and this says what they will find there. */
+.norm-title {
+  font-family: var(--law);
+  font-size: 12.5px;
+  line-height: 1.45;
+  color: var(--ink-3);
+}
+
+/* The opening of a provision the answer named without quoting. Set apart from
+   a quote on purpose — italic and unmarked, where a quote is upright in
+   guillemets — because it is a truncation, not a citation. */
+.entry-opening {
+  font-family: var(--law);
+  font-size: 13px;
+  font-style: italic;
+  line-height: 1.6;
+  color: var(--ink-3);
+  margin: 0 0 12px;
+  padding-left: 34px;
+}
+
 .entry-quote {
   font-family: var(--law);
   font-size: 13.5px;

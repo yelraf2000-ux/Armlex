@@ -30,6 +30,28 @@ export function parseDates(header: string): { adopted: string | null; amended: s
   return { adopted: iso('adopted'), amended: iso('amended') };
 }
 
+/**
+ * The opening of a provision, for an entry the answer named but did not quote.
+ *
+ * NOT a quote, and deliberately not set as one: the panel reserves « » for
+ * passages the server verified as verbatim, and dressing a truncated preview
+ * in the same marks would make an editorial cut look like an exact citation.
+ * The caller shows it plain, and the full text is a click away.
+ *
+ * The first paragraph only. Articles in this corpus open onto rate TABLES
+ * often enough — «| Ժամանակահատված | Եկամտային հարկի դրույքաչափը |» — that
+ * running past the blank line would print table plumbing as the preview.
+ */
+export function opening(body: string, max = 180): string {
+  const firstParagraph = body.split(/\n\s*\n/)[0] ?? body;
+  const clean = firstParagraph.replace(/\s+/g, ' ').trim();
+  if (clean.length <= max) return clean;
+  const cut = clean.slice(0, max);
+  const lastSpace = cut.lastIndexOf(' ');
+  // Only break on a word if one is far enough in to leave a readable line.
+  return `${(lastSpace > 60 ? cut.slice(0, lastSpace) : cut).trimEnd()}…`;
+}
+
 export interface Segment {
   text: string;
   mark: boolean;

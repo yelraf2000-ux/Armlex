@@ -12,9 +12,9 @@
  * the gutter, entries are separated by rules, and the citation figures in the
  * transcript address these numbers.
  */
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import type { Chunk } from './types.js';
-import { highlight, parseDates, splitHeader } from './chunkText.js';
+import { headerField, highlight, opening, parseDates, splitHeader } from './chunkText.js';
 import { useSettings } from './Settings.js';
 
 export interface Entry {
@@ -94,9 +94,33 @@ function ApparatusEntry({
 
   const { header, body } = splitHeader(chunk.text);
   const { adopted, amended } = parseDates(header);
+  /* The provision's own heading, as the act gives it — «Եկամտային հարկի
+     դրույքաչափերը». It was being parsed away and thrown out, leaving the
+     column to identify articles by number alone. */
+  const title = headerField(header, 'Title');
   const segments = highlight(body, quotes);
   const marked = segments.filter((s) => s.mark).map((s) => s.text);
   const related = useRelated(chunk.articleId, open);
+
+  /*
+   * Open AT the passage, not at the top of the article.
+   *
+   * Articles here run to twenty thousand characters, so expanding one used to
+   * drop the reader at its first line to hunt for the highlight — in a column
+   * whose whole purpose is to put the operative words in front of them. Only
+   * the panel's own scroller moves; the page never does. An article with
+   * nothing highlighted opens at its top, which is where it should open.
+   */
+  const bodyRef = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    if (!open) return;
+    const el = bodyRef.current;
+    const mark = el?.querySelector('mark');
+    const scroller = el?.closest('.norm-inner');
+    if (!el || !mark || !scroller) return;
+    const offset = mark.getBoundingClientRect().top - scroller.getBoundingClientRect().top;
+    scroller.scrollTop += offset - 90;
+  }, [open]);
 
   async function copyQuote(): Promise<void> {
     // What an accountant actually pastes into a memo: the words of the law plus
@@ -128,6 +152,7 @@ function ApparatusEntry({
               </span>
             ) : null}
           </span>
+          {title ? <span className="norm-title" lang="hy">{title}</span> : null}
         </span>
       </button>
 
@@ -137,7 +162,11 @@ function ApparatusEntry({
         <div className="entry-quote carried">{t('norm.carried')}</div>
       ) : marked.length > 0 ? (
         <div className="entry-quote" lang="hy">«{marked[0]}»</div>
-      ) : null}
+      ) : (
+        /* Named by the answer but not quoted from. Its opening, plain and
+           unquoted — see `opening` for why it carries no guillemets. */
+        <div className="entry-opening" lang="hy">{opening(body)}</div>
+      )}
 
       {open ? (
         <div className="entry-body">
@@ -147,7 +176,7 @@ function ApparatusEntry({
             {corpusSynced ? <div><dt>{t('norm.checked')}</dt><dd>{corpusSynced}</dd></div> : null}
           </dl>
 
-          <div className="norm-body" lang="hy">
+          <div className="norm-body" lang="hy" ref={bodyRef}>
             {segments.map((s, i) => (s.mark ? <mark key={i}>{s.text}</mark> : <span key={i}>{s.text}</span>))}
           </div>
 
