@@ -343,9 +343,9 @@ app.post<{ Body: ChatBody }>('/api/chat/stream', async (req, reply) => {
  */
 /*
  * Statute to read while an answer is being prepared — see `interlude.ts` for
- * why it is statute and not something written for the purpose. Public, like
- * /api/corpus: it discloses nothing an unsigned-in reader cannot already read
- * on ARLIS, and the client wants it before the first question is asked.
+ * why it is statute and not something written for the purpose. Listed in
+ * PUBLIC_PATHS: it discloses nothing an unsigned-in reader cannot already read
+ * on ARLIS, and the visitors who wait longest are the ones on the preview.
  */
 app.get('/api/interlude', async () => ({ interludes: await someInterludes(8) }));
 

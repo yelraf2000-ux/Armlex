@@ -110,6 +110,10 @@ const PUBLIC_PATHS = new Set([
   // The payment provider has no session. This one is verified by HMAC signature
   // instead, which is a stronger check than a cookie: see billing/routes.ts.
   '/api/billing/webhook',
+  // Published law, shown while an answer is prepared. Nothing here is anyone's
+  // data — it is the text of two codes, already public on ARLIS — and the
+  // visitors who wait longest are the ones using the preview with no account.
+  '/api/interlude',
 ]);
 
 /** A shape the UI can render, with no hash or provider id in it. */
