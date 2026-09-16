@@ -11,6 +11,7 @@ import { useEffect, useState } from 'react';
 import { BRAND } from './brand.js';
 import { MarkdownView } from './MarkdownView.js';
 import { useSettings } from './Settings.js';
+import { BrandMark } from './BrandMark.js';
 
 interface SharedMessage {
   role: string;
@@ -47,7 +48,7 @@ export function Shared({ token }: { token: string }) {
       <div className="wrap shared-page">
         <div className="shared-head">
           <a className="brand" href="/">
-            {BRAND}
+            <BrandMark />
           </a>
         </div>
         {/*
@@ -66,7 +67,7 @@ export function Shared({ token }: { token: string }) {
     <div className="wrap shared-page">
       <div className="shared-head">
         <a className="brand" href="/">
-          {BRAND}
+          <BrandMark />
         </a>
         <span className="shared-badge">{t('share.readOnly')}</span>
       </div>

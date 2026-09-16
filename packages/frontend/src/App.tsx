@@ -25,6 +25,7 @@ import { Invite } from './Invite.js';
 import { Reset } from './Reset.js';
 import { extractQuotes } from './quotes.js';
 import { RailToggle, SettingsProvider, useSettings } from './Settings.js';
+import { BrandMark } from './BrandMark.js';
 
 type Mode = 'search' | 'ask' | 'chat';
 
@@ -503,7 +504,7 @@ function Workbench() {
             rather than clearing field by field, so nothing survives by
             accident. There is no router here, so this is the only "home".
           */}
-          <button className="brand" onClick={goHome}>{BRAND}</button>
+          <button className="brand" onClick={goHome}><BrandMark /></button>
           <RailToggle />
 
           <span className="spacer" />

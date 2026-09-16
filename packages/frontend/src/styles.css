@@ -3183,6 +3183,30 @@ a:hover { color: var(--primary-700); }
 }
 .masthead-sub { font-style: normal; font-size: 12px; line-height: 16px; color: var(--text-muted); }
 
+/*
+ * The book mark, beside the name.
+ *
+ * Inline, not flex, and that is the whole trick. The header rows align their
+ * items on the TEXT baseline; a flex container takes its baseline from its
+ * first item, which here is an image whose baseline is its bottom edge — so
+ * everything sharing the row would drop by the difference. As inline content
+ * the brand's baseline stays the name's, and `vertical-align: middle` centres
+ * the mark on it.
+ *
+ * Sized in em so it scales with whichever header it is in: 32px beside the 24px
+ * masthead name, smaller beside the shared page's link.
+ */
+.brand-logo {
+  display: inline-block;
+  height: 1.35em;
+  width: auto;
+  margin-right: 0.4em;
+  vertical-align: middle;
+  position: relative;
+  top: -0.08em;
+}
+.rail-mini-logo img { display: block; width: 36px; height: auto; }
+
 /* The sidebar: white, set off by a hairline rather than a tint. Painted on body
    for the reason given at the original rule; the 1px stop is the border. */
 @media (min-width: 1201px) {
@@ -4347,4 +4371,17 @@ a:hover { color: var(--primary-700); }
     margin-right: var(--space-4);
     padding: var(--space-6) var(--space-5);
   }
+}
+
+/*
+ * The mark made the brand 61px wider, and on a phone the landing header's
+ * «Գրանցում» wrapped onto a row of its own. Measured at 360px — the narrowest
+ * common Android width — these fit brand, Sign in and Register on one line
+ * with ~16px to spare. The mark is sized in em, so it follows the name down.
+ */
+@media (max-width: 480px) {
+  .masthead-top { gap: var(--space-2); }
+  .provenance .brand { font-size: 18px; }
+  .landing-signin,
+  .landing-signup { padding: 0 10px; }
 }

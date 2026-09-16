@@ -695,7 +695,7 @@ export function Chat({
             aria-label={t('nav.openRail')}
             title={t('nav.openRail')}
           >
-            <img src="/favicon.svg" alt="" width={26} height={26} />
+            <img src="/logo.png" alt="" width={36} height={23} />
           </button>
           <button
             onClick={() => {

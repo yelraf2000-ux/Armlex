@@ -17,6 +17,7 @@ import { MarkdownView } from './MarkdownView.js';
 import { BrandLine } from './BrandLine.js';
 import { useSettings } from './Settings.js';
 import { navigate, usePath } from './router.js';
+import { BrandMark } from './BrandMark.js';
 
 export const PENDING_QUESTION = 'matyan.pendingQuestion';
 export const PENDING_PREVIEW = 'matyan.pendingPreview';
@@ -226,7 +227,7 @@ export function Landing({
         <header className="provenance">
           <div className="masthead-top">
             <button className="brand" onClick={goHome}>
-              {BRAND}
+              <BrandMark />
             </button>
           </div>
         </header>
@@ -261,7 +262,7 @@ export function Landing({
       <header className="provenance">
         <div className="masthead-top">
           <button className="brand" onClick={goHome}>
-            {BRAND}
+            <BrandMark />
           </button>
           <span className="spacer" />
           <button className="landing-signin" onClick={() => openForm('signin')}>

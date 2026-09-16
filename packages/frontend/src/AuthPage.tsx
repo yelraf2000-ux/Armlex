@@ -10,6 +10,7 @@
  */
 import type { ReactNode } from 'react';
 import { BRAND } from './brand.js';
+import { BrandMark } from './BrandMark.js';
 
 export function AuthPage({ children }: { children: ReactNode }) {
   return (
@@ -23,7 +24,7 @@ export function AuthPage({ children }: { children: ReactNode }) {
             exactly that, and it is what the shared-conversation page does too.
           */}
           <a className="brand" href="/">
-            {BRAND}
+            <BrandMark />
           </a>
         </div>
       </header>
