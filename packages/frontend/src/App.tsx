@@ -266,7 +266,6 @@ function AskMode({ corpusSynced }: { corpusSynced: string | null }) {
         entries={entries}
         quotes={quotes}
         answer={answer ?? ''}
-        pending={loading}
         corpusSynced={corpusSynced}
         selectedId={selectedId}
         onSelect={setSelectedId}

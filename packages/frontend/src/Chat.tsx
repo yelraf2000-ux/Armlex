@@ -894,7 +894,6 @@ export function Chat({
         entries={entries}
         quotes={shownQuotes}
         answer={owningTurn?.text ?? ''}
-        pending={owningTurn?.streaming ?? false}
         corpusSynced={corpusSynced}
         selectedId={selectedId}
         onSelect={setSelectedId}

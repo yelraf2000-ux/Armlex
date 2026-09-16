@@ -253,7 +253,6 @@ export function NormPanel({
   entries,
   quotes,
   answer,
-  pending,
   corpusSynced,
   selectedId,
   onSelect,
@@ -261,8 +260,6 @@ export function NormPanel({
   entries: Entry[];
   quotes: string[];
   answer: string;
-  /** The answer is still being written, so the column is still filling. */
-  pending: boolean;
   corpusSynced: string | null;
   /** Which entry the reader last addressed from the transcript. */
   selectedId: string | null;
@@ -315,17 +312,19 @@ export function NormPanel({
     */
     <aside className="norm">
       <div className="norm-inner">
+        {/*
+          Nothing stands here until the answer has cited something — no count of
+          zero, no line promising provisions later. Everything shown in this
+          column is a provision the answer rests on, so anything else standing
+          in for one before then is a placeholder a reader has to learn to
+          disregard. The column keeps its width while an answer is in progress,
+          so the first entry arrives without the reading column reflowing.
+        */}
         <div className="app-head">
           <span className="app-title">{t('norm.title')}</span>
-          <span className="app-count">{acts.length}</span>
+          {acts.length > 0 ? <span className="app-count">{acts.length}</span> : null}
         </div>
         <div className="app-rule" />
-
-        {/* Empty and still writing: say so, rather than leave a blank column
-            that reads as a failure to find anything. */}
-        {acts.length === 0 && pending ? (
-          <p className="app-pending">{t('norm.pending')}</p>
-        ) : null}
 
         {acts.map((act, i) => (
           <div className="act-group" key={act.arlisId}>

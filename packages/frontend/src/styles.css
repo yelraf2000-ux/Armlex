@@ -952,14 +952,6 @@ a { color: var(--accent); }
   color: var(--ink-4);
 }
 
-/* Shown only while an answer is being written and has cited nothing yet. */
-.app-pending {
-  margin: 0;
-  font-size: 12.5px;
-  line-height: 1.6;
-  color: var(--ink-4);
-}
-
 .entry-quote {
   font-family: var(--law);
   font-size: 13.5px;
