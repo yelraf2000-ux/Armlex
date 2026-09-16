@@ -15,6 +15,7 @@
 import { useEffect, useRef, useState } from 'react';
 import type { Chunk } from './types.js';
 import { headerField, highlight, opening, parseDates, splitHeader } from './chunkText.js';
+import { partsNamed, range, runs, selectParts } from './parts.js';
 import { useSettings } from './Settings.js';
 
 export interface Entry {
@@ -76,6 +77,7 @@ function useRelated(articleId: string, open: boolean): Related[] {
 function ApparatusEntry({
   entry,
   quotes,
+  answer,
   corpusSynced,
   focused,
   open,
@@ -83,6 +85,7 @@ function ApparatusEntry({
 }: {
   entry: Entry;
   quotes: string[];
+  answer: string;
   corpusSynced: string | null;
   focused: boolean;
   open: boolean;
@@ -105,6 +108,13 @@ function ApparatusEntry({
      under the heading reads as a rendering fault. */
   const preview = marked.length > 0 ? '' : opening(body);
   const related = useRelated(chunk.articleId, open);
+
+  /* Open onto the part the answer leans on, not onto the article. Which part
+     that is comes from the delivered text alone — a quote inside it, or the
+     citation naming it — so nothing here is a judgment about relevance. The
+     rest of the act is on ARLIS, one click below. See `parts.ts`. */
+  const shown = selectParts(body, quotes, partsNamed(answer, chunk.ref));
+  const hiddenCount = shown.filter((p) => !p.shown).length;
 
   /*
    * Open AT the passage, not at the top of the article.
@@ -181,8 +191,29 @@ function ApparatusEntry({
           </dl>
 
           <div className="norm-body" lang="hy" ref={bodyRef}>
-            {segments.map((s, i) => (s.mark ? <mark key={i}>{s.text}</mark> : <span key={i}>{s.text}</span>))}
+            {runs(shown).map((run, i) =>
+              run.shown ? (
+                <p key={i} className="norm-part">
+                  {highlight(run.text, quotes).map((s, j) =>
+                    s.mark ? <mark key={j}>{s.text}</mark> : <span key={j}>{s.text}</span>,
+                  )}
+                </p>
+              ) : (
+                /* Say what was withheld and how much of it. An ellipsis would
+                   hide the size of the cut, and a reader cannot judge whether
+                   to open ARLIS without knowing there are fourteen more parts
+                   down there. */
+                <p key={i} className="norm-elided" lang="hy">
+                  {run.labels.length === 1
+                    ? `${t('norm.part')} ${run.labels[0]}`
+                    : `${t('norm.parts')} ${range(run.labels)}`}
+                </p>
+              ),
+            )}
           </div>
+          {hiddenCount > 0 ? (
+            <p className="norm-trimmed">{t('norm.trimmed')}</p>
+          ) : null}
 
           <div className="norm-actions">
             <button className="btn" onClick={() => void copyQuote()}>
@@ -221,12 +252,14 @@ function ApparatusEntry({
 export function NormPanel({
   entries,
   quotes,
+  answer,
   corpusSynced,
   selectedId,
   onSelect,
 }: {
   entries: Entry[];
   quotes: string[];
+  answer: string;
   corpusSynced: string | null;
   /** Which entry the reader last addressed from the transcript. */
   selectedId: string | null;
@@ -301,6 +334,7 @@ export function NormPanel({
           key={entry.chunk.articleId}
           entry={entry}
           quotes={quotes}
+          answer={answer}
           corpusSynced={corpusSynced}
           focused={selectedId === entry.chunk.articleId}
           open={isOpen(entry.chunk.articleId)}

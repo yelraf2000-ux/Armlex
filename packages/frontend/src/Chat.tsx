@@ -889,6 +889,7 @@ export function Chat({
       <NormPanel
         entries={entries}
         quotes={shownQuotes}
+        answer={owningTurn?.text ?? ''}
         corpusSynced={corpusSynced}
         selectedId={selectedId}
         onSelect={setSelectedId}

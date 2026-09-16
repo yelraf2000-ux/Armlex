@@ -910,6 +910,44 @@ a { color: var(--accent); }
   padding-left: 34px;
 }
 
+/* One part of an article, as the act numbers them. Parts read as separate
+   rules, so they are separated as paragraphs rather than run together. */
+.norm-part {
+  margin: 0 0 14px;
+  white-space: pre-wrap;
+}
+
+.norm-part:last-child { margin-bottom: 0; }
+
+/* What was left out, and how much of it. Set as a rule across the column so it
+   reads as a gap in the text rather than as more text — a reader skimming must
+   not mistake it for a provision. */
+.norm-elided {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: 0 0 14px;
+  font-size: 11.5px;
+  letter-spacing: 0.04em;
+  color: var(--ink-4);
+  white-space: nowrap;
+}
+
+.norm-elided::before,
+.norm-elided::after {
+  content: '';
+  flex: 1;
+  border-top: 1px dashed var(--rule);
+}
+
+/* Said once under the text, not at every gap. */
+.norm-trimmed {
+  margin: 12px 0 0;
+  font-size: 11.5px;
+  line-height: 1.55;
+  color: var(--ink-4);
+}
+
 .entry-quote {
   font-family: var(--law);
   font-size: 13.5px;

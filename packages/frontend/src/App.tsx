@@ -265,6 +265,7 @@ function AskMode({ corpusSynced }: { corpusSynced: string | null }) {
       <NormPanel
         entries={entries}
         quotes={quotes}
+        answer={answer ?? ''}
         corpusSynced={corpusSynced}
         selectedId={selectedId}
         onSelect={setSelectedId}
