@@ -353,7 +353,13 @@ export function Chat({
     // there is exactly one place text accumulates. Time to first token is ~9s
     // warm and the full answer takes ~45-60s; without streaming that is a
     // minute of blank screen.
-    setTurns((t) => [...t, { role: 'assistant', text: '' }]);
+    // `streaming` from birth, not from the first token. The pacer used to set
+    // it, so for the nine seconds of retrieval and contextualising the turn
+    // looked FINISHED with an empty answer — and an empty settled answer is
+    // exactly the case where the apparatus falls back to showing everything
+    // retrieved. The column filled with fifteen provisions, then emptied when
+    // the first word arrived. The `finally` below always clears it.
+    setTurns((t) => [...t, { role: 'assistant', text: '', streaming: true }]);
 
     const patchLast = (patch: Partial<Turn>): void => {
       setTurns((t) => {
