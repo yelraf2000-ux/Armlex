@@ -67,26 +67,3 @@ export function useSettings(): Settings {
   if (!ctx) throw new Error('useSettings called outside SettingsProvider');
   return ctx;
 }
-
-/**
- * The rail toggle, kept separate from the other controls so it can sit at the
- * far left of the bar.
- *
- * Placed between the mode tabs and the language switcher it read as a fourth
- * mode and went unnoticed; a navigation toggle belongs on the provenance line,
- * before everything else. It names the thing it opens rather than showing a
- * glyph, and `aria-expanded` plus the rule under it carry the state.
- */
-export function RailToggle() {
-  const { railOpen, toggleRail, t } = useSettings();
-  // Hidden while the sidebar is open: the sidebar carries the same word as its
-  // own title, and the same word twice on one screen reads as two different
-  // things. Once collapsed, the thin strip is the main way back, and this
-  // stays as a second one.
-  if (railOpen) return null;
-  return (
-    <button className="rail-toggle" onClick={toggleRail} aria-expanded={railOpen}>
-      {t('nav.consultations')}
-    </button>
-  );
-}

@@ -3215,6 +3215,12 @@ a:hover { color: var(--primary-700); }
    closing the sidebar moved the whole page by 3px. Holding the button at the
    lockup's height keeps the page still either way. */
 .provenance button.brand { min-height: 36px; }
+/* Sidebar collapsed on a wide screen: the left strip carries the mark, so the
+   header does not repeat it. visibility, not display — the space stays, the
+   page does not move, and a hidden button can be neither clicked nor tabbed to. */
+@media (min-width: 1201px) {
+  .provenance .brand.rail-closed { visibility: hidden; }
+}
 .brand-compact { display: none; }
 @media (max-width: 1200px) {
   .brand-lockup { display: none; }

@@ -24,7 +24,7 @@ import { Verify } from './Verify.js';
 import { Invite } from './Invite.js';
 import { Reset } from './Reset.js';
 import { extractQuotes } from './quotes.js';
-import { RailToggle, SettingsProvider, useSettings } from './Settings.js';
+import { SettingsProvider, useSettings } from './Settings.js';
 import { BrandMark } from './BrandMark.js';
 
 type Mode = 'search' | 'ask' | 'chat';
@@ -514,8 +514,14 @@ function Workbench() {
             cannot be shown whatever the setting says, so the compact mark stands
             in. The lockup's alt is the product's name, because on wide screens
             it is the only thing naming this button.
+
+            Collapsed, on wide screens, the brand is not shown at all: the strip
+            down the left edge already carries the book (which reopens the
+            sidebar) and a new consultation, so a mark and name beside it only
+            said the same thing again. It is hidden, not removed, so its height
+            stays reserved and opening the sidebar does not move the page.
           */}
-          <button className="brand" onClick={goHome}>
+          <button className={railOpen ? 'brand' : 'brand rail-closed'} onClick={goHome}>
             {railOpen ? (
               <>
                 <img className="brand-lockup" src="/logo-lockup.png" alt={BRAND} width={164} height={36} />
@@ -525,7 +531,6 @@ function Workbench() {
               <BrandMark />
             )}
           </button>
-          <RailToggle />
 
           <span className="spacer" />
           {/*
