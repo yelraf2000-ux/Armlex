@@ -3207,6 +3207,16 @@ a:hover { color: var(--primary-700); }
 }
 .rail-mini-logo img { display: block; width: 36px; height: auto; }
 
+/* The full lockup, shown in place of mark-and-name while the sidebar is open.
+   Stored at 3x; 36px tall puts its lettering at the size of the 24px name it
+   replaces. */
+.brand-lockup { display: block; height: 36px; width: auto; }
+.brand-compact { display: none; }
+@media (max-width: 1200px) {
+  .brand-lockup { display: none; }
+  .brand-compact { display: inline; }
+}
+
 /* The sidebar: white, set off by a hairline rather than a tint. Painted on body
    for the reason given at the original rule; the 1px stop is the border. */
 @media (min-width: 1201px) {

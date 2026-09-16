@@ -282,7 +282,7 @@ interface CorpusInfo {
 }
 
 function Workbench() {
-  const { t } = useSettings();
+  const { t, railOpen } = useSettings();
   const [mode, setMode] = useState<Mode>('chat');
   /** Bumped to remount the active mode, which is how "go home" clears it. */
   const [homeKey, setHomeKey] = useState(0);
@@ -504,7 +504,27 @@ function Workbench() {
             rather than clearing field by field, so nothing survives by
             accident. There is no router here, so this is the only "home".
           */}
-          <button className="brand" onClick={goHome}><BrandMark /></button>
+          {/*
+            With the sidebar open, the full lockup — book and wordmark as one
+            image — heads the page. Collapsed, the book already stands at the top
+            of the thin strip, so the header carries the compact mark beside the
+            name instead of repeating the whole lockup next to it.
+
+            Both are rendered while open, and CSS picks: below 1200px the sidebar
+            cannot be shown whatever the setting says, so the compact mark stands
+            in. The lockup's alt is the product's name, because on wide screens
+            it is the only thing naming this button.
+          */}
+          <button className="brand" onClick={goHome}>
+            {railOpen ? (
+              <>
+                <img className="brand-lockup" src="/logo-lockup.png" alt={BRAND} width={164} height={36} />
+                <span className="brand-compact"><BrandMark /></span>
+              </>
+            ) : (
+              <BrandMark />
+            )}
+          </button>
           <RailToggle />
 
           <span className="spacer" />
