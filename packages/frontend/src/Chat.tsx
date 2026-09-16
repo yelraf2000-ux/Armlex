@@ -544,12 +544,44 @@ export function Chat({
     ...(t?.fresh ?? []).map((chunk) => ({ chunk, carried: false })),
     ...(t?.carried ?? []).map((chunk) => ({ chunk, carried: true })),
   ];
+
+  /**
+   * The provisions the answer actually leans on, out of everything retrieved.
+   *
+   * Retrieval hands over eight or more candidates and the panel used to list
+   * all of them, so an answer resting on four articles was filed under thirteen
+   * — most of them fetched, considered and not used, with nothing to say so.
+   * A reader checking an answer had to work out which of the thirteen it was
+   * built from, which is the work the apparatus exists to save them.
+   *
+   * Two signals, both taken from the delivered text: the answer names the
+   * provision (it cites by name — «(ՀՀ ՀԱՐԿԱՅԻՆ ՕՐԵՆՍԳԻՐՔ, Հոդված 254)»), or it
+   * quotes a passage that occurs in that article.
+   *
+   * While the answer is still being written, everything found is shown: the
+   * text has not finished naming what it uses, and entries would appear and
+   * vanish under the reader as it did.
+   *
+   * If nothing matches, everything is shown. An answer that cites in a form
+   * this does not recognise must not leave the reader with no apparatus at all
+   * — failing towards more evidence is the safe direction here.
+   */
+  const citedOf = (t: Turn | undefined): Entry[] => {
+    const all = sourcesOf(t);
+    const text = t?.text ?? '';
+    if (!text || t?.streaming) return all;
+    const quoted = extractQuotes(text);
+    const used = all.filter(
+      (e) => text.includes(e.chunk.ref) || quoted.some((q) => e.chunk.text.includes(q)),
+    );
+    return used.length > 0 ? used : all;
+  };
   const owningTurn =
     (selectedId
-      ? [...assistantTurns].reverse().find((t) => sourcesOf(t).some((e) => e.chunk.articleId === selectedId))
+      ? [...assistantTurns].reverse().find((t) => citedOf(t).some((e) => e.chunk.articleId === selectedId))
       : undefined) ?? assistantTurns[assistantTurns.length - 1];
 
-  const entries = sourcesOf(owningTurn);
+  const entries = citedOf(owningTurn);
   const shownQuotes = extractQuotes(owningTurn?.text ?? '');
 
   return (
@@ -706,7 +738,7 @@ export function Chat({
       ) : null}
 
       {turns.map((turn, i) => {
-        const sources = sourcesOf(turn);
+        const sources = citedOf(turn);
         /* Waiting on the first word. The typing line names the speaker itself,
            so the standing role label would only say MatyanAI a second time. */
         const typing = turn.role === 'assistant' && !!turn.stage && !turn.text;
@@ -793,7 +825,6 @@ export function Chat({
                     onClick={() => setSelectedId(e.chunk.articleId)}
                     title={e.carried ? t('norm.carried') : e.chunk.documentTitle}
                   >
-                    <span className="cite-n">{n + 1}</span>
                     <span lang="hy">{e.chunk.ref}</span>
                   </button>
                 ))}

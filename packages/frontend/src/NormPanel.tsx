@@ -75,7 +75,6 @@ function useRelated(articleId: string, open: boolean): Related[] {
 
 function ApparatusEntry({
   entry,
-  n,
   quotes,
   corpusSynced,
   focused,
@@ -83,7 +82,6 @@ function ApparatusEntry({
   onToggle,
 }: {
   entry: Entry;
-  n: number;
   quotes: string[];
   corpusSynced: string | null;
   focused: boolean;
@@ -117,7 +115,6 @@ function ApparatusEntry({
   return (
     <div className={focused ? 'entry focused' : 'entry'}>
       <button className="entry-head" onClick={onToggle} aria-expanded={open}>
-        <span className="entry-n">{n}</span>
         <span className="entry-main">
           <span className="entry-line">
             <span className="norm-ref" lang="hy">{chunk.ref}</span>
@@ -131,7 +128,6 @@ function ApparatusEntry({
               </span>
             ) : null}
           </span>
-          <span className="norm-act" lang="hy">{chunk.documentTitle}</span>
         </span>
       </button>
 
@@ -222,6 +218,23 @@ export function NormPanel({
   const first = entries[0]!.chunk.articleId;
   const isOpen = (id: string): boolean => open[id] ?? (id === first && selectedId === null);
 
+  /*
+   * One heading per act, its provisions listed under it.
+   *
+   * Four provisions of the Tax Code used to be four entries, each repeating the
+   * act's name — and legal drafting being what it is, several points of one
+   * government decision arrive together constantly, so the column read as four
+   * or five separate sources when it was one act read in four places.
+   *
+   * Insertion order is kept: the first act mentioned stays first.
+   */
+  const acts: { arlisId: number; title: string; entries: Entry[] }[] = [];
+  for (const entry of entries) {
+    const act = acts.find((a) => a.arlisId === entry.chunk.arlisId);
+    if (act) act.entries.push(entry);
+    else acts.push({ arlisId: entry.chunk.arlisId, title: entry.chunk.documentTitle, entries: [entry] });
+  }
+
   return (
     /*
       Two elements, because the column has two jobs that want different heights.
@@ -235,15 +248,25 @@ export function NormPanel({
       <div className="norm-inner">
         <div className="app-head">
           <span className="app-title">{t('norm.title')}</span>
-          <span className="app-count">{entries.length}</span>
+          <span className="app-count">{acts.length}</span>
         </div>
         <div className="app-rule" />
 
-        {entries.map((entry, i) => (
+        {acts.map((act, i) => (
+          <div className="act" key={act.arlisId}>
+            {/*
+              One line, with the whole title on hover. Act titles are stored in
+              capitals and run to 703 characters in this corpus, so printed in
+              full under every provision they buried the provisions themselves.
+            */}
+            <div className="act-head" lang="hy" title={act.title}>
+              <span className="act-n">{i + 1}</span>
+              <span className="act-title">{act.title}</span>
+            </div>
+            {act.entries.map((entry) => (
           <ApparatusEntry
           key={entry.chunk.articleId}
           entry={entry}
-          n={i + 1}
           quotes={quotes}
           corpusSynced={corpusSynced}
           focused={selectedId === entry.chunk.articleId}
@@ -259,6 +282,8 @@ export function NormPanel({
             if (next) onSelect(id);
           }}
         />
+            ))}
+          </div>
         ))}
       </div>
     </aside>

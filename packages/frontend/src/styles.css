@@ -797,15 +797,8 @@ a { color: var(--accent); }
   cursor: pointer;
   white-space: nowrap;
 }
-.cite .cite-n {
-  font-size: 11px;
-  vertical-align: super;
-  margin-right: 3px;
-  color: var(--ink-3);
-}
 .cite:hover { color: var(--accent); border-bottom-color: var(--rule-2); }
 .cite[aria-current="true"] { color: var(--accent); border-bottom-color: var(--accent); }
-.cite[aria-current="true"] .cite-n { color: var(--accent); }
 .cite:focus-visible { outline: 1px solid var(--accent); outline-offset: 3px; }
 /* Carried from an earlier turn: read, but not the basis of this answer. */
 .cite.carried { font-style: italic; color: var(--ink-3); }
@@ -852,20 +845,43 @@ a { color: var(--accent); }
 .entry-head:hover { color: var(--accent); }
 .entry-head:focus-visible { outline: 1px solid var(--accent); outline-offset: 2px; }
 
-/* The figure hangs in the gutter, as a printed apparatus sets it. */
-.entry-n {
-  flex: 0 0 22px;
-  font-size: 12px;
-  font-weight: 600;
-  padding-top: 4px;
-  color: var(--ink-3);
-}
-.entry.focused .entry-n { color: var(--accent); }
-
 .entry-main { display: flex; flex-direction: column; gap: 3px; min-width: 0; flex: 1; }
 .entry-line { display: flex; align-items: baseline; gap: 9px; flex-wrap: wrap; }
 .norm-ref { font-family: var(--law); font-size: 16.5px; font-weight: 700; }
-.norm-act { font-family: var(--law); font-size: 12.5px; color: var(--ink-3); }
+
+/*
+ * The act, named once above the provisions read from it.
+ *
+ * Its title is printed on ONE line, with the whole of it on hover. These are
+ * stored in capitals and reach 703 characters in this corpus — set in full
+ * under every provision, as they were, the shouting was the loudest thing in
+ * the column and the provisions themselves were what got lost.
+ */
+.act { margin-bottom: 18px; }
+.act-head {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  margin-bottom: 6px;
+  cursor: default;
+}
+.act-n {
+  flex: 0 0 auto;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--ink-3);
+}
+.act-title {
+  flex: 1;
+  min-width: 0;
+  font-family: var(--law);
+  font-size: 12.5px;
+  color: var(--ink-3);
+  /* One line. The full title is the element's own tooltip. */
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
 
 /* Dates are italic, never badges: a revision date is a fact about the text, and
    only a RECENT one is a caution worth the accent. */
