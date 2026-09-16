@@ -24,7 +24,7 @@ interface InvitationView {
 const MIN_PASSWORD = 8;
 
 export function Invite({ token, onAccepted }: { token: string; onAccepted: () => void }) {
-  const { t, lang } = useSettings();
+  const { t } = useSettings();
   const [view, setView] = useState<InvitationView | null>(null);
   const [state, setState] = useState<'loading' | 'ready' | 'gone'>('loading');
   const [password, setPassword] = useState('');
@@ -63,7 +63,7 @@ export function Invite({ token, onAccepted }: { token: string; onAccepted: () =>
       const res = await fetch(`/api/invite/${encodeURIComponent(token)}`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ password, lang }),
+        body: JSON.stringify({ password }),
       });
       const body = (await res.json().catch(() => ({}))) as {
         error?: string;

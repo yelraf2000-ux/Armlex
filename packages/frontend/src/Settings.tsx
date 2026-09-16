@@ -7,8 +7,7 @@
  */
 import { createContext, useContext, useEffect, useMemo, useState } from 'react';
 import type { ReactNode } from 'react';
-import { LANGS, initialLang, storeLang, translator } from './i18n.js';
-import type { Lang } from './i18n.js';
+import { t } from './i18n.js';
 import { applyTheme, initialTheme } from './theme.js';
 import type { Theme } from './theme.js';
 
@@ -22,8 +21,6 @@ interface Settings {
    * toggle wired to either would flip the wrong way whenever the two raced.
    */
   setRail: (open: boolean) => void;
-  lang: Lang;
-  setLang: (l: Lang) => void;
   theme: Theme;
   setTheme: (t: Theme) => void;
   t: (key: string) => string;
@@ -34,7 +31,7 @@ const RAIL_KEY = 'armlex.rail';
 const SettingsContext = createContext<Settings | null>(null);
 
 export function SettingsProvider({ children }: { children: ReactNode }) {
-  const [lang, setLangState] = useState<Lang>(() => FORCED_LANG ?? initialLang());
+
   const [theme, setThemeState] = useState<Theme>(() => initialTheme());
   const [railOpen, setRailOpen] = useState<boolean>(() => {
     try {
@@ -44,7 +41,12 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
     }
   });
 
-  useEffect(() => { storeLang(lang); }, [lang]);
+  /* The document's language never changes now, so it is set once. It drives
+     font selection and screen-reader pronunciation for the chrome; Armenian
+     legal text carries its own lang="hy" regardless. */
+  useEffect(() => {
+    document.documentElement.lang = 'hy';
+  }, []);
   useEffect(() => { applyTheme(theme); }, [theme]);
   useEffect(() => {
     try {
@@ -59,13 +61,11 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
       railOpen,
       toggleRail: () => setRailOpen((v) => !v),
       setRail: setRailOpen,
-      lang,
-      setLang: setLangState,
       theme,
       setTheme: setThemeState,
-      t: translator(lang),
+      t,
     }),
-    [lang, theme, railOpen],
+    [theme, railOpen],
   );
 
   return <SettingsContext.Provider value={value}>{children}</SettingsContext.Provider>;
@@ -90,23 +90,9 @@ export function useSettings(): Settings {
  */
 const SHOW_THEME_SWITCHER = false;
 
-/**
- * TEST BUILD: Armenian only.
- *
- * Hiding the switcher is not enough on its own. `initialLang()` falls back to
- * the browser's language and then to Russian, so a tester on a Russian or
- * English machine would have landed in an interface they were never meant to
- * see, with the control to leave it removed. FORCED_LANG pins the choice; the
- * other dictionaries are untouched and complete.
- *
- * To restore: set FORCED_LANG to null and SHOW_LANG_SWITCHER to true.
- */
-const SHOW_LANG_SWITCHER = false;
-const FORCED_LANG: Lang | null = 'hy';
-
 /** Compact switchers for the provenance bar. */
 export function SettingsControls() {
-  const { lang, setLang, theme, setTheme, t } = useSettings();
+  const { theme, setTheme, t } = useSettings();
 
   // Words, not dingbats. ◐ ☀ ☾ are typographic strays here — every other
   // control in the edition is a word with a rule under it, and the glyphs
@@ -116,27 +102,12 @@ export function SettingsControls() {
     { key: 'dark', label: t('theme.dark') },
   ];
 
-  // With both switchers hidden this would be an empty flex box still claiming a
-  // gap in the masthead row. Render nothing instead.
-  if (!SHOW_LANG_SWITCHER && !SHOW_THEME_SWITCHER) return null;
+  // Hidden, this would be an empty flex box still claiming a gap in the
+  // masthead row. Render nothing instead.
+  if (!SHOW_THEME_SWITCHER) return null;
 
   return (
     <div className="settings">
-      {SHOW_LANG_SWITCHER ? (
-        <div className="switcher" role="group" aria-label="Language">
-          {LANGS.map((l) => (
-            <button
-              key={l.code}
-              className={lang === l.code ? 'sw active' : 'sw'}
-              aria-pressed={lang === l.code}
-              onClick={() => setLang(l.code)}
-            >
-              {l.label}
-            </button>
-          ))}
-        </div>
-      ) : null}
-
       {SHOW_THEME_SWITCHER ? (
         <div className="switcher" role="group" aria-label="Theme">
           {themes.map((th) => (

@@ -226,7 +226,7 @@ export async function register(req: FastifyRequest, reply: FastifyReply): Promis
 
   // And this account may itself be inviting others.
   const invites = parseInvites((req.body as { invites?: unknown })?.invites);
-  const bonus = await recordInvites(user.id, invites, (req.body as { lang?: unknown })?.lang);
+  const bonus = await recordInvites(user.id, invites);
 
   // Re-read: both of the above may have changed the allowance, and the UI
   // should be told the number that is true rather than the one it expected.
@@ -247,7 +247,7 @@ export async function register(req: FastifyRequest, reply: FastifyReply): Promis
    * the resend instead of a spinner.
    */
   if (verification.isRequired()) {
-    const sent = await verification.issueFor(fresh, (req.body as { lang?: unknown })?.lang);
+    const sent = await verification.issueFor(fresh);
     if (!sent.sent) req.log.error({ err: sent.error, email }, 'verification mail failed');
     return reply.send({
       needsVerification: true,
@@ -333,13 +333,13 @@ export async function verifyEmail(req: FastifyRequest, reply: FastifyReply): Pro
  * exists to close.
  */
 export async function forgotPassword(req: FastifyRequest, reply: FastifyReply): Promise<void> {
-  const body = req.body as { email?: unknown; lang?: unknown } | undefined;
+  const body = req.body as { email?: unknown } | undefined;
   const email = typeof body?.email === 'string' ? normaliseEmail(body.email) : '';
 
   await slow();
 
   if (/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
-    const sent = await reset.issueFor(email, body?.lang);
+    const sent = await reset.issueFor(email);
     // Logged, never returned: the caller must not learn which of the two
     // reasons — no such account, or a provider failure — applied.
     if (!sent.sent) req.log.info({ email }, 'reset link not sent');
@@ -399,7 +399,7 @@ export async function readInvite(req: FastifyRequest, reply: FastifyReply): Prom
  */
 export async function acceptInvite(req: FastifyRequest, reply: FastifyReply): Promise<void> {
   const token = (req.params as { token?: string } | undefined)?.token ?? '';
-  const body = req.body as { password?: unknown; lang?: unknown } | undefined;
+  const body = req.body as { password?: unknown } | undefined;
   const password = typeof body?.password === 'string' ? body.password : '';
 
   if (password.length < MIN_PASSWORD) {
@@ -417,7 +417,7 @@ export async function acceptInvite(req: FastifyRequest, reply: FastifyReply): Pr
   await workspaceIdFor(user);
 
   if (verification.isRequired()) {
-    const sent = await verification.issueFor(user, body?.lang);
+    const sent = await verification.issueFor(user);
     if (!sent.sent) req.log.error({ err: sent.error, email: user.email }, 'invite verify mail failed');
     return reply.send({
       needsVerification: true,
@@ -442,14 +442,14 @@ export async function resendVerification(
   req: FastifyRequest,
   reply: FastifyReply,
 ): Promise<void> {
-  const body = req.body as { email?: unknown; lang?: unknown } | undefined;
+  const body = req.body as { email?: unknown } | undefined;
   const email = typeof body?.email === 'string' ? normaliseEmail(body.email) : '';
 
   await slow();
 
   const user = await findByEmail(email);
   if (user && !(await verification.isVerified(user.id))) {
-    const sent = await verification.issueFor(user, body?.lang);
+    const sent = await verification.issueFor(user);
     if (!sent.sent) req.log.error({ err: sent.error, email }, 'verification resend failed');
   }
   return reply.send({ ok: true });
@@ -552,7 +552,7 @@ export async function postWorkspaceInvite(
   if (!(await requireAdmin(req, reply))) return;
 
   const body = req.body as
-    | { email?: unknown; name?: unknown; admin?: unknown; lang?: unknown }
+    | { email?: unknown; name?: unknown; admin?: unknown }
     | undefined;
   // The invitee has no stored preference — they have no account yet — so the
   // mail goes out in the language the inviter is working in, which is the best
@@ -560,7 +560,6 @@ export async function postWorkspaceInvite(
   const result = await inviteToWorkspace(
     req.user!,
     { email: body?.email, name: body?.name, admin: body?.admin },
-    body?.lang,
   );
   if (!result.ok) return reply.code(400).send({ error: result.reason });
   return reply.send(await readWorkspace(req.user!));

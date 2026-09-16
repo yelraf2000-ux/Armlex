@@ -21,12 +21,6 @@ import * as mailer from './mailer.js';
 
 export type InviteKind = 'referral' | 'workspace';
 
-type Lang = 'hy' | 'ru' | 'en';
-
-function normaliseLang(raw: unknown): Lang {
-  return raw === 'ru' || raw === 'en' ? raw : 'hy';
-}
-
 function origin(): string {
   return (process.env['PUBLIC_ORIGIN'] ?? 'http://localhost:5173').replace(/\/+$/, '');
 }
@@ -43,40 +37,17 @@ interface Copy {
   ignore: string;
 }
 
-const COPY: Record<Lang, Copy> = {
-  hy: {
-    subject: (who) => `${who}-ը հրավիրում է Ձեզ MatyanAI`,
-    heading: 'Ձեզ հրավիրել են MatyanAI',
-    referral: (who) => `${who}-ը խորհուրդ է տալիս MatyanAI-ն։`,
-    workspace: (who) => `${who}-ը Ձեզ ավելացրել է իր թիմին MatyanAI-ում։`,
-    what: 'MatyanAI-ն պատասխանում է ՀՀ հարկային և աշխատանքային օրենսդրության հարցերին՝ հենվելով օրենքի իրական տեքստի վրա, հոդվածների հղումներով։',
-    button: 'Ընդունել հրավերը',
-    useThis: 'Կմնա միայն գաղտնաբառ ընտրել — անունն ու հասցեն արդեն լրացված են։',
-    free: 'Միանալով՝ թիմի ընդհանուր հարցերին կավելացնեք շաբաթական 5 հարց։',
-    ignore: 'Եթե սա Ձեզ չի վերաբերում, պարզապես անտեսեք այս նամակը։',
-  },
-  ru: {
-    subject: (who) => `${who} приглашает вас в MatyanAI`,
-    heading: 'Вас пригласили в MatyanAI',
-    referral: (who) => `${who} рекомендует вам MatyanAI.`,
-    workspace: (who) => `${who} добавил вас в свою команду в MatyanAI.`,
-    what: 'MatyanAI отвечает на вопросы по налоговому и трудовому законодательству РА, опираясь на реальный текст закона, со ссылками на статьи.',
-    button: 'Принять приглашение',
-    useThis: 'Останется только выбрать пароль — имя и адрес уже заполнены.',
-    free: 'Присоединившись, вы добавите к общим вопросам команды 5 вопросов в неделю.',
-    ignore: 'Если это не к вам, просто проигнорируйте письмо.',
-  },
-  en: {
-    subject: (who) => `${who} invited you to MatyanAI`,
-    heading: 'You have been invited to MatyanAI',
-    referral: (who) => `${who} recommends MatyanAI.`,
-    workspace: (who) => `${who} added you to their team on MatyanAI.`,
-    what: 'MatyanAI answers questions on Armenian tax and labour law, grounded in the actual text of the law, with links to the articles.',
-    button: 'Accept the invitation',
-    useThis: 'All that is left is choosing a password — the name and address are already filled in.',
-    free: 'By joining, you add 5 questions a week to your team\'s shared allowance.',
-    ignore: 'If this is not for you, simply ignore this message.',
-  },
+/** One language. The interface is Armenian only, so the post is too. */
+const COPY: Copy = {
+  subject: (who) => `${who}-ը հրավիրում է Ձեզ MatyanAI`,
+  heading: 'Ձեզ հրավիրել են MatyanAI',
+  referral: (who) => `${who}-ը խորհուրդ է տալիս MatyanAI-ն։`,
+  workspace: (who) => `${who}-ը Ձեզ ավելացրել է իր թիմին MatyanAI-ում։`,
+  what: 'MatyanAI-ն պատասխանում է ՀՀ հարկային և աշխատանքային օրենսդրության հարցերին՝ հենվելով օրենքի իրական տեքստի վրա, հոդվածների հղումներով։',
+  button: 'Ընդունել հրավերը',
+  useThis: 'Կմնա միայն գաղտնաբառ ընտրել — անունն ու հասցեն արդեն լրացված են։',
+  free: 'Միանալով՝ թիմի ընդհանուր հարցերին կավելացնեք շաբաթական 5 հարց։',
+  ignore: 'Եթե սա Ձեզ չի վերաբերում, պարզապես անտեսեք այս նամակը։',
 };
 
 /**
@@ -101,11 +72,10 @@ export async function sendInvite(opts: {
   /** Raw invitation token. Its presence is what makes the link an acceptance
    *  link rather than a bare trip to the homepage. */
   token?: string;
-  lang?: unknown;
 }): Promise<{ sent: boolean; error?: string }> {
   if (!mailer.isEnabled()) return { sent: false, error: 'mail_disabled' };
 
-  const c = COPY[normaliseLang(opts.lang)];
+  const c = COPY;
   const who = opts.inviter.trim() || 'MatyanAI';
   const lead = opts.kind === 'workspace' ? c.workspace(who) : c.referral(who);
   // Falls back to the homepage for an invitation minted before tokens existed:

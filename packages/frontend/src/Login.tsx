@@ -203,7 +203,7 @@ export function Login({
    *  they just pressed. */
   initialTab?: Tab | undefined;
 }) {
-  const { t, lang } = useSettings();
+  const { t } = useSettings();
   const [tab, setTab] = useState<Tab>(initialTab ?? 'signin');
   /* The address can change without this form doing anything — the back and
      forward buttons move between /login and /registration — so the tab follows
@@ -361,14 +361,13 @@ export function Login({
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(
           tab === 'signin'
-            ? { email: email.trim(), password, lang }
+            ? { email: email.trim(), password }
             : {
                 email: email.trim(),
                 password,
                 // Decides which language the verification mail is written in.
                 // The account has no stored preference yet — this request is
                 // the only place that knowledge exists.
-                lang,
                 name: profile.fullName.trim() || undefined,
                 companyName: profile.companyName.trim() || undefined,
                 companySize: profile.companySize || undefined,
@@ -425,7 +424,7 @@ export function Login({
       await fetch('/api/auth/forgot', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email: email.trim(), lang }),
+        body: JSON.stringify({ email: email.trim() }),
       });
       // Nothing to branch on: the route answers `ok` for an unknown address
       // too, and showing anything else here would leak what it withholds.
@@ -444,7 +443,7 @@ export function Login({
       await fetch('/api/auth/resend-verification', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email: pending.email, lang }),
+        body: JSON.stringify({ email: pending.email }),
       });
       // The route answers `ok` whether or not the address exists, so there is
       // nothing here to branch on — and nothing worth telling the user apart,

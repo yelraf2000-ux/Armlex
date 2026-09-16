@@ -138,7 +138,6 @@ export function parseInvites(raw: unknown): InviteInput[] {
 export async function recordInvites(
   inviterId: string,
   invites: InviteInput[],
-  lang?: unknown,
 ): Promise<number> {
   if (invites.length === 0) return 0;
 
@@ -153,7 +152,7 @@ export async function recordInvites(
     // No row means the conflict clause swallowed it — this address was already
     // invited by this person, and mailing them a second time would be the
     // reward-free half of a duplicate invitation arriving as spam.
-    if (rows.length > 0) await mailInvite(inviterId, invite.email, token, lang);
+    if (rows.length > 0) await mailInvite(inviterId, invite.email, token);
   }
 
   // Nothing paid for sending: the colleague's seat is the reward, and it
@@ -173,7 +172,6 @@ async function mailInvite(
   inviterId: string,
   to: string,
   token: string,
-  lang: unknown,
 ): Promise<void> {
   const rows = await db()<{ name: string | null; company_name: string | null }[]>`
     SELECT name, company_name FROM users WHERE id = ${inviterId}`;
@@ -181,7 +179,7 @@ async function mailInvite(
   // Falls back to the firm when the person left their own name blank, since
   // "someone invited you" persuades nobody.
   const inviter = row?.name?.trim() || row?.company_name?.trim() || '';
-  await sendInvite({ to, inviter, kind: 'referral', token, lang });
+  await sendInvite({ to, inviter, kind: 'referral', token });
 }
 
 export type AcceptResult =

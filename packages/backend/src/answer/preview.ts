@@ -23,7 +23,6 @@ import { contextualize } from './contextualize.js';
 import { generate } from './llm.js';
 import { SYSTEM } from './chat.js';
 import { CoverageParser } from './coverage.js';
-import { answerLanguage } from './language.js';
 import { validateQuotes } from './validateQuotes.js';
 import { retrieve } from '../retrieval/retrieve.js';
 import { generationDocument } from '../retrieval/rerank.js';
@@ -110,10 +109,9 @@ export async function generatePreview(question: string, ip: string): Promise<Pre
   const query = [ctx.standaloneQuery, ctx.searchTerms].filter(Boolean).join(' ');
   const chunks = ctx.needsRetrieval ? await retrieve(query, 4) : [];
 
-  const lang = answerLanguage(question) === 'ru' ? 'RUSSIAN' : 'ARMENIAN';
   const user = [
     `User message: ${question}`,
-    `\n\nANSWER LANGUAGE: ${lang}.`,
+    `\n\nANSWER LANGUAGE: ARMENIAN.`,
     `\n\nLegal act fragments:\n\n${chunks.map((c) => generationDocument(c)).join('\n\n---\n\n')}`,
   ].join('');
 

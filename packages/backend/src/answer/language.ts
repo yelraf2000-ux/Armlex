@@ -1,5 +1,12 @@
 /**
- * Which language an answer must be written in.
+ * Which language a question was asked in.
+ *
+ * NO LONGER CHOOSES THE ANSWER: every answer is Armenian now, whatever the
+ * question was written in, and the prompts say so directly. This stays because
+ * the eval harness groups questions by the language they were asked in, which
+ * is still a real property of a question.
+ *
+ * What it was for, kept because the reasoning still explains the numbers:
  *
  * Deliberately a pure script count, not a language model or an inference. The
  * generator sees tens of thousands of characters of Armenian statute in every

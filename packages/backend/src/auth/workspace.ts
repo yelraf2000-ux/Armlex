@@ -381,7 +381,6 @@ export type InviteResult =
 export async function inviteToWorkspace(
   user: User,
   input: { email: unknown; name: unknown; admin: unknown },
-  lang?: unknown,
 ): Promise<InviteResult> {
   const email = typeof input.email === 'string' ? normaliseEmail(input.email) : '';
   if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return { ok: false, reason: 'invalid_email' };
@@ -428,7 +427,7 @@ export async function inviteToWorkspace(
    * while a thrown error would cost them the invitation itself.
    */
   const inviter = user.name?.trim() || user.company_name?.trim() || '';
-  await sendInvite({ to: email, inviter, kind: 'workspace', token, lang });
+  await sendInvite({ to: email, inviter, kind: 'workspace', token });
 
   return { ok: true };
 }

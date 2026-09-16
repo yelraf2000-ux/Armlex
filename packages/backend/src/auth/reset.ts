@@ -38,12 +38,6 @@ function origin(): string {
   return (process.env['PUBLIC_ORIGIN'] ?? 'http://localhost:5173').replace(/\/+$/, '');
 }
 
-type Lang = 'hy' | 'ru' | 'en';
-
-function normaliseLang(raw: unknown): Lang {
-  return raw === 'ru' || raw === 'en' ? raw : 'hy';
-}
-
 interface Copy {
   subject: string;
   heading: string;
@@ -54,41 +48,20 @@ interface Copy {
   ignore: string;
 }
 
-const COPY: Record<Lang, Copy> = {
-  hy: {
-    subject: 'MatyanAI — գաղտնաբառի վերականգնում',
-    heading: 'Նոր գաղտնաբառ',
-    body: 'Սեղմեք ներքևի կոճակը՝ նոր գաղտնաբառ սահմանելու համար։',
-    button: 'Սահմանել նոր գաղտնաբառ',
-    fallback: 'Եթե կոճակը չի աշխատում, պատճենեք այս հղումը Ձեր դիտարկիչ․',
-    expiry: 'Հղումը գործում է 1 ժամ։',
-    ignore:
-      'Եթե Դուք չեք պահանջել վերականգնում, անտեսեք այս նամակը — գաղտնաբառը մնում է անփոփոխ։',
-  },
-  ru: {
-    subject: 'MatyanAI — восстановление пароля',
-    heading: 'Новый пароль',
-    body: 'Нажмите кнопку ниже, чтобы задать новый пароль.',
-    button: 'Задать новый пароль',
-    fallback: 'Если кнопка не работает, скопируйте эту ссылку в браузер:',
-    expiry: 'Ссылка действует 1 час.',
-    ignore:
-      'Если вы не запрашивали восстановление, проигнорируйте письмо — пароль останется прежним.',
-  },
-  en: {
-    subject: 'MatyanAI — password reset',
-    heading: 'New password',
-    body: 'Click the button below to set a new password.',
-    button: 'Set a new password',
-    fallback: 'If the button does not work, copy this link into your browser:',
-    expiry: 'The link is valid for 1 hour.',
-    ignore:
-      'If you did not ask for a reset, ignore this message — your password stays as it is.',
-  },
+/** One language. The interface is Armenian only, so the post is too. */
+const COPY: Copy = {
+  subject: 'MatyanAI — գաղտնաբառի վերականգնում',
+  heading: 'Նոր գաղտնաբառ',
+  body: 'Սեղմեք ներքևի կոճակը՝ նոր գաղտնաբառ սահմանելու համար։',
+  button: 'Սահմանել նոր գաղտնաբառ',
+  fallback: 'Եթե կոճակը չի աշխատում, պատճենեք այս հղումը Ձեր դիտարկիչ․',
+  expiry: 'Հղումը գործում է 1 ժամ։',
+  ignore:
+    'Եթե Դուք չեք պահանջել վերականգնում, անտեսեք այս նամակը — գաղտնաբառը մնում է անփոփոխ։',
 };
 
-function render(link: string, lang: Lang): { html: string; text: string } {
-  const c = COPY[lang];
+function render(link: string): { html: string; text: string } {
+  const c = COPY;
   const html = [
     '<div style="margin:0;padding:32px 16px;background:#EDE8DC;font-family:Georgia,serif;color:#33191E">',
     '<div style="max-width:520px;margin:0 auto;background:#FFFFFF;border-radius:10px;padding:32px">',
@@ -112,7 +85,7 @@ function render(link: string, lang: Lang): { html: string; text: string } {
  * means the older one still works after the person has been told it was
  * replaced, and for a credential this strong that window should not exist.
  */
-export async function issueFor(email: string, lang: unknown): Promise<{ sent: boolean }> {
+export async function issueFor(email: string): Promise<{ sent: boolean }> {
   if (!isEnabled()) return { sent: false };
 
   const rows = await db()<{ id: string }[]>`SELECT id FROM users WHERE email = ${email}`;
@@ -128,9 +101,8 @@ export async function issueFor(email: string, lang: unknown): Promise<{ sent: bo
     INSERT INTO password_resets (token_hash, user_id, expires_at)
     VALUES (${hash(token)}, ${user.id}, now() + make_interval(mins => ${TTL_MINUTES}))`;
 
-  const chosen = normaliseLang(lang);
-  const { html, text } = render(`${origin()}/reset/${token}`, chosen);
-  const res = await mailer.send({ to: email, subject: COPY[chosen].subject, html, text });
+  const { html, text } = render(`${origin()}/reset/${token}`);
+  const res = await mailer.send({ to: email, subject: COPY.subject, html, text });
   return { sent: res.ok };
 }
 

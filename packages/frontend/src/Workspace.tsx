@@ -68,7 +68,7 @@ export function Workspace({
   section: Section;
   onSection: (section: Section) => void;
 }) {
-  const { t, lang } = useSettings();
+  const { t } = useSettings();
   const [view, setView] = useState<WorkspaceView | null>(null);
   const [usage, setUsage] = useState<UsageView | null>(null);
   const [adding, setAdding] = useState(false);
@@ -146,9 +146,7 @@ export function Workspace({
       const res = await fetch('/api/workspace/invites', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        // Carries the language so the invitation mail is written in the one the
-        // inviter works in -- the invitee has no account and so no preference.
-        body: JSON.stringify({ email: email.trim(), name: name.trim(), admin, lang }),
+        body: JSON.stringify({ email: email.trim(), name: name.trim(), admin }),
       });
       if (res.ok) {
         setView((await res.json()) as WorkspaceView);

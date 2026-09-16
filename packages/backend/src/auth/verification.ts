@@ -39,12 +39,6 @@ function origin(): string {
   return (process.env['PUBLIC_ORIGIN'] ?? 'http://localhost:5173').replace(/\/+$/, '');
 }
 
-type Lang = 'hy' | 'ru' | 'en';
-
-function normaliseLang(raw: unknown): Lang {
-  return raw === 'ru' || raw === 'en' ? raw : 'hy';
-}
-
 interface Copy {
   subject: string;
   heading: string;
@@ -55,34 +49,15 @@ interface Copy {
   ignore: string;
 }
 
-const COPY: Record<Lang, Copy> = {
-  hy: {
-    subject: 'MatyanAI — հաստատեք Ձեր էլ. հասցեն',
-    heading: 'Հաստատեք Ձեր էլ. հասցեն',
-    body: 'Սեղմեք ներքևի կոճակը՝ Ձեր MatyanAI հաշիվն ակտիվացնելու համար։',
-    button: 'Հաստատել հասցեն',
-    fallback: 'Եթե կոճակը չի աշխատում, պատճենեք այս հղումը Ձեր դիտարկիչ․',
-    expiry: 'Հղումը գործում է 24 ժամ։',
-    ignore: 'Եթե Դուք չեք գրանցվել, պարզապես անտեսեք այս նամակը։',
-  },
-  ru: {
-    subject: 'MatyanAI — подтвердите ваш адрес',
-    heading: 'Подтвердите ваш адрес',
-    body: 'Нажмите кнопку ниже, чтобы активировать вашу учётную запись MatyanAI.',
-    button: 'Подтвердить адрес',
-    fallback: 'Если кнопка не работает, скопируйте эту ссылку в браузер:',
-    expiry: 'Ссылка действует 24 часа.',
-    ignore: 'Если вы не регистрировались, просто проигнорируйте это письмо.',
-  },
-  en: {
-    subject: 'MatyanAI — confirm your email',
-    heading: 'Confirm your email',
-    body: 'Click the button below to activate your MatyanAI account.',
-    button: 'Confirm email',
-    fallback: 'If the button does not work, copy this link into your browser:',
-    expiry: 'The link is valid for 24 hours.',
-    ignore: 'If you did not register, simply ignore this message.',
-  },
+/** One language. The interface is Armenian only, so the post is too. */
+const COPY: Copy = {
+  subject: 'MatyanAI — հաստատեք Ձեր էլ. հասցեն',
+  heading: 'Հաստատեք Ձեր էլ. հասցեն',
+  body: 'Սեղմեք ներքևի կոճակը՝ Ձեր MatyanAI հաշիվն ակտիվացնելու համար։',
+  button: 'Հաստատել հասցեն',
+  fallback: 'Եթե կոճակը չի աշխատում, պատճենեք այս հղումը Ձեր դիտարկիչ․',
+  expiry: 'Հղումը գործում է 24 ժամ։',
+  ignore: 'Եթե Դուք չեք գրանցվել, պարզապես անտեսեք այս նամակը։',
 };
 
 /*
@@ -91,8 +66,8 @@ const COPY: Record<Lang, Copy> = {
  * plain text still works — one that needs a stylesheet to make the link
  * findable does not.
  */
-function render(link: string, lang: Lang): { html: string; text: string } {
-  const c = COPY[lang];
+function render(link: string): { html: string; text: string } {
+  const c = COPY;
   const html = [
     '<div style="margin:0;padding:32px 16px;background:#EDE8DC;font-family:Georgia,serif;color:#33191E">',
     '<div style="max-width:520px;margin:0 auto;background:#FFFFFF;border-radius:10px;padding:32px">',
@@ -119,7 +94,6 @@ function render(link: string, lang: Lang): { html: string; text: string } {
  */
 export async function issueFor(
   user: Pick<User, 'id' | 'email'>,
-  lang: unknown = 'hy',
 ): Promise<{ sent: boolean; error?: string }> {
   if (!isRequired()) return { sent: false, error: 'mail_disabled' };
 
@@ -131,11 +105,10 @@ export async function issueFor(
     INSERT INTO email_verifications (token_hash, user_id, expires_at)
     VALUES (${hash(token)}, ${user.id}, now() + make_interval(hours => ${TTL_HOURS}))`;
 
-  const chosen = normaliseLang(lang);
-  const { html, text } = render(`${origin()}/verify/${token}`, chosen);
+  const { html, text } = render(`${origin()}/verify/${token}`);
   const res = await mailer.send({
     to: user.email,
-    subject: COPY[chosen].subject,
+    subject: COPY.subject,
     html,
     text,
   });

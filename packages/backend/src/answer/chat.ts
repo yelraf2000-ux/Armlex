@@ -24,7 +24,6 @@ import { QuoteStreamGate } from './streamGate.js';
 import { validateNumbers } from './validateNumbers.js';
 import { CoverageParser } from './coverage.js';
 import type { Coverage } from './coverage.js';
-import { answerLanguage } from './language.js';
 import type { Turn } from './contextualize.js';
 
 
@@ -81,12 +80,10 @@ consistent with what you declared:
             answer from adjacent material. List the closest fragments, explicitly
             labelled as related-but-not-answering, and stop.
 
-LANGUAGE RULE — read the user's LAST message and answer in that language:
-- Armenian question → answer entirely in Armenian.
-- Russian question → answer entirely in Russian.
-- Mixed → use the dominant language of the last message.
-- Verbatim quotes from legal acts stay in Armenian in all cases, never translated inside the quotation.
-- The closing disclaimer is written in the same language as the answer.
+LANGUAGE RULE — every answer is written in Armenian, whatever language the question was asked in.
+- Armenian question, Russian question, transliterated Armenian, mixed: the answer is Armenian.
+- Verbatim quotes from legal acts are Armenian anyway — they are the authoritative text.
+- The closing disclaimer is Armenian.
 
 HARD RULES:
 1. Answer ONLY from the legal-act fragments provided in the current message. No general knowledge about taxes or Armenian law, even when you are certain.
@@ -484,19 +481,11 @@ export async function chat(
 
   const userContent = [
     `User message: ${message}`,
-    // Decide the answer language HERE, not in the model's head.
-    //
-    // The system prompt already says "answer in the language of the last
-    // message", and it is not reliably obeyed: the request also carries ~34,000
-    // characters of Armenian statute, and that mass of Armenian outweighs a
-    // one-line instruction. Measured — «нужна ли касса в магазине» came back
-    // with 0 Cyrillic characters and 1,139 Armenian ones.
-    //
-    // Script counting is deterministic and cannot drift, so the model is told
-    // the answer rather than asked to infer it. Same failure that made the
-    // Russian-language system prompt bias answers toward Russian; the pressure
-    // now comes from the retrieved text instead of the prompt.
-    `\n\nANSWER LANGUAGE: ${answerLanguage(message) === 'ru' ? 'RUSSIAN' : 'ARMENIAN'}.`,
+    // Repeated in the turn, not left to the system prompt alone. The request
+    // carries ~34,000 characters of Armenian statute, and that mass has been
+    // measured overwhelming one-line prompt instructions before — it is cheap
+    // to say again where the model cannot miss it.
+    `\n\nANSWER LANGUAGE: ARMENIAN.`,
     ' Write the entire answer in that language, including the closing',
     ' disclaimer. Verbatim quotes of the law stay Armenian regardless.',
     ctx.standaloneQuery !== message
@@ -518,7 +507,7 @@ export async function chat(
   // against the full article while showing a reduced one would let a quote the
   // model never saw pass verification — precisely the failure this guards.
   const chunkTexts = [...fresh, ...carried].map((c) => generationDocument(c));
-  const gate = new QuoteStreamGate(chunkTexts, answerLanguage(message));
+  const gate = new QuoteStreamGate(chunkTexts, 'hy');
   // Order matters: the coverage header is stripped BEFORE the quote gate sees
   // the text, so the gate never mistakes it for prose or a quotation.
   const coverage = new CoverageParser();
@@ -547,10 +536,7 @@ export async function chat(
   // panel, which still shows every cited article in full. The threshold is 2:
   // a single removal is self-explanatory where it sits.
   if (gate.invalidCount >= 2) {
-    tail +=
-      answerLanguage(message) === 'ru'
-        ? `\n\nЧасть цитат не прошла дословную проверку и была убрана из текста — сами статьи открыты в панели «Норма» справа.`
-        : `\n\nՄեջբերումների մի մասը բառացի ստուգում չի անցել և հանվել է տեքստից — հոդվածներն ամբողջությամբ բաց են «Նորմ» վահանակում։`;
+    tail += `\n\nՄեջբերումների մի մասը բառացի ստուգում չի անցել և հանվել է տեքստից — հոդվածներն ամբողջությամբ բաց են «Նորմ» վահանակում։`;
   }
   if (tail && onDelta) onDelta(tail);
 
