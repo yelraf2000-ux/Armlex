@@ -83,15 +83,15 @@ export async function sendInvite(opts: {
   const link = opts.token ? `${origin()}/invite/${opts.token}` : origin();
 
   const html = [
-    '<div style="margin:0;padding:32px 16px;background:#F7F8FA;font-family:-apple-system,BlinkMacSystemFont,Roboto,Helvetica,Arial,sans-serif;color:#111418">',
-    '<div style="max-width:520px;margin:0 auto;background:#FFFFFF;border-radius:8px;padding:32px">',
-    `<h1 style="margin:0 0 16px;font-size:22px;font-weight:600">${escapeHtml(c.heading)}</h1>`,
-    `<p style="margin:0 0 12px;font-size:15px;line-height:1.55;color:#444C57">${escapeHtml(lead)}</p>`,
-    `<p style="margin:0 0 24px;font-size:15px;line-height:1.55;color:#444C57">${escapeHtml(c.what)}</p>`,
-    `<p style="margin:0 0 24px"><a href="${link}" style="display:inline-block;background:#2250DC;color:#FFFFFF;text-decoration:none;padding:12px 24px;border-radius:8px;font-size:15px">${escapeHtml(c.button)}</a></p>`,
-    `<p style="margin:0 0 4px;font-size:13px;color:#444C57"><strong>${escapeHtml(c.useThis)}</strong></p>`,
-    `<p style="margin:0 0 16px;font-size:13px;color:#79818E">${escapeHtml(c.free)}</p>`,
-    `<p style="margin:0;font-size:13px;color:#79818E">${escapeHtml(c.ignore)}</p>`,
+    '<div style="margin:0;padding:32px 16px;background:#f8f9ff;font-family:Noto Sans,Noto Sans Armenian,-apple-system,BlinkMacSystemFont,Roboto,Helvetica,Arial,sans-serif;color:#0f172a">',
+    '<div style="max-width:520px;margin:0 auto;background:#ffffff;border:1px solid #e2e8f0;border-radius:16px;padding:32px">',
+    `<h1 style="margin:0 0 16px;font-size:22px;line-height:28px;font-weight:700">${escapeHtml(c.heading)}</h1>`,
+    `<p style="margin:0 0 12px;font-size:15px;line-height:1.55;color:#334155">${escapeHtml(lead)}</p>`,
+    `<p style="margin:0 0 24px;font-size:15px;line-height:1.55;color:#334155">${escapeHtml(c.what)}</p>`,
+    `<p style="margin:0 0 24px"><a href="${link}" style="display:inline-block;background:#2563eb;color:#ffffff;text-decoration:none;padding:12px 24px;border-radius:8px;font-size:15px;font-weight:600">${escapeHtml(c.button)}</a></p>`,
+    `<p style="margin:0 0 4px;font-size:13px;color:#334155"><strong>${escapeHtml(c.useThis)}</strong></p>`,
+    `<p style="margin:0 0 16px;font-size:13px;color:#64748b">${escapeHtml(c.free)}</p>`,
+    `<p style="margin:0;font-size:13px;color:#64748b">${escapeHtml(c.ignore)}</p>`,
     '</div></div>',
   ].join('');
 

@@ -84,7 +84,7 @@ const hy: Dict = {
   'corpus.acts': 'ակտ',
   'corpus.chunks': 'հատված',
   'corpus.synced': 'Ստուգված ARLIS-ի հետ',
-  'corpus.disclaimer': 'Սա իրավաբանական խորհրդատվություն չէ — ստուգեք ամբողջական տեքստը',
+  'corpus.disclaimer': 'Սա իրավաբանական խորհրդատվություն չէ — ստուգեք ամբողջական տեքստը ARLIS-ում',
 
   'turn.question': 'Հարց',
   'turn.searchedFor': 'որոնվել է՝',
@@ -210,9 +210,6 @@ const hy: Dict = {
   'preview.failed': 'Չհաջողվեց ստանալ պատասխանը։',
   'preview.resuming': 'Պատրաստում եմ Ձեր ամբողջական պատասխանը…',
 
-  'theme.auto': 'Ավտո',
-  'theme.light': 'Լույս',
-  'theme.dark': 'Մուգ',
 
   'error.credit':
     'Anthropic API-ի հաշվեկշիռը սպառվել է — սա ծրագրի սխալ չէ։ Համալրեք հաշիվը Plans & Billing բաժնում; որոնումն աշխատում է առանց դրա։',

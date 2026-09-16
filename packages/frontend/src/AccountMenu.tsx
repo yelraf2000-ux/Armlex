@@ -133,7 +133,7 @@ export function AccountMenu({
               </div>
               <div className="account-bar" aria-hidden="true">
                 <div
-                  className="account-bar-fill"
+                  className={usage.used >= usage.limit ? 'account-bar-fill depleted' : 'account-bar-fill'}
                   style={{ width: `${Math.min(100, (usage.used / usage.limit) * 100)}%` }}
                 />
               </div>

@@ -1,5 +1,5 @@
 /**
- * Interface language and theme, shared through context.
+ * Interface settings, shared through context.
  *
  * Context rather than prop-drilling: the translator is needed at every depth
  * (rail, thread, norm panel, login), and threading it through would make every
@@ -8,8 +8,6 @@
 import { createContext, useContext, useEffect, useMemo, useState } from 'react';
 import type { ReactNode } from 'react';
 import { t } from './i18n.js';
-import { applyTheme, initialTheme } from './theme.js';
-import type { Theme } from './theme.js';
 
 interface Settings {
   /** Whether the consultations rail is shown; remembered across visits. */
@@ -21,8 +19,6 @@ interface Settings {
    * toggle wired to either would flip the wrong way whenever the two raced.
    */
   setRail: (open: boolean) => void;
-  theme: Theme;
-  setTheme: (t: Theme) => void;
   t: (key: string) => string;
 }
 
@@ -31,8 +27,6 @@ const RAIL_KEY = 'armlex.rail';
 const SettingsContext = createContext<Settings | null>(null);
 
 export function SettingsProvider({ children }: { children: ReactNode }) {
-
-  const [theme, setThemeState] = useState<Theme>(() => initialTheme());
   const [railOpen, setRailOpen] = useState<boolean>(() => {
     try {
       return localStorage.getItem(RAIL_KEY) !== 'closed';
@@ -47,7 +41,6 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     document.documentElement.lang = 'hy';
   }, []);
-  useEffect(() => { applyTheme(theme); }, [theme]);
   useEffect(() => {
     try {
       localStorage.setItem(RAIL_KEY, railOpen ? 'open' : 'closed');
@@ -61,11 +54,9 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
       railOpen,
       toggleRail: () => setRailOpen((v) => !v),
       setRail: setRailOpen,
-      theme,
-      setTheme: setThemeState,
       t,
     }),
-    [theme, railOpen],
+    [railOpen],
   );
 
   return <SettingsContext.Provider value={value}>{children}</SettingsContext.Provider>;
@@ -75,55 +66,6 @@ export function useSettings(): Settings {
   const ctx = useContext(SettingsContext);
   if (!ctx) throw new Error('useSettings called outside SettingsProvider');
   return ctx;
-}
-
-/**
- * TEST BUILD: the theme switcher is hidden.
- *
- * A tester asked to judge whether the answers are any good should not be
- * spending attention on Light/Dark. Theme still WORKS — 'auto' is the default,
- * `applyTheme` leaves the attribute off, and the stylesheet resolves the OS
- * preference — so a tester on a dark machine still gets the night edition. Only
- * the manual override is out of sight.
- *
- * To restore: flip SHOW_THEME_SWITCHER back to true. Nothing else changed.
- */
-const SHOW_THEME_SWITCHER = false;
-
-/** Compact switchers for the provenance bar. */
-export function SettingsControls() {
-  const { theme, setTheme, t } = useSettings();
-
-  // Words, not dingbats. ◐ ☀ ☾ are typographic strays here — every other
-  // control in the edition is a word with a rule under it, and the glyphs
-  // rendered differently on every platform anyway.
-  const themes: { key: Theme; label: string }[] = [
-    { key: 'light', label: t('theme.light') },
-    { key: 'dark', label: t('theme.dark') },
-  ];
-
-  // Hidden, this would be an empty flex box still claiming a gap in the
-  // masthead row. Render nothing instead.
-  if (!SHOW_THEME_SWITCHER) return null;
-
-  return (
-    <div className="settings">
-      {SHOW_THEME_SWITCHER ? (
-        <div className="switcher" role="group" aria-label="Theme">
-          {themes.map((th) => (
-            <button
-              key={th.key}
-              className={theme === th.key ? 'sw active' : 'sw'}
-              aria-pressed={theme === th.key}
-              onClick={() => setTheme(th.key)}
-            >
-              {th.label}
-            </button>
-          ))}
-        </div>
-      ) : null}
-    </div>
-  );
 }
 
 /**

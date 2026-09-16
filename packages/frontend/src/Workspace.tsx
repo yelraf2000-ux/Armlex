@@ -416,7 +416,7 @@ export function Workspace({
                     {usage.limit !== null ? (
                       <div className="ws-bar" aria-hidden="true">
                         <div
-                          className="ws-bar-fill"
+                          className={usage.used >= usage.limit ? 'ws-bar-fill depleted' : 'ws-bar-fill'}
                           style={{ width: `${Math.min(100, (usage.used / usage.limit) * 100)}%` }}
                         />
                       </div>

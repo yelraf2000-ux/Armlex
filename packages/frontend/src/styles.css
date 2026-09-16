@@ -1,147 +1,132 @@
 /* ---------------------------------------------------------------------------
-   Издание — printed commentary.
+   MatyanAI design system — tokens.
 
-   The earlier palette reasoned from ledger stationery but resolved to plain
-   white with one accent, and every screen ended up looking like every other
-   product. This one commits: uncoated cream paper, black ink, a deeper red
-   than the old cherry because #C41E3A goes muddy on a warm ground.
+   docs/DESIGN.md is the source of truth; every value below is copied from it,
+   and the few places this file departs from it (all for text contrast) are
+   listed in that file's §0 and marked where they occur.
 
-   The form is a legal commentary volume, and that is not decoration — it is
-   how the content is actually shaped. Citations are superior figures. Sources
-   are an apparatus with numbers hanging in the gutter, not a stack of cards.
-   The caveat is a «Примечание редакции». Rules separate; boxes do not.
+   Light only, by decision: the dark theme was removed with its switcher rather
+   than derived from a palette that does not define one.
 
-   Both themes resolve as a set. Nothing is defined only inside a media query.
+   The older names — --paper, --ink, --accent, --rule and the rest — are kept
+   as ALIASES onto the system tokens, because about four hundred rules use
+   them and a rename would be churn with no visual effect. New rules should
+   reach for the system names.
    --------------------------------------------------------------------------- */
 :root {
-  color-scheme: light dark;
+  color-scheme: light;
 
-  /* The fixed colophon's height — one line, the disclaimer. Anything that
-     sits at the bottom of the window — the composer, the account block, the
-     sidebar's own padding — stands on top of this rather than behind it.
-     This is only the value before the page has measured it: Colophon writes
-     the real height, which changes with screen width and language. */
-  --footer-h: 33px;
-  /* The masthead's height, for anything that has to fill the window beneath
-     it — the empty consultation screen centres in exactly that space. */
+  /* The fixed footer's height. Colophon measures and writes the real value;
+     this is only what stands until it has. */
+  --footer-h: 41px;
+  /* The masthead's height, for anything that fills the window beneath it. */
   --masthead-h: 56px;
 
-  /*
-   * Cool white and a working blue.
-   *
-   * This was warm cream under a crimson accent — a printed edition, which is
-   * what the serifs were for too. The palette that replaces it is the one legal
-   * services are actually set in: a near-white ground with the faintest cool
-   * cast, near-black text, and one strong blue carrying identity, links, focus
-   * and anything a person is meant to press.
-   */
-  --paper:   #F7F8FA;  /* near-white, a degree cool */
-  --glow:    #FFFFFF;  /* the same ground, lit    — see the body gradient below */
-  --shade:   #EDF0F5;  /* the same ground, shaded — the far end of that gradient */
-  --leaf:    #EEF2FC;  /* panels, hovers and the active row: paper with blue in it */
-  --ink:     #111418;
-  --ink-2:   #444C57;
-  --ink-3:   #79818E;
-  --rule:    #E3E7ED;
-  --rule-2:  #C6CCD6;
-  --accent:  #2250DC;
-  --accent-bg: #E7EDFD;
-  --mark:    #E3E1FF;  /* the quoted fragment, marked — the palette's periwinkle */
+  /* 2.1 Primary & brand accent */
+  --primary-50:  #eff6ff;
+  --primary-100: #dbeafe;
+  --primary-200: #bfdbfe;
+  --primary-500: #3b82f6;
+  --primary-600: #2563eb;
+  --primary-700: #1d4ed8;
+  --primary-800: #1e40af;
+  --primary-900: #1e3a8a;
 
-  /*
-   * Caution, which is NOT the brand colour any more.
-   *
-   * It used to be: the accent was crimson, so "delete permanently", "no norm
-   * found" and the not-legal-advice line all shared one colour with the CTA.
-   * With a blue accent that stops working — a blue delete button reads as the
-   * safe choice — so warning and destruction get their own red, and the brand
-   * stops speaking for both.
-   */
-  --danger:    #C0322B;
-  --danger-bg: #FBE9E7;
+  /* 2.2 Neutral & surface hierarchy */
+  --surface-canvas:  #f8f9ff;
+  --surface-lowest:  #ffffff;
+  --surface-low:     #f1f5f9;
+  --surface:         #e2e8f0;
+  --surface-high:    #cbd5e1;
+  --surface-highest: #94a3b8;
+  /* Not a named surface in the spec, but the hover and header value it gives
+     for tables, outline buttons and the inline role selector. */
+  --surface-hover:   #f8fafc;
 
+  /* 2.3 Text */
+  --text-primary:   #0f172a;
+  --text-secondary: #334155;
+  --text-muted:     #64748b;
+  --text-subtle:    #94a3b8;  /* placeholders and disabled ONLY — 2.6:1 on white */
+  --text-inverse:   #ffffff;
 
-  /*
-   * The ground, in one place, so anything that has to paint over the page can
-   * paint the SAME thing and disappear into it. Held in a custom property
-   * rather than repeated: the two copies drifting apart is exactly the bug this
-   * exists to prevent.
-   */
-  --ground:
-    radial-gradient(125% 85% at 50% -12%, var(--glow) 0%, transparent 58%),
-    linear-gradient(to bottom, var(--paper) 40%, var(--shade) 100%);
+  /* 2.4 Semantic */
+  --success-50:  #f0fdf4;
+  --success-200: #bbf7d0;
+  --success-500: #22c55e;
+  --success-700: #15803d;
+  --warning-50:  #fffbeb;
+  --warning-500: #f59e0b;
+  --warning-700: #b45309;
+  --danger-50:   #fef2f2;
+  --danger-500:  #ef4444;
+  /* Text and destructive fills. The spec's #ef4444 is 3.8:1 on white and for
+     white on red, under AA for text this size; #dc2626 is the next step of the
+     same red at 4.8:1. #ef4444 stays for marks that are not text. */
+  --danger-600:  #dc2626;
+  --info-50:     #f0f9ff;
+  --info-500:    #0284c7;  /* icons and accent borders — 4.1:1, not for small text */
 
-  /*
-   * One family, and a plain one.
-   *
-   * This was set in Prata and Lora — a display serif over a text serif, with
-   * Noto Serif Armenian for the statute. Three faces, all of them with serifs,
-   * which is a typography for a printed edition rather than for a tool someone
-   * reads eight hours a day.
-   *
-   * Inter carries Latin and Cyrillic; Armenian falls through to Noto Sans
-   * Armenian glyph by glyph, which is how font fallback works and why the two
-   * sit in one stack rather than in two variables.
-   *
-   * The three names are kept because thirty rules use them, and because what
-   * separated a heading from body text was never the family — it was size and
-   * weight, which still do the work.
-   */
-  --sans: "Inter", "Noto Sans Armenian", system-ui, -apple-system, "Segoe UI",
-    "Helvetica Neue", Arial, sans-serif;
-  --display: var(--sans);
-  --body:    var(--sans);
-  --law:     var(--sans);
+  /* 3. Typography */
+  --font-sans: "Noto Sans", "Noto Sans Armenian", -apple-system, BlinkMacSystemFont,
+    "Segoe UI", Roboto, sans-serif;
+  --font-mono: "SFMono-Regular", Consolas, "Liberation Mono", Menlo, monospace;
 
-  /*
-   * One corner radius, everywhere something is drawn as a box.
-   *
-   * There were ten different values in this file — 2, 3, 4, 5, 6, 7, 8, 9, 10
-   * and 11 pixels — so two controls sitting beside each other rounded by
-   * different amounts. Circles (avatars, the typing dots) and the two
-   * underline-only inputs keep their own, because they are not boxes.
-   */
-  --radius: 8px;
-}
+  /* 4. Spacing — 8pt grid */
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 20px;
+  --space-6: 24px;
+  --space-8: 32px;
+  --space-10: 40px;
+  --space-12: 48px;
 
-/*
- * Dark is not an inversion: the ground keeps the same cool cast, and both the
- * accent and the danger red lift, because #2250DC and #C0322B each disappear
- * against a dark ground.
- */
-@media (prefers-color-scheme: dark) {
-  :root:not([data-theme="light"]) {
-    --paper:   #0F1216;
-    --glow:    #1B2230;
-    --shade:   #0A0C10;
-    --leaf:    #171D27;
-    --ink:     #E7EAF0;
-    --ink-2:   #AFB7C3;
-    --ink-3:   #7D8694;
-    --rule:    #242B36;
-    --rule-2:  #3A4250;
-    --accent:  #7FA0FF;
-    --accent-bg: #16203C;
-    --mark:    #2C2C58;
-    --danger:    #FF8378;
-    --danger-bg: #3A1B18;
-  }
-}
-:root[data-theme="dark"] {
-  --paper:   #0F1216;
-  --glow:    #1B2230;
-  --shade:   #0A0C10;
-  --leaf:    #171D27;
-  --ink:     #E7EAF0;
-  --ink-2:   #AFB7C3;
-  --ink-3:   #7D8694;
-  --rule:    #242B36;
-  --rule-2:  #3A4250;
-  --accent:  #7FA0FF;
-  --accent-bg: #16203C;
-  --mark:    #2C2C58;
-  --danger:    #FF8378;
-  --danger-bg: #3A1B18;
+  /* 5. Radii */
+  --radius-xs: 4px;
+  --radius-sm: 6px;
+  --radius-md: 8px;
+  --radius-lg: 12px;
+  --radius-xl: 16px;
+  --radius-2xl: 24px;
+  --radius-full: 9999px;
+
+  /* 5. Elevation */
+  --shadow-sm: 0 1px 2px 0 rgba(15, 23, 42, 0.05);
+  --shadow-md: 0 4px 6px -1px rgba(15, 23, 42, 0.08), 0 2px 4px -2px rgba(15, 23, 42, 0.04);
+  --shadow-lg: 0 10px 15px -3px rgba(15, 23, 42, 0.08), 0 4px 6px -4px rgba(15, 23, 42, 0.03);
+  --shadow-focus: 0 0 0 3px rgba(37, 99, 235, 0.2);
+
+  /* 5. Borders */
+  --border-subtle: 1px solid var(--surface);
+  --border-highlight: 1px solid var(--primary-200);
+  --border-input: 1px solid var(--surface-high);
+
+  /* Aliases — the names the existing rules use. */
+  --paper:     var(--surface-canvas);
+  --glow:      var(--surface-lowest);
+  --shade:     var(--surface-low);
+  --leaf:      var(--primary-50);
+  --ink:       var(--text-primary);
+  --ink-2:     var(--text-secondary);
+  --ink-3:     var(--text-muted);
+  --ink-4:     var(--text-muted);   /* captions — see --text-subtle for why not subtle */
+  --rule:      var(--surface);
+  --rule-2:    var(--surface-high);
+  --accent:    var(--primary-600);
+  --accent-bg: var(--primary-50);
+  --mark:      var(--primary-100);
+  --danger:    var(--danger-600);
+  --danger-bg: var(--danger-50);
+  /* The canvas is flat. Every rule that paints the ground also sets
+     background-color, so `none` leaves exactly the canvas colour. */
+  --ground:    none;
+  --sans:      var(--font-sans);
+  --display:   var(--font-sans);
+  --body:      var(--font-sans);
+  --law:       var(--font-sans);
+  --radius:    var(--radius-md);
 }
 
 * { box-sizing: border-box; }
@@ -151,25 +136,7 @@
    asking for Arial. Family only: sizes stay where each rule puts them. */
 button, input, textarea, select { font-family: inherit; }
 
-/*
- * The ground is lit, not tinted.
- *
- * A page of paper is never one flat value — it takes more light where it faces
- * the lamp and settles into its own colour away from it. Two layers do that:
- * a pool from the top centre, and a gentle deepening toward the foot, so the
- * page carries a range instead of one value with an invisible highlight on it.
- *
- * The first attempt put the lit end 2-4% off the paper and faded it out inside
- * the top third. Nobody could see it — which is a no-op, not restraint. Now the
- * top and the bottom are ~25 RGB points apart, readable as shading on a screen
- * without ever announcing itself as a gradient.
- *
- * Fixed, so it belongs to the window rather than sliding as the transcript
- * scrolls. And one hue throughout: --glow, --paper and --shade are the SAME
- * colour at three levels of light. The moment a background gradient carries two
- * hues it stops reading as light on paper and starts reading as decoration,
- * which is the one thing this design does not do.
- */
+/* Colours, face and size are set in the design-system layer at the end. */
 body {
   margin: 0;
   background-color: var(--paper);
@@ -1642,7 +1609,9 @@ body:has(.rail-mini) .page { padding-left: 56px; }
   background: var(--ink);
   color: var(--paper);
 }
-.login-row button:hover:not(:disabled) {
+/* :where() keeps this at (0,1,1). Written plainly it was (0,3,1) and outranked
+   every exemption below — hovering a size pill painted it as a primary button. */
+.login-row button:where(:hover:not(:disabled)) {
   background: color-mix(in srgb, var(--ink) 86%, var(--paper));
 }
 .login-row button:disabled { background: var(--rule-2); color: var(--leaf); cursor: default; }
@@ -3130,4 +3099,1191 @@ body:has(.rail-mini) .page { padding-left: 56px; }
   line-height: 1.35;
   opacity: 0.7;
   margin-top: 0.15rem;
+}
+
+/* ===========================================================================
+   Design system — components (docs/DESIGN.md §6)
+
+   One layer, last in the file, so every component's appearance under the
+   system can be read in one place against the spec section it implements.
+   It restyles; it does not re-lay-out. Grid tracks, sticky offsets, the
+   measured footer height and the floating-label mechanics above are untouched,
+   because each of them encodes a bug already fixed once.
+
+   Where a rule above changes a property inside a media query, and this layer
+   sets the same property unconditionally, the media variant is restated at the
+   foot of this layer — otherwise source order would silently undo it.
+   =========================================================================== */
+
+/* ── Base ─────────────────────────────────────────────────────────────────── */
+
+body {
+  background-color: var(--surface-canvas);
+  background-image: none;
+  color: var(--text-primary);
+  font-family: var(--font-sans);
+  font-size: 14px;
+  line-height: 22px;
+}
+
+a { color: var(--primary-600); }
+a:hover { color: var(--primary-700); }
+
+::placeholder { color: var(--text-subtle); opacity: 1; }
+
+/* One focus treatment everywhere: the spec's ring, not a hairline outline. */
+.provenance .brand:focus-visible,
+.seg:focus-visible,
+.cite:focus-visible,
+.entry-head:focus-visible,
+.btn:focus-visible,
+.rail-toggle:focus-visible,
+.rail-mini button:focus-visible,
+.auth-switch-link:focus-visible,
+.session-more:focus-visible,
+.new-case:focus-visible,
+.session-item:focus-visible,
+.popup-close:focus-visible,
+.popup-primary:focus-visible,
+.popup-secondary:focus-visible,
+.popup-danger:focus-visible,
+.ws-nav button:focus-visible,
+.ws-add:focus-visible {
+  outline: none;
+  box-shadow: var(--shadow-focus);
+  border-radius: var(--radius-md);
+}
+
+/* §3 Micro / Overline — every small-caps section label. */
+.panel-title,
+.turn-role,
+.stage-who,
+.src-label,
+.cites-label,
+.related-title,
+.interlude-label,
+.coverage-label,
+.ws-section-head h2 {
+  font-size: 11px;
+  line-height: 14px;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+
+/* ── Masthead & frame ─────────────────────────────────────────────────────── */
+
+.masthead-synced {
+  font-size: 12px;
+  line-height: 16px;
+  letter-spacing: 0.01em;
+  text-transform: none;
+  color: var(--text-muted);
+}
+.masthead-sub { font-style: normal; font-size: 12px; line-height: 16px; color: var(--text-muted); }
+
+/* The sidebar: white, set off by a hairline rather than a tint. Painted on body
+   for the reason given at the original rule; the 1px stop is the border. */
+@media (min-width: 1201px) {
+  body:has(.workbench:not(.rail-hidden)) {
+    background-image: linear-gradient(
+      to right,
+      var(--surface-lowest) 243px,
+      var(--surface) 243px,
+      var(--surface) 244px,
+      transparent 244px
+    );
+  }
+}
+
+/* The sources column sits on the canvas, so its white cards read as cards. */
+.norm {
+  background: var(--surface-canvas);
+  border-left: var(--border-subtle);
+}
+
+.turn.assistant { border-top: var(--border-subtle); }
+
+/* §6.6 Persistent footer / legal disclaimer. */
+.colophon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-2);
+  padding: 10px var(--space-5);
+  background-color: var(--surface-lowest);
+  background-image: none;
+  border-top: var(--border-subtle);
+}
+.colophon-icon { flex: none; color: var(--text-muted); }
+.colophon-disclaimer {
+  font-size: 12px;
+  line-height: 16px;
+  font-style: normal;
+  color: var(--text-muted);
+}
+
+/* ── Sidebar: consultations ───────────────────────────────────────────────── */
+
+.rail { padding-left: var(--space-4); padding-right: var(--space-4); }
+.rail .panel-title { padding: 0 var(--space-3); }
+
+/* The key CTA of the whole product, so §6.1 Primary. While an empty
+   consultation is open it is the place you already are: shown selected. */
+.new-case {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 40px;
+  padding: 0 var(--space-4);
+  margin-bottom: var(--space-4);
+  border: 1px solid var(--primary-600);
+  border-radius: var(--radius-md);
+  background: var(--primary-600);
+  color: var(--text-inverse);
+  font-size: 14px;
+  font-weight: 600;
+  text-align: center;
+  box-shadow: var(--shadow-sm);
+}
+.new-case:hover { background: var(--primary-700); border-color: var(--primary-700); }
+.new-case.active,
+.new-case.active:hover {
+  background: var(--primary-50);
+  border-color: var(--primary-200);
+  color: var(--primary-700);
+  box-shadow: none;
+}
+
+.session-item,
+.sessions-more {
+  padding: var(--space-2) var(--space-3);
+  border-radius: var(--radius-md);
+}
+.session-item { color: var(--text-secondary); }
+.session-q { font-size: 14px; line-height: 20px; }
+.session-item:hover,
+.sessions-more:hover { background: var(--surface-low); color: var(--text-primary); }
+.session-item.active { background: var(--primary-50); color: var(--primary-700); font-weight: 500; }
+.sessions-empty {
+  padding: var(--space-3);
+  font-style: normal;
+  font-size: 12px;
+  line-height: 16px;
+  color: var(--text-muted);
+}
+.session-pin { color: var(--primary-600); }
+
+/* §6.1 Icon action. */
+.session-more {
+  width: 32px;
+  padding: 0;
+  justify-content: center;
+  border-bottom: 0;
+  border-radius: var(--radius-md);
+}
+.session-more:hover { background: var(--surface-low); }
+
+.session-rename {
+  padding: var(--space-2) var(--space-3);
+  border: 1px solid var(--primary-600);
+  border-radius: var(--radius-md);
+  background: var(--surface-lowest);
+  box-shadow: var(--shadow-focus);
+}
+
+/* The collapsed strip is the same sidebar, narrower: same white, same edge. */
+.rail-mini {
+  background-color: var(--surface-lowest);
+  border-right: var(--border-subtle);
+}
+.rail-mini button { width: 36px; height: 36px; border-radius: var(--radius-md); }
+.rail-mini button:hover { background: var(--surface-low); }
+.rail-toggle:hover { color: var(--primary-600); }
+
+/* ── Account control ──────────────────────────────────────────────────────── */
+
+.account-rail {
+  width: 243px; /* leaves the sidebar's 1px border line visible */
+  padding: var(--space-2) var(--space-4) var(--space-3);
+  background-color: var(--surface-lowest);
+  border-top: var(--border-subtle);
+}
+
+.account-button {
+  padding: var(--space-2) 10px;
+  border-radius: var(--radius-md);
+  color: var(--text-primary);
+  font-size: 14px;
+}
+.account-button:hover { background: var(--surface-low); }
+
+/* §6.4 avatar initials: a circle in the brand blue. */
+.account-initial {
+  width: 28px;
+  height: 28px;
+  border-radius: var(--radius-full);
+  background: var(--primary-600);
+  color: var(--text-inverse);
+  font-size: 12px;
+  font-weight: 600;
+}
+.account-masthead .account-initial { width: 24px; height: 24px; font-size: 11px; }
+
+/* §5 dropdown: radius-md, shadow-md. */
+.account-pop,
+.session-menu {
+  padding: 6px;
+  border: var(--border-subtle);
+  border-radius: var(--radius-md);
+  background: var(--surface-lowest);
+  box-shadow: var(--shadow-md);
+}
+.account-pop { width: 248px; }
+.session-menu { min-width: 196px; }
+
+.account-who { padding: var(--space-2) 10px 10px; border-bottom: var(--border-subtle); }
+.account-who-name { font-size: 14px; line-height: 20px; font-weight: 600; }
+.account-who-mail { font-size: 12px; line-height: 16px; color: var(--text-muted); }
+
+.account-quota { padding: var(--space-2) 10px 10px; }
+.account-quota-line {
+  margin-bottom: 6px;
+  font-size: 12px;
+  line-height: 16px;
+  color: var(--text-muted);
+}
+.account-quota-line .num { font-weight: 600; color: var(--text-primary); }
+
+.account-pop > button,
+.session-menu button {
+  padding: var(--space-2) 10px;
+  border-radius: var(--radius-sm);
+  color: var(--text-secondary);
+  font-size: 14px;
+  line-height: 20px;
+}
+.account-pop > button:hover,
+.session-menu button:hover { background: var(--surface-low); color: var(--text-primary); }
+/* Two classes: `.account-pop > button` outranks a lone `.account-upgrade`, which
+   is why this link was never actually blue. */
+.account-pop > .account-upgrade { color: var(--primary-600); font-weight: 600; }
+
+.account-note {
+  margin: 2px 10px 6px;
+  font-style: normal;
+  font-size: 12px;
+  line-height: 16px;
+  color: var(--text-muted);
+}
+.account-rule,
+.session-menu-rule { margin: 6px 4px; background: var(--surface); }
+
+/* Destructive, in red. This was the accent — blue — which reads as the safe
+   choice on exactly the item that deletes a conversation. */
+.session-menu button.danger { color: var(--danger-600); }
+.session-menu button.danger:hover { background: var(--danger-50); color: var(--danger-600); }
+
+.session-confirm > span { font-style: normal; font-size: 12px; line-height: 16px; color: var(--text-secondary); }
+.session-menu .session-confirm button {
+  padding: 4px 10px;
+  border: var(--border-input);
+  border-radius: var(--radius-sm);
+  font-size: 12px;
+  letter-spacing: 0;
+}
+.session-menu .session-confirm button.danger,
+.session-menu .session-confirm button.danger:hover {
+  border-color: var(--danger-600);
+  background: var(--danger-600);
+  color: var(--text-inverse);
+}
+
+/* §6.4 quota progress bar: 8px, fully rounded, red once the allowance is gone. */
+.account-bar,
+.ws-bar {
+  height: 8px;
+  border-radius: var(--radius-full);
+  background: var(--surface);
+}
+.account-bar-fill,
+.ws-bar-fill { border-radius: var(--radius-full); background: var(--primary-600); }
+.account-bar-fill.depleted,
+.ws-bar-fill.depleted { background: var(--danger-500); }
+
+/* ── Empty consultation & transcript ──────────────────────────────────────── */
+
+/* §3 Heading 2 — "query prompt head". */
+.intro-title {
+  font-size: 22px;
+  line-height: 28px;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+  color: var(--text-primary);
+}
+
+/* The reader's question heads the answer: Heading 2. */
+.turn.user .turn-text {
+  font-size: 22px;
+  line-height: 28px;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+  color: var(--text-primary);
+}
+
+/* §3 Body (Legal Text): legal analysis at 14/24. The opening paragraph — the
+   short conclusion — is set as Lead so it can be found at a glance. */
+.md { color: var(--text-secondary); }
+.md p,
+.md li { font-size: 14px; line-height: 24px; }
+.md p { margin: 0 0 var(--space-4); }
+.md p:first-child {
+  font-size: 15px;
+  line-height: 24px;
+  font-weight: 500;
+  color: var(--text-primary);
+}
+.md p:last-child { margin-bottom: 0; }
+.md strong { font-weight: 600; color: var(--text-primary); }
+
+.caret { background: var(--primary-600); }
+
+.stage { font-style: normal; font-size: 14px; color: var(--text-secondary); }
+.stage-line { font-size: 14px; line-height: 22px; color: var(--text-muted); }
+.stage-dots i { background: var(--primary-500); }
+
+/* Statute shown during the wait: a quiet card, clearly not the answer. */
+.interlude {
+  margin: var(--space-4) 0 0;
+  padding: var(--space-3) var(--space-4);
+  border: var(--border-subtle);
+  border-radius: var(--radius-lg);
+  background: var(--surface-lowest);
+  box-shadow: var(--shadow-sm);
+}
+.interlude-label { margin-bottom: 6px; }
+.interlude-text { font-size: 13px; line-height: 20px; color: var(--text-secondary); }
+.interlude-ref { margin-top: 6px; font-size: 12px; line-height: 16px; color: var(--text-muted); }
+
+/*
+ * Coverage notes, as §6.6's advisory banner and the warning accents of §2.4.
+ * `partial` is advisory — info. `none` is the answer itself saying no norm was
+ * found — warning, never red, which is kept for what destroys something.
+ * The info blue is on the border only: #0284c7 is under AA for 11px text.
+ */
+.coverage {
+  margin: var(--space-4) 0;
+  padding: var(--space-3) var(--space-4);
+  border: 0;
+  border-left: 3px solid var(--info-500);
+  border-radius: var(--radius-lg);
+  background: var(--info-50);
+}
+.coverage-label { display: block; margin-bottom: 4px; color: var(--text-secondary); }
+.coverage-body { font-style: normal; font-size: 14px; line-height: 22px; color: var(--text-secondary); }
+.coverage.none {
+  padding: var(--space-4) var(--space-5);
+  border: 0;
+  border-left: 3px solid var(--warning-500);
+  background: var(--warning-50);
+}
+.coverage.none .coverage-label { margin-bottom: 6px; letter-spacing: 0.05em; color: var(--warning-700); }
+.coverage.none .coverage-body {
+  font-family: var(--font-sans);
+  font-size: 15px;
+  line-height: 22px;
+  font-weight: 500;
+  color: var(--text-primary);
+}
+
+.turn-meta {
+  gap: var(--space-3);
+  margin-top: var(--space-6);
+  padding-top: var(--space-4);
+  border-top: var(--border-subtle);
+}
+
+/* Citations as §6.3 pills — the answer's figures, addressed to the cards. */
+.cites { gap: var(--space-2); align-items: center; }
+.cites-label { margin: 0 4px 0 0; }
+.cite {
+  padding: 4px 10px;
+  border: 0;
+  border-radius: var(--radius-full);
+  background: var(--primary-50);
+  color: var(--primary-700);
+  font-size: 12px;
+  line-height: 16px;
+  font-weight: 600;
+}
+.cite:hover { background: var(--primary-100); color: var(--primary-800); }
+.cite[aria-current="true"] { background: var(--primary-600); color: var(--text-inverse); }
+.cite.carried { font-style: normal; background: var(--surface-low); color: var(--text-muted); }
+
+.rewrite { font-style: normal; font-size: 12px; line-height: 16px; color: var(--text-muted); }
+.rewrite em { font-style: normal; color: var(--text-secondary); }
+
+/* §6.1 Subtle / Ghost. */
+.turn-share {
+  padding: 4px var(--space-2);
+  border-radius: var(--radius-md);
+  color: var(--text-muted);
+  font-size: 12px;
+  font-weight: 500;
+}
+.turn-share:hover { background: var(--primary-50); color: var(--primary-600); }
+
+.error {
+  padding: var(--space-3) var(--space-4);
+  border-left: 3px solid var(--danger-500);
+  border-radius: var(--radius-md);
+  background: var(--danger-50);
+  color: var(--danger-600);
+  font-style: normal;
+  font-size: 14px;
+  line-height: 22px;
+}
+.empty { font-style: normal; font-size: 14px; line-height: 22px; color: var(--text-muted); }
+.hint,
+.model { font-style: normal; }
+
+/* ── §6.5 Legal reference cards ───────────────────────────────────────────── */
+
+.app-head { align-items: center; gap: var(--space-2); margin-bottom: var(--space-4); }
+.app-title { font-size: 18px; line-height: 24px; font-weight: 600; color: var(--text-primary); }
+/* §5 count badge. */
+.app-count {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 22px;
+  height: 22px;
+  padding: 0 7px;
+  border-radius: var(--radius-full);
+  background: var(--primary-100);
+  color: var(--primary-700);
+  font-size: 12px;
+  font-style: normal;
+  font-weight: 600;
+}
+/* Cards carry their own edges; a rule above them would be a fourth line. */
+.app-rule { display: none; }
+
+.act-group { margin-bottom: var(--space-6); }
+.act-head { align-items: center; gap: var(--space-2); margin-bottom: var(--space-2); }
+.act-n {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  height: 20px;
+  border-radius: var(--radius-full);
+  background: var(--surface);
+  color: var(--text-secondary);
+  font-size: 11px;
+  font-weight: 700;
+}
+.act-title {
+  font-size: 11px;
+  line-height: 14px;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+
+.entry {
+  margin-bottom: var(--space-3);
+  padding: var(--space-4);
+  border: var(--border-subtle);
+  border-radius: var(--radius-lg);
+  background: var(--surface-lowest);
+  box-shadow: var(--shadow-sm);
+}
+.entry:last-child { margin-bottom: 0; }
+/* §5 border-highlight: the card the answer's figure is pointing at. */
+.entry.focused { border: var(--border-highlight); }
+
+.entry-head { padding: 0; }
+.entry-head:hover { color: inherit; }
+.entry-main { gap: 4px; }
+.entry-line { align-items: center; gap: var(--space-2); }
+
+.norm-ref {
+  font-size: 18px;
+  line-height: 24px;
+  font-weight: 700;
+  color: var(--primary-600);
+}
+.entry.focused .norm-ref { color: var(--primary-600); }
+.entry-head:hover .norm-ref { color: var(--primary-700); }
+
+/* The modification-date tag. A recent amendment is a caution, so it takes the
+   warning accent rather than the brand blue the article number now carries. */
+.rev {
+  display: inline-flex;
+  align-items: center;
+  padding: 2px var(--space-2);
+  border-radius: var(--radius-sm);
+  background: var(--surface-low);
+  color: var(--text-muted);
+  font-size: 12px;
+  line-height: 16px;
+  font-style: normal;
+  font-weight: 500;
+  font-variant-numeric: tabular-nums;
+}
+.rev.recent { background: var(--warning-50); color: var(--warning-700); }
+
+/* §3 Subhead — the card's description line. */
+.norm-title { font-size: 15px; line-height: 22px; font-weight: 500; color: var(--text-secondary); }
+
+/* Excerpts at 13/20. The gutter indent belonged to a figure that no longer
+   hangs there. */
+.entry-quote,
+.entry-opening {
+  margin: var(--space-3) 0 0;
+  padding-left: 0;
+  font-size: 13px;
+  line-height: 20px;
+  color: var(--text-secondary);
+}
+/* Still italic: an opening is a truncation, a quote is a citation, and the two
+   must not look alike. */
+.entry-opening { color: var(--text-muted); }
+.entry-quote.carried { font-style: normal; color: var(--text-muted); }
+
+.entry-body {
+  margin-top: var(--space-3);
+  padding: var(--space-3) 0 0;
+  border-top: var(--border-subtle);
+}
+.norm-body {
+  padding: 0 0 var(--space-3);
+  font-size: 13px;
+  line-height: 20px;
+  color: var(--text-secondary);
+}
+.norm-part { margin: 0 0 var(--space-3); }
+.norm-body mark,
+.chunk-body mark {
+  padding: 0 2px;
+  border-radius: 2px;
+  background: var(--primary-100);
+  color: var(--primary-900);
+}
+
+.norm-dates {
+  gap: var(--space-4);
+  margin: 0 0 var(--space-3);
+  font-size: 12px;
+  line-height: 16px;
+  letter-spacing: 0.01em;
+  text-transform: none;
+  color: var(--text-muted);
+}
+.norm-dates dd { font-weight: 500; color: var(--text-primary); }
+
+.norm-elided {
+  margin: 0 0 var(--space-3);
+  font-size: 12px;
+  line-height: 16px;
+  letter-spacing: 0.01em;
+  color: var(--text-muted);
+}
+.norm-elided::before,
+.norm-elided::after { border-top: 1px dashed var(--surface-high); }
+.norm-trimmed { margin: 0 0 var(--space-3); font-size: 12px; line-height: 16px; color: var(--text-muted); }
+
+.norm-actions,
+.card-actions { gap: var(--space-2); padding: 0 0 var(--space-3); align-items: center; }
+
+/* §6.1 Secondary, at the size a card has room for. */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 32px;
+  padding: 0 var(--space-3);
+  border: var(--border-input);
+  border-radius: var(--radius-md);
+  background: var(--surface-lowest);
+  color: var(--text-primary);
+  font-size: 13px;
+  font-weight: 500;
+  letter-spacing: 0;
+  text-decoration: none;
+  box-shadow: var(--shadow-sm);
+}
+.btn:hover { background: var(--surface-hover); color: var(--text-primary); border-color: var(--surface-high); }
+
+.refs { gap: var(--space-2); }
+.ref,
+.related-link {
+  border-bottom: 0;
+  color: var(--primary-600);
+  font-size: 13px;
+  line-height: 20px;
+  text-decoration: none;
+}
+.ref:hover,
+.related-link:hover { color: var(--primary-700); text-decoration: underline; }
+
+/* ── Composer — §5 radius-2xl "floating chat input" ───────────────────────── */
+
+.composer { padding: var(--space-3) 0 var(--space-4); }
+
+.composer textarea,
+.landing-ask textarea {
+  min-height: 52px;
+  padding: 14px var(--space-5);
+  border: var(--border-input);
+  border-radius: var(--radius-2xl);
+  background: var(--surface-lowest);
+  background-image: none;
+  color: var(--text-primary);
+  font-size: 14px;
+  line-height: 22px;
+  box-shadow: var(--shadow-sm);
+  transition: border-color 140ms ease, box-shadow 140ms ease;
+}
+.composer textarea:focus,
+.landing-ask textarea:focus {
+  outline: none;
+  border-color: var(--primary-600);
+  box-shadow: var(--shadow-focus);
+}
+.composer textarea:disabled { background: var(--surface-low); color: var(--text-muted); }
+.composer .composer-field textarea,
+.landing-ask .composer-field textarea { padding-right: 56px; }
+
+/* §6.1 Primary, as a round send control inside the capsule. */
+.send-arrow {
+  right: 8px;
+  bottom: 8px;
+  width: 36px;
+  height: 36px;
+  border-radius: var(--radius-full);
+  background: var(--primary-600);
+  color: var(--text-inverse);
+}
+.send-arrow:hover:not(:disabled) { background: var(--primary-700); }
+.send-arrow:disabled { background: var(--surface); color: var(--text-subtle); }
+.send-arrow.busy { background: var(--primary-600); }
+.send-arrow.busy::after { border-color: var(--text-inverse); border-right-color: transparent; }
+
+/* ── §6.1 Buttons ─────────────────────────────────────────────────────────── */
+
+/* Primary. */
+/* The four exemptions are the non-primary buttons that live inside .login-row;
+   :where() keeps the specificity where the rest of these rules expect it. */
+.popup-primary,
+.login-row button:where(:not(.linkish, .invite-add, .size-option, .password-eye)),
+.preview-cta-button,
+.landing-signup,
+.ws-invite button.primary,
+.controls button {
+  border: 1px solid var(--primary-600);
+  border-radius: var(--radius-md);
+  background: var(--primary-600);
+  color: var(--text-inverse);
+  font-size: 14px;
+  font-weight: 600;
+  letter-spacing: 0;
+  text-transform: none;
+  box-shadow: var(--shadow-sm);
+  filter: none;
+}
+.popup-primary:hover:not(:disabled),
+.login-row button:where(:not(.linkish, .invite-add, .size-option, .password-eye)):where(:hover:not(:disabled)),
+.preview-cta-button:hover,
+.landing-signup:hover,
+.ws-invite button.primary:hover:not(:disabled),
+.controls button:hover:not(:disabled) {
+  border-color: var(--primary-700);
+  background: var(--primary-700);
+  color: var(--text-inverse);
+  filter: none;
+}
+.popup-primary:disabled,
+.login-row button:where(:not(.linkish, .invite-add, .size-option, .password-eye)):disabled,
+.ws-invite button.primary:disabled,
+.controls button:disabled {
+  border-color: var(--surface);
+  background: var(--surface);
+  color: var(--text-subtle);
+  box-shadow: none;
+  opacity: 1;
+}
+.login-row button:where(:not(.linkish, .invite-add, .size-option, .password-eye)) { min-height: 44px; padding: 10px var(--space-5); }
+.preview-cta-button { min-height: 44px; padding: 10px var(--space-5); }
+.landing-signup { min-height: 38px; padding: 0 var(--space-4); }
+
+/* Secondary / Outline. */
+.popup-secondary,
+.login-google,
+.ws-add,
+.ws-invite button,
+.ws-confirm button {
+  border: var(--border-input);
+  border-radius: var(--radius-md);
+  background: var(--surface-lowest);
+  color: var(--text-primary);
+  font-size: 14px;
+  font-weight: 500;
+  box-shadow: var(--shadow-sm);
+}
+.popup-secondary:hover,
+.login-google:hover,
+.ws-add:hover,
+.ws-invite button:hover:not(:disabled),
+.ws-confirm button:hover {
+  background: var(--surface-hover);
+  border-color: var(--surface-high);
+  color: var(--text-primary);
+}
+.login-google { min-height: 44px; padding: 10px var(--space-4); }
+.ws-add { height: 36px; padding: 0 14px; }
+.ws-invite button { height: 44px; padding: 0 var(--space-4); }
+.ws-confirm button { height: 32px; padding: 0 var(--space-3); font-size: 13px; }
+
+/* Pressed while its form is open. */
+.ws-add.on,
+.ws-add.on:hover {
+  border-color: var(--primary-200);
+  background: var(--primary-50);
+  color: var(--primary-700);
+  font-weight: 600;
+  box-shadow: none;
+}
+
+/* Destructive — danger-600 for contrast, see docs/DESIGN.md §0. */
+.popup-danger {
+  border: 1px solid var(--danger-600);
+  background: var(--danger-600);
+  color: var(--text-inverse);
+  box-shadow: var(--shadow-sm);
+}
+.popup-danger:hover { border-color: #b91c1c; background: #b91c1c; }
+
+.popup-primary,
+.popup-secondary,
+.popup-danger {
+  min-height: 40px;
+  padding: 9px var(--space-5);
+  font-size: 14px;
+  line-height: 20px;
+}
+
+/* Subtle / Ghost. */
+.landing-signin,
+.linkish,
+.login-row .linkish,
+.ws-back {
+  border-radius: var(--radius-md);
+  color: var(--text-secondary);
+  font-size: 14px;
+  font-weight: 500;
+}
+.landing-signin { min-height: 38px; padding: 0 var(--space-4); }
+.landing-signin:hover,
+.linkish:hover,
+.login-row .linkish:hover,
+.ws-back:hover { background: var(--primary-50); color: var(--primary-600); }
+.login-row .linkish { padding: 6px 10px; color: var(--text-muted); }
+.ws-back { padding: 6px 10px; color: var(--text-muted); }
+
+.login-row .invite-add { color: var(--primary-600); font-size: 14px; font-weight: 500; }
+.login-row .invite-add:hover:not(:disabled) { color: var(--primary-700); }
+
+.ws-remove {
+  padding: 6px 10px;
+  border-radius: var(--radius-md);
+  color: var(--text-muted);
+  font-size: 13px;
+  font-weight: 500;
+}
+/* Red, not the accent: it removes a person. */
+.ws-remove:hover { background: var(--danger-50); color: var(--danger-600); }
+
+/* Icon action. */
+.popup-close {
+  flex: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  padding: 0;
+  border-radius: var(--radius-md);
+  color: var(--text-muted);
+  font-size: 22px;
+}
+.popup-close:hover { background: var(--surface-low); color: var(--text-primary); }
+
+.login-row .password-eye,
+.password-eye { border-radius: var(--radius-md); }
+.login-row .password-eye:hover,
+.password-eye:hover { background: var(--surface-low); color: var(--text-primary); }
+
+/* ── §6.2 Form inputs ─────────────────────────────────────────────────────── */
+
+.login-row input,
+.popup-row input,
+.ws-invite input,
+.controls input {
+  height: 44px;
+  padding: 10px 14px;
+  border: var(--border-input);
+  border-radius: var(--radius-md);
+  background: var(--surface-lowest);
+  color: var(--text-primary);
+  font-family: var(--font-sans);
+  font-size: 14px;
+  line-height: 22px;
+  box-shadow: var(--shadow-sm);
+}
+.login-row input:focus,
+.popup-row input:focus,
+.ws-invite input:focus,
+.controls input:focus {
+  outline: none;
+  border-color: var(--primary-600);
+  box-shadow: var(--shadow-focus);
+}
+/* Restated at two classes: the padding shorthand above would otherwise take
+   the room the reveal button needs. */
+.login-row .password-box input { padding-right: 48px; }
+
+.login-row .invite-row input {
+  height: 44px;
+  padding: 10px 14px;
+  border: var(--border-input);
+  font-size: 14px;
+}
+.login-row .invite-row input:focus { border-color: var(--primary-600); box-shadow: var(--shadow-focus); }
+.login-row .invite-row input[aria-invalid="true"] {
+  border-color: var(--danger-600);
+  box-shadow: 0 0 0 3px rgba(220, 38, 38, 0.15);
+}
+
+/* The floating label, re-seated for a 44px box and 14px text. */
+.login-row .field label { font-size: 14px; color: var(--text-muted); }
+.login-row .field input:focus + label,
+.login-row .field input:not(:placeholder-shown) + label {
+  font-size: 12px;
+  font-weight: 500;
+  background: var(--surface-lowest);
+}
+.login-row .field input:focus + label { color: var(--primary-600); }
+
+/* Inline role selector. */
+.ws-rank {
+  height: 44px;
+  padding: 0 var(--space-3);
+  border: 1px solid var(--surface);
+  border-radius: var(--radius-sm);
+  background: var(--surface-hover);
+  color: var(--text-primary);
+  font-size: 14px;
+}
+.ws-rank:focus { border-color: var(--primary-600); box-shadow: var(--shadow-focus); }
+
+/* Size selector / segmented pills. */
+.size-options { gap: var(--space-2); }
+.size-option,
+.login-row .size-option {
+  min-height: 44px;
+  padding: 10px var(--space-2);
+  border: 1px solid transparent;
+  border-radius: var(--radius-md);
+  background: var(--surface-low);
+  color: var(--text-secondary);
+  font-size: 14px;
+  font-weight: 500;
+  box-shadow: none;
+}
+.size-option:hover,
+.login-row .size-option:hover { border-color: transparent; background: var(--surface); color: var(--text-primary); }
+.size-option.on,
+.size-option.on:hover,
+.login-row .size-option.on,
+.login-row .size-option.on:hover {
+  border-color: var(--primary-600);
+  background: var(--primary-600);
+  color: var(--text-inverse);
+  font-weight: 600;
+  box-shadow: var(--shadow-sm);
+}
+
+.segmented {
+  gap: 4px;
+  padding: 4px;
+  border-radius: var(--radius-md);
+  background: var(--surface-low);
+}
+.seg {
+  margin-left: 0;
+  padding: 6px var(--space-3);
+  border: 0;
+  border-radius: var(--radius-sm);
+  color: var(--text-secondary);
+  font-size: 13px;
+  font-weight: 500;
+  letter-spacing: 0;
+  text-transform: none;
+}
+.seg:hover { background: var(--surface); color: var(--text-primary); }
+.seg.active { background: var(--primary-600); color: var(--text-inverse); font-weight: 600; box-shadow: var(--shadow-sm); }
+
+/* ── Sign-in, registration, verify, invite, reset ─────────────────────────── */
+
+/* §5 radius-xl, §4 space-8: the onboarding card. */
+.login {
+  max-width: 460px;
+  padding: var(--space-8);
+  border: var(--border-subtle);
+  border-radius: var(--radius-xl);
+  background: var(--surface-lowest);
+  box-shadow: var(--shadow-sm);
+}
+
+.auth-head { margin-bottom: var(--space-6); }
+/* §3 Display / H1. */
+.auth-title,
+.ws-title {
+  font-family: var(--font-sans);
+  font-size: 28px;
+  line-height: 36px;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  color: var(--text-primary);
+}
+.auth-sub { margin-top: var(--space-2); font-size: 15px; line-height: 22px; color: var(--text-muted); }
+.auth-switch { margin-top: var(--space-5); font-size: 14px; line-height: 22px; color: var(--text-secondary); }
+.auth-switch-link { color: var(--primary-600); font-weight: 600; letter-spacing: 0; text-transform: none; }
+.auth-switch-link:hover { color: var(--primary-700); }
+
+.login-verify-title {
+  font-family: var(--font-sans);
+  font-size: 22px;
+  line-height: 28px;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+}
+
+.login-label {
+  font-size: 14px;
+  line-height: 22px;
+  font-weight: 500;
+  letter-spacing: 0;
+  text-transform: none;
+  color: var(--text-primary);
+}
+.login-why,
+.login-note { font-size: 12px; line-height: 16px; color: var(--text-muted); }
+.login-foot {
+  font-size: 12px;
+  line-height: 16px;
+  letter-spacing: 0.01em;
+  text-transform: none;
+  color: var(--text-muted);
+  border-top: var(--border-subtle);
+}
+.login-or { font-size: 12px; color: var(--text-muted); }
+.login-or::before,
+.login-or::after { background: var(--surface); }
+
+.invite-offer { font-size: 15px; line-height: 22px; color: var(--text-secondary); }
+.invite-bonus { font-size: 12px; font-weight: 600; color: var(--primary-600); }
+
+/* ── Landing & the withheld preview ───────────────────────────────────────── */
+
+.landing-lede { font-size: 15px; line-height: 22px; color: var(--text-muted); }
+
+.landing-example {
+  padding: var(--space-3) var(--space-4);
+  border: var(--border-subtle);
+  border-radius: var(--radius-lg);
+  background: var(--surface-lowest);
+  color: var(--text-secondary);
+  font-size: 14px;
+  line-height: 22px;
+  box-shadow: var(--shadow-sm);
+}
+.landing-example:hover:not(:disabled) {
+  border-color: var(--primary-200);
+  background: var(--primary-50);
+  color: var(--text-primary);
+}
+
+.preview-cta {
+  padding: var(--space-6);
+  border: var(--border-subtle);
+  border-radius: var(--radius-xl);
+  background: var(--surface-lowest);
+  box-shadow: var(--shadow-lg);
+}
+.preview-cta-text { font-size: 14px; line-height: 22px; color: var(--text-secondary); }
+.preview-cta-note { font-size: 12px; line-height: 16px; letter-spacing: 0.01em; color: var(--text-muted); }
+
+/* ── §5 Modal dialogs ─────────────────────────────────────────────────────── */
+
+.popup-backdrop { background: rgba(15, 23, 42, 0.45); }
+.popup {
+  max-width: 480px;
+  padding: var(--space-5) var(--space-6) var(--space-6);
+  border: var(--border-subtle);
+  border-radius: var(--radius-xl);
+  background: var(--surface-lowest);
+  color: var(--text-primary);
+  box-shadow: var(--shadow-lg);
+  font-family: var(--font-sans);
+}
+.popup-head { gap: var(--space-3); margin-bottom: var(--space-4); }
+.popup-head h2 {
+  font-family: var(--font-sans);
+  font-size: 22px;
+  line-height: 28px;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+}
+.popup-body { margin: 0 0 var(--space-6); font-size: 14px; line-height: 22px; color: var(--text-secondary); }
+.popup-who { font-size: 15px; line-height: 22px; font-weight: 500; color: var(--text-primary); }
+.popup-note,
+.popup-hint { font-size: 12px; line-height: 16px; color: var(--text-muted); }
+.popup-actions { gap: var(--space-3); }
+.popup-row + .popup-actions { margin-top: var(--space-6); }
+
+/* ── Workspace ────────────────────────────────────────────────────────────── */
+
+.ws { padding: var(--space-8) var(--space-10) 64px; }
+.ws-head { margin-bottom: var(--space-6); padding-bottom: 0; align-items: center; }
+
+.ws-nav { gap: 4px; padding-right: var(--space-8); }
+.ws-nav button {
+  padding: 10px var(--space-3);
+  border-radius: var(--radius-md);
+  color: var(--text-secondary);
+  font-size: 14px;
+  line-height: 20px;
+  font-weight: 500;
+}
+.ws-nav button:hover { background: var(--surface-low); color: var(--text-primary); }
+/* §2.1 active navigation. */
+.ws-nav button.on { background: var(--primary-50); color: var(--primary-700); font-weight: 600; }
+
+.ws-section-head { margin: 0 0 var(--space-3); align-items: center; }
+.ws-table + .ws-section-head { margin-top: var(--space-8); }
+
+.ws-invite {
+  gap: var(--space-3);
+  padding: var(--space-4);
+  margin-bottom: var(--space-4);
+  border: var(--border-subtle);
+  border-radius: var(--radius-lg);
+  background: var(--surface-lowest);
+  box-shadow: var(--shadow-sm);
+}
+.ws-error { font-size: 13px; line-height: 20px; color: var(--danger-600); }
+
+/* §6.4 table: on white, 56px rows, hairline dividers, hover tint. */
+.ws-table {
+  border-collapse: separate;
+  border-spacing: 0;
+  overflow: hidden;
+  border: var(--border-subtle);
+  border-radius: var(--radius-lg);
+  background: var(--surface-lowest);
+  box-shadow: var(--shadow-sm);
+}
+.ws-table td {
+  height: 56px;
+  padding: var(--space-2) var(--space-3);
+  border-bottom: 1px solid var(--surface-low);
+  color: var(--text-primary);
+  font-size: 14px;
+  line-height: 22px;
+}
+.ws-table td:first-child { padding-left: var(--space-4); }
+.ws-table td:last-child { padding-right: var(--space-4); }
+.ws-table tr:last-child td { border-bottom: 0; }
+.ws-table tr:hover td { background: var(--surface-hover); }
+.ws-you { font-style: normal; color: var(--text-muted); }
+.ws-mail { font-size: 12px; line-height: 16px; color: var(--text-muted); }
+
+/* §6.3 pills. A plain member is outlined so it is not mistaken for Pending,
+   which the spec sets in the same grey. */
+.ws-badge {
+  padding: 2px 10px;
+  border: 1px solid var(--surface);
+  border-radius: var(--radius-full);
+  background: var(--surface-lowest);
+  color: var(--text-secondary);
+  font-size: 12px;
+  line-height: 16px;
+  font-weight: 600;
+  letter-spacing: 0;
+  text-transform: none;
+}
+.ws-badge.admin { border-color: var(--primary-50); background: var(--primary-50); color: var(--primary-600); }
+.ws-badge.pending { border-color: var(--surface); background: var(--surface-low); color: #475569; font-style: normal; }
+
+.ws-note,
+.ws-empty { font-style: normal; font-size: 12px; line-height: 16px; color: var(--text-muted); }
+
+.ws-total {
+  padding: var(--space-5);
+  margin-bottom: var(--space-6);
+  border: var(--border-subtle);
+  border-radius: var(--radius-lg);
+  background: var(--surface-lowest);
+  box-shadow: var(--shadow-sm);
+}
+.ws-total-line { font-size: 14px; line-height: 22px; color: var(--text-secondary); }
+/* §3 Metric Value. */
+.ws-total-line .num {
+  font-family: var(--font-sans);
+  font-size: 32px;
+  line-height: 38px;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  color: var(--text-primary);
+}
+.ws-bar { margin-top: var(--space-3); }
+
+/* ── Shared consultation page ─────────────────────────────────────────────── */
+
+.shared-head { border-bottom: var(--border-subtle); }
+.shared-badge { font-size: 12px; line-height: 16px; letter-spacing: 0.01em; color: var(--text-muted); }
+.shared-foot { border-top: var(--border-subtle); }
+
+/* ── Media variants restated (see the note at the top of this layer) ──────── */
+
+@media (max-width: 900px) {
+  .norm {
+    border-left: 0;
+    border-top: var(--border-subtle);
+    background: var(--surface-canvas);
+  }
+  .turn.user .turn-text,
+  .intro-title { font-size: 20px; line-height: 26px; }
+  /* iOS zooms into any field set under 16px. */
+  .composer textarea { font-size: 16px; }
+  .btn { min-height: 44px; }
+  .cite { padding-top: var(--space-2); padding-bottom: var(--space-2); }
+}
+
+@media (max-width: 700px) {
+  .ws { padding: var(--space-5) var(--space-5) 44px; }
+  .ws-nav { padding-right: 0; }
+}
+
+@media (max-width: 560px) {
+  .login {
+    margin-left: var(--space-4);
+    margin-right: var(--space-4);
+    padding: var(--space-6) var(--space-5);
+  }
 }

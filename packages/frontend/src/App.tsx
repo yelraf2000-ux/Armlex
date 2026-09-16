@@ -24,7 +24,7 @@ import { Verify } from './Verify.js';
 import { Invite } from './Invite.js';
 import { Reset } from './Reset.js';
 import { extractQuotes } from './quotes.js';
-import { RailToggle, SettingsControls, SettingsProvider, useSettings } from './Settings.js';
+import { RailToggle, SettingsProvider, useSettings } from './Settings.js';
 
 type Mode = 'search' | 'ask' | 'chat';
 
@@ -526,7 +526,6 @@ function Workbench() {
               onOpenWorkspace={() => navigate('/workspace')}
             />
           ) : null}
-          <SettingsControls />
           {/*
             One mode, so no switcher: a lone tab is a control that cannot do
             anything, which is worse than no control at all.
@@ -640,6 +639,22 @@ function Colophon() {
 
   return (
     <footer ref={ref} className="colophon">
+      {/* §6.6: an info circle, decorative — the sentence beside it says it all. */}
+      <svg
+        className="colophon-icon"
+        width="16"
+        height="16"
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="2"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        aria-hidden="true"
+      >
+        <circle cx="12" cy="12" r="10" />
+        <path d="M12 16v-4M12 8h.01" />
+      </svg>
       <div className="colophon-disclaimer">{t('corpus.disclaimer')}</div>
     </footer>
   );

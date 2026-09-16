@@ -60,40 +60,17 @@
       SVG only. Every browser this app supports reads an SVG favicon, and one
       vector file stays sharp at 16px in the tab and at 180px on a home
       screen — where a single .ico would be soft at one end or heavy at the
-      other. theme-color paints the mobile browser chrome to match the page
-      ground instead of leaving a white band above a cream design.
+      other. theme-color paints the mobile browser chrome the canvas colour.
     -->
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <link rel="apple-touch-icon" href="/favicon.svg" />
-    <meta name="theme-color" content="#F7F8FA" media="(prefers-color-scheme: light)" />
-    <meta name="theme-color" content="#0F1216" media="(prefers-color-scheme: dark)" />
+    <meta name="theme-color" content="#f8f9ff" />
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link
       rel="stylesheet"
-      href="https://fonts.googleapis.com/css2?family=Inter:ital,wght@0,400;0,500;0,600;0,700;1,400;1,600&family=Noto+Sans+Armenian:wght@400;500;600;700&display=swap"
+      href="https://fonts.googleapis.com/css2?family=Noto+Sans:wght@400;500;600;700&family=Noto+Sans+Armenian:wght@400;500;600;700&display=swap"
     />
-    <script>
-      /*
-       * Stamp the saved theme and language BEFORE the app boots.
-       *
-       * React applies both on mount, which is one paint too late: a dark-mode
-       * user gets a white flash on every load, and the page briefly announces
-       * the wrong language to assistive technology. Reading localStorage here
-       * costs nothing and removes both.
-       *
-       * Wrapped in try/catch because localStorage throws outright when cookies
-       * are blocked, and a theme preference must never stop the app loading.
-       */
-      try {
-        var t = localStorage.getItem('armlex.theme');
-        if (t === 'dark' || t === 'light') document.documentElement.setAttribute('data-theme', t);
-        var l = localStorage.getItem('armlex.lang');
-        if (l === 'hy' || l === 'ru' || l === 'en') document.documentElement.lang = l;
-      } catch (e) {
-        /* no stored preference is available; the defaults are fine */
-      }
-    </script>
   </head>
   <body>
     <div id="root"></div>
