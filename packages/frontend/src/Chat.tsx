@@ -13,6 +13,7 @@ import { NormPanel } from './NormPanel.js';
 import type { Entry } from './NormPanel.js';
 import { MarkdownView } from './MarkdownView.js';
 import { extractQuotes } from './quotes.js';
+import { citedIndexes } from './cited.js';
 import { BrandLine } from './BrandLine.js';
 import { Sessions } from './Sessions.js';
 import { SharePopup } from './SharePopup.js';
@@ -556,7 +557,8 @@ export function Chat({
    *
    * Two signals, both taken from the delivered text: the answer names the
    * provision (it cites by name — «(ՀՀ ՀԱՐԿԱՅԻՆ ՕՐԵՆՍԳԻՐՔ, Հոդված 254)»), or it
-   * quotes a passage that occurs in that article.
+   * quotes a passage that occurs in that article. `citedIndexes` holds the
+   * rule and the edge cases it has to survive.
    *
    * While the answer is still being written, everything found is shown: the
    * text has not finished naming what it uses, and entries would appear and
@@ -570,11 +572,8 @@ export function Chat({
     const all = sourcesOf(t);
     const text = t?.text ?? '';
     if (!text || t?.streaming) return all;
-    const quoted = extractQuotes(text);
-    const used = all.filter(
-      (e) => text.includes(e.chunk.ref) || quoted.some((q) => e.chunk.text.includes(q)),
-    );
-    return used.length > 0 ? used : all;
+    const keep = new Set(citedIndexes(all.map((e) => e.chunk), text));
+    return all.filter((_, i) => keep.has(i));
   };
   const owningTurn =
     (selectedId
