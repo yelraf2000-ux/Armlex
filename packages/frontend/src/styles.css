@@ -3235,8 +3235,11 @@ a:hover { color: var(--primary-700); }
   display: flex;
   align-items: center;
   justify-content: center;
-  height: 40px;
-  padding: 0 var(--space-4);
+  /* min-height, not height: the label fits on one line with 20px to spare, and
+     a different platform's font metrics must wrap it, not clip it. */
+  min-height: 40px;
+  padding: var(--space-2) var(--space-4);
+  line-height: 20px;
   margin-bottom: var(--space-4);
   border: 1px solid var(--primary-600);
   border-radius: var(--radius-md);
@@ -3263,9 +3266,22 @@ a:hover { color: var(--primary-700); }
 }
 .session-item { color: var(--text-secondary); }
 .session-q { font-size: 14px; line-height: 20px; }
-.session-item:hover,
+/*
+ * Hover and the active state belong to the ROW, not to the button inside it.
+ *
+ * The component marks the open conversation with `.session-row.active`, while
+ * the stylesheet only ever styled `.session-item.active` — a class nothing sets
+ * — so the conversation you were in was never highlighted at all. Styling the
+ * row also takes in the "…" button beside the title, so a highlight covers the
+ * whole line instead of stopping short of the menu control.
+ */
+.session-row { border-radius: var(--radius-md); }
+.session-row:hover,
 .sessions-more:hover { background: var(--surface-low); color: var(--text-primary); }
-.session-item.active { background: var(--primary-50); color: var(--primary-700); font-weight: 500; }
+.session-item:hover { background: transparent; }
+.session-row.active,
+.session-row.active:hover { background: var(--primary-50); }
+.session-row.active .session-item { color: var(--primary-700); font-weight: 500; }
 .sessions-empty {
   padding: var(--space-3);
   font-style: normal;
@@ -3283,7 +3299,9 @@ a:hover { color: var(--primary-700); }
   border-bottom: 0;
   border-radius: var(--radius-md);
 }
-.session-more:hover { background: var(--surface-low); }
+/* One step darker than the row's own hover, which it sits inside. */
+.session-more:hover { background: var(--surface); }
+.session-row.active .session-more:hover { background: var(--primary-100); }
 
 .session-rename {
   padding: var(--space-2) var(--space-3);
