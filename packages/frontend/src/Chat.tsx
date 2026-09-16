@@ -196,6 +196,13 @@ export function Chat({
   const inputRef = useRef<HTMLTextAreaElement>(null);
   /** Whether to keep following the streaming answer; false once the reader scrolls up. */
   const stickRef = useRef(true);
+  /**
+   * A transcript has just been loaded, so the next render is a conversation
+   * arriving whole rather than an answer growing. It opens at its first
+   * question — which is where reading one starts — instead of at the foot of
+   * the last answer.
+   */
+  const openedRef = useRef(false);
 
   /**
    * Reopen a past conversation.
@@ -255,6 +262,10 @@ export function Chat({
       );
       setSelectedId(null);
       setError(null);
+      openedRef.current = true;
+      // The reader may have scrolled away in the conversation they just left;
+      // a new answer in this one should still be followed.
+      stickRef.current = true;
     } catch (err) {
       setError(String(err));
     }
@@ -299,10 +310,31 @@ export function Chat({
     // the reader at the bottom of the register, below the empty state that
     // explains what the edition covers.
     if (turns.length === 0) return;
+
+    /*
+      A conversation that was just opened starts at the top.
+
+      This effect used to fire for that too, because opening one replaces
+      `turns` exactly as an arriving answer does — so clicking a conversation
+      in the register dropped the reader at the end of its last answer, and
+      they had to scroll back up to the question they had come to re-read.
+    */
+    if (openedRef.current) {
+      openedRef.current = false;
+      window.scrollTo({ top: 0 });
+      return;
+    }
+
+    /*
+      Otherwise follow only while something is actually being written. Without
+      this the same jump returns by another door: any later change to `turns`
+      on a conversation the reader is sitting in would move them to the bottom.
+    */
+    if (!loading) return;
     // Scroll the page, not the anchor: the composer is sticky, so scrolling an
     // anchor "into view" stops short by the composer's height every time.
     if (stickRef.current) window.scrollTo({ top: document.body.scrollHeight });
-  }, [turns]);
+  }, [turns, loading]);
 
   async function send(override?: string): Promise<void> {
     const message = (override ?? input).trim();
