@@ -319,7 +319,7 @@ export function NormPanel({
         <div className="app-rule" />
 
         {acts.map((act, i) => (
-          <div className="act" key={act.arlisId}>
+          <div className="act-group" key={act.arlisId}>
             {/*
               One line, with the whole title on hover. Act titles are stored in
               capitals and run to 703 characters in this corpus, so printed in

@@ -857,7 +857,11 @@ a { color: var(--accent); }
  * under every provision, as they were, the shouting was the loudest thing in
  * the column and the provisions themselves were what got lost.
  */
-.act { margin-bottom: 18px; }
+/* The grouping wrapper. Named `act-group`, not `act`: `.act` is the small-caps
+   label for an act number in ChunkCard, and reusing it put every provision in
+   the apparatus — bodies, quotes and previews alike — into 11px letter-spaced
+   CAPITALS, inherited from a rule written for a three-word label. */
+.act-group { margin-bottom: 18px; }
 .act-head {
   display: flex;
   align-items: baseline;
