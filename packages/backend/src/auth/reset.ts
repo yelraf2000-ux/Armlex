@@ -60,7 +60,8 @@ const COPY: Copy = {
     'Եթե Դուք չեք պահանջել վերականգնում, անտեսեք այս նամակը — գաղտնաբառը մնում է անփոփոխ։',
 };
 
-function render(link: string): { html: string; text: string } {
+/** Exported so the rendered mail can be looked at without sending one. */
+export function render(link: string): { html: string; text: string } {
   const c = COPY;
   const html = [
     '<div style="margin:0;padding:32px 16px;background:#F7F8FA;font-family:-apple-system,BlinkMacSystemFont,Roboto,Helvetica,Arial,sans-serif;color:#111418">',
