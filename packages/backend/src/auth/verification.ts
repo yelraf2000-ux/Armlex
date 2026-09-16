@@ -69,15 +69,15 @@ const COPY: Copy = {
 function render(link: string): { html: string; text: string } {
   const c = COPY;
   const html = [
-    '<div style="margin:0;padding:32px 16px;background:#EDE8DC;font-family:Georgia,serif;color:#33191E">',
-    '<div style="max-width:520px;margin:0 auto;background:#FFFFFF;border-radius:10px;padding:32px">',
-    `<h1 style="margin:0 0 16px;font-size:22px;font-weight:normal">${c.heading}</h1>`,
-    `<p style="margin:0 0 24px;font-size:15px;line-height:1.55;color:#4A3524">${c.body}</p>`,
-    `<p style="margin:0 0 24px"><a href="${link}" style="display:inline-block;background:#A8142B;color:#EDE8DC;text-decoration:none;padding:12px 24px;border-radius:6px;font-size:15px">${c.button}</a></p>`,
-    `<p style="margin:0 0 8px;font-size:13px;color:#8B8474">${c.fallback}</p>`,
-    `<p style="margin:0 0 24px;font-size:13px;word-break:break-all"><a href="${link}" style="color:#A8142B">${link}</a></p>`,
-    `<p style="margin:0 0 4px;font-size:13px;color:#8B8474">${c.expiry}</p>`,
-    `<p style="margin:0;font-size:13px;color:#8B8474">${c.ignore}</p>`,
+    '<div style="margin:0;padding:32px 16px;background:#F7F8FA;font-family:-apple-system,BlinkMacSystemFont,Roboto,Helvetica,Arial,sans-serif;color:#111418">',
+    '<div style="max-width:520px;margin:0 auto;background:#FFFFFF;border-radius:8px;padding:32px">',
+    `<h1 style="margin:0 0 16px;font-size:22px;font-weight:600">${c.heading}</h1>`,
+    `<p style="margin:0 0 24px;font-size:15px;line-height:1.55;color:#444C57">${c.body}</p>`,
+    `<p style="margin:0 0 24px"><a href="${link}" style="display:inline-block;background:#2250DC;color:#FFFFFF;text-decoration:none;padding:12px 24px;border-radius:8px;font-size:15px">${c.button}</a></p>`,
+    `<p style="margin:0 0 8px;font-size:13px;color:#79818E">${c.fallback}</p>`,
+    `<p style="margin:0 0 24px;font-size:13px;word-break:break-all"><a href="${link}" style="color:#2250DC">${link}</a></p>`,
+    `<p style="margin:0 0 4px;font-size:13px;color:#79818E">${c.expiry}</p>`,
+    `<p style="margin:0;font-size:13px;color:#79818E">${c.ignore}</p>`,
     '</div></div>',
   ].join('');
   const text = `${c.heading}\n\n${c.body}\n\n${link}\n\n${c.expiry}\n${c.ignore}`;
