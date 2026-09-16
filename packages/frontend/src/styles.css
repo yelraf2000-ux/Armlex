@@ -3226,7 +3226,7 @@ a:hover { color: var(--primary-700); }
 
 /* ── Sidebar: consultations ───────────────────────────────────────────────── */
 
-.rail { padding-left: var(--space-4); padding-right: var(--space-4); }
+.rail { padding-left: var(--space-3); padding-right: var(--space-3); }
 .rail .panel-title { padding: 0 var(--space-3); }
 
 /* The key CTA of the whole product, so §6.1 Primary. While an empty
@@ -3235,11 +3235,18 @@ a:hover { color: var(--primary-700); }
   display: flex;
   align-items: center;
   justify-content: center;
-  /* min-height, not height: the label fits on one line with 20px to spare, and
-     a different platform's font metrics must wrap it, not clip it. */
+  /*
+   * Sized from a measurement, not a guess. «+ Նոր խորհրդատվություն» needs 185px
+   * at 14px/600; with the sidebar's 16px gutters and this button's 16px padding
+   * it had 178, and wrapped to a two-line 58px CTA. 12px gutters and 10px padding
+   * give it 198. The no-wrap is a guard for font metrics that run wider still.
+   */
   min-height: 40px;
-  padding: var(--space-2) var(--space-4);
+  padding: var(--space-2) 10px;
   line-height: 20px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
   margin-bottom: var(--space-4);
   border: 1px solid var(--primary-600);
   border-radius: var(--radius-md);
