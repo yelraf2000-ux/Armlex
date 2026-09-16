@@ -3391,9 +3391,45 @@ a:hover { color: var(--primary-700); }
 }
 .account-pop > button:hover,
 .session-menu button:hover { background: var(--surface-low); color: var(--text-primary); }
-/* Two classes: `.account-pop > button` outranks a lone `.account-upgrade`, which
-   is why this link was never actually blue. */
-.account-pop > .account-upgrade { color: var(--primary-600); font-weight: 600; }
+/*
+ * Upgrade — §6.1 Primary, in both places it appears: the account menu and the
+ * usage card. It is the one action in either that earns money, and it was a
+ * blue text row in the menu and an entirely unstyled browser button on the
+ * usage page.
+ *
+ * Two classes on the menu one: `.account-pop > button` outranks a lone
+ * `.account-upgrade`, and would otherwise put its padding and colour back.
+ */
+.account-pop > .account-upgrade,
+.ws-upgrade {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 40px;
+  padding: 9px var(--space-5);
+  border: 1px solid var(--primary-600);
+  border-radius: var(--radius-md);
+  background: var(--primary-600);
+  color: var(--text-inverse);
+  font-family: var(--font-sans);
+  font-size: 14px;
+  line-height: 20px;
+  font-weight: 600;
+  text-align: center;
+  box-shadow: var(--shadow-sm);
+  cursor: pointer;
+}
+.account-pop > .account-upgrade:hover,
+.ws-upgrade:hover {
+  border-color: var(--primary-700);
+  background: var(--primary-700);
+  color: var(--text-inverse);
+}
+.account-pop > .account-upgrade:focus-visible,
+.ws-upgrade:focus-visible { outline: none; box-shadow: var(--shadow-focus); }
+/* Inset in the menu, so it reads as a button in a list rather than a row of it. */
+.account-pop > .account-upgrade { width: calc(100% - 8px); margin: 4px; }
+.ws-upgrade { margin-top: var(--space-4); }
 
 .account-note {
   margin: 2px 10px 6px;
