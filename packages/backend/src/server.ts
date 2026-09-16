@@ -235,9 +235,7 @@ app.post<{ Body: ChatBody }>('/api/chat/stream', async (req, reply) => {
       // without a renewal date reads as the end of the road rather than as a
       // wait, which is the difference between a cancelled account and a
       // patient one.
-      detail:
-        `Այս շաբաթվա ${usage.limit} հարցի սահմանաչափը սպառված է։ Նորը՝ երկուշաբթի։ / ` +
-        `Исчерпан лимит в ${usage.limit} вопросов на эту неделю. Обновится в понедельник.`,
+      detail: `Այս շաբաթվա ${usage.limit} հարցի սահմանաչափը սպառված է։ Նորը՝ երկուշաբթի։`,
     });
   }
 
@@ -324,9 +322,7 @@ app.post<{ Body: ChatBody }>('/api/chat/stream', async (req, reply) => {
         error: 'search_unavailable',
         detail:
           'Որոնման համակարգը ժամանակավորապես անհասանելի է, ուստի պատասխան չի տրվում։ ' +
-          'Սա ՉԻ նշանակում, որ Ձեր հարցին վերաբերող նորմ չկա։ / ' +
-          'Поиск временно недоступен, поэтому ответ не даётся. Это НЕ значит, ' +
-          'что по вашему вопросу нет нормы.',
+          'Սա ՉԻ նշանակում, որ Ձեր հարցին վերաբերող նորմ չկա։',
       });
       return;
     }

@@ -99,6 +99,8 @@ const hy: Dict = {
   'stage.reading': 'Կարդում եմ գտնված հոդվածները…',
   'stage.writing': 'Ձևակերպում եմ պատասխանը…',
 
+  'coverage.partialLabel': 'ԽՄԲԱԳՐԱԿԱՆ ԾԱՆՈԹԱԳՐՈՒԹՅՈՒՆ',
+  'coverage.noneLabel': 'ՈՒՂՂԱԿԻ ՆՈՐՄ ՉԻ ԳՏՆՎԵԼ',
   'coverage.partial':
     'Գտնված հոդվածները հարցը լուսաբանում են մասամբ — ստուգեք, արդյոք ճշտող հարցը չի փոխում եզրակացությունը։',
   'coverage.none':
@@ -316,6 +318,8 @@ const ru: Dict = {
   'stage.reading': 'Читаю найденные статьи…',
   'stage.writing': 'Формулирую ответ…',
 
+  'coverage.partialLabel': 'ԽՄԲԱԳՐԱԿԱՆ ԾԱՆՈԹԱԳՐՈՒԹՅՈՒՆ',
+  'coverage.noneLabel': 'ՈՒՂՂԱԿԻ ՆՈՐՄ ՉԻ ԳՏՆՎԵԼ',
   'coverage.partial':
     'Найденные статьи покрывают вопрос частично — проверьте, что уточняющий вопрос ниже не меняет вывод.',
   'coverage.none':
@@ -532,6 +536,8 @@ const en: Dict = {
   'stage.reading': 'Reading the articles found…',
   'stage.writing': 'Drafting the answer…',
 
+  'coverage.partialLabel': 'ԽՄԲԱԳՐԱԿԱՆ ԾԱՆՈԹԱԳՐՈՒԹՅՈՒՆ',
+  'coverage.noneLabel': 'ՈՒՂՂԱԿԻ ՆՈՐՄ ՉԻ ԳՏՆՎԵԼ',
   'coverage.partial':
     'The articles found cover this only partly — check whether the clarifying question below changes the conclusion.',
   'coverage.none':

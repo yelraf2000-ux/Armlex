@@ -726,8 +726,15 @@ a { color: var(--accent); }
   border-left: 2px solid var(--danger);
   animation: fade-in 280ms ease-out;
 }
-.coverage::before {
-  content: "Примечание редакции";
+/*
+ * The heading is an element now, not `content` on a pseudo-element.
+ *
+ * It was two Russian strings hard-coded in this file — the one piece of the
+ * interface no dictionary could reach, and so the one piece that stayed
+ * Russian after the rest was pinned to Armenian. Any text a reader sees has to
+ * come from the dictionary, or it will be missed exactly like this.
+ */
+.coverage-label {
   display: block;
   font-size: 11px;
   letter-spacing: 0.16em;
@@ -748,7 +755,7 @@ a { color: var(--accent); }
   background: var(--danger-bg);
   padding: 20px 24px 18px;
 }
-.coverage.none::before { content: "Прямой нормы не найдено"; letter-spacing: 0.18em; margin-bottom: 10px; }
+.coverage.none .coverage-label { letter-spacing: 0.18em; margin-bottom: 10px; }
 .coverage.none .coverage-body {
   font-family: var(--display);
   font-style: normal;

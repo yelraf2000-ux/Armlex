@@ -706,6 +706,9 @@ export function Chat({
           )}
           {turn.coverage && COVERAGE_KEY[turn.coverage] ? (
             <div className={`coverage ${turn.coverage}`}>
+              <span className="coverage-label">
+                {t(turn.coverage === 'none' ? 'coverage.noneLabel' : 'coverage.partialLabel')}
+              </span>
               <div className="coverage-body">{t(COVERAGE_KEY[turn.coverage]!)}</div>
             </div>
           ) : null}
