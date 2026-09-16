@@ -11,6 +11,9 @@
  * nothing waits for it — the answer streams whether or not a name has arrived,
  * and a failure here costs a name, never a turn.
  *
+ * Armenian, always: the name goes into a sidebar that is Armenian, and a
+ * Russian question used to put a Russian line in it.
+ *
  * Haiku, `temperature: 0`, 32 tokens. The whole call is a few hundred
  * milliseconds and a fraction of a cent against a question that costs both in
  * quantity.
@@ -27,8 +30,9 @@ const SYSTEM = [
   '',
   'Rules:',
   '- 2 to 5 words. Never a sentence, never a question, no final full stop.',
-  '- The SAME LANGUAGE as the question. An Armenian question gets an Armenian',
-  '  name, a Russian one a Russian name. Never translate.',
+  '- ALWAYS IN ARMENIAN, whatever language the question was written in — a',
+  '  Russian or transliterated question still gets an Armenian name, because',
+  '  the register it appears in is Armenian.',
   '- Name the SUBJECT, not the act of asking: "ԱԱՀ-ի դրույքաչափ", not',
   '  "Հարց ԱԱՀ-ի մասին".',
   '- Keep the distinguishing detail. Two questions about payroll must not end',
