@@ -3211,6 +3211,10 @@ a:hover { color: var(--primary-700); }
    Stored at 3x; 36px tall puts its lettering at the size of the 24px name it
    replaces. */
 .brand-lockup { display: block; height: 36px; width: auto; }
+/* The compact brand's line box is 33px and the lockup is 36, so opening or
+   closing the sidebar moved the whole page by 3px. Holding the button at the
+   lockup's height keeps the page still either way. */
+.provenance button.brand { min-height: 36px; }
 .brand-compact { display: none; }
 @media (max-width: 1200px) {
   .brand-lockup { display: none; }
