@@ -10,6 +10,7 @@ import { useEffect, useRef, useState } from 'react';
 import type { Chunk } from './types.js';
 import { BRAND } from './brand.js';
 import { NormPanel } from './NormPanel.js';
+import { Interlude } from './Interlude.js';
 import type { Entry } from './NormPanel.js';
 import { MarkdownView } from './MarkdownView.js';
 import { extractQuotes } from './quotes.js';
@@ -810,6 +811,9 @@ export function Chat({
               </span>
             </div>
           ) : null}
+          {/* Inside the same condition as the stage line, so it leaves the
+              screen the moment the first word of the answer arrives. */}
+          {turn.stage && !turn.text ? <Interlude /> : null}
 
           {/*
             Citations as superior figures addressing the apparatus beside the

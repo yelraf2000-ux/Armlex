@@ -88,6 +88,7 @@ const hy: Dict = {
 
   'turn.question': 'Հարց',
   'turn.searchedFor': 'որոնվել է՝',
+  'interlude.label': 'Այս ընթացքում՝ օրենսգրքից',
 
   'stage.understanding': 'Վերլուծում եմ հարցը…',
   'stage.searching': 'Փնտրում եմ Հարկային օրենսգրքում…',

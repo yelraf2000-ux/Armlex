@@ -952,6 +952,53 @@ a { color: var(--accent); }
   color: var(--ink-4);
 }
 
+/*
+  Statute shown while the answer is being prepared.
+
+  Set as an aside and not as prose: indented behind a rule, smaller, with its
+  citation under it. The one thing it must never be is the opening of the
+  answer, which is about to appear a few lines below in the same column.
+*/
+.interlude {
+  margin: 14px 0 0;
+  padding: 0 0 0 16px;
+  border-left: 2px solid var(--rule);
+  max-width: 62ch;
+}
+
+.interlude-label {
+  font-size: 10.5px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--ink-4);
+  margin-bottom: 6px;
+}
+
+.interlude-text {
+  margin: 0;
+  font-family: var(--law);
+  font-size: 13.5px;
+  line-height: 1.7;
+  color: var(--ink-2);
+  animation: interlude-in 600ms ease-out;
+}
+
+.interlude-ref {
+  margin-top: 6px;
+  font-size: 11.5px;
+  color: var(--ink-4);
+}
+
+@keyframes interlude-in {
+  from { opacity: 0; transform: translateY(3px); }
+  to { opacity: 1; transform: none; }
+}
+
+/* Somebody who has asked not to be moved is not moved. */
+@media (prefers-reduced-motion: reduce) {
+  .interlude-text { animation: none; }
+}
+
 .entry-quote {
   font-family: var(--law);
   font-size: 13.5px;

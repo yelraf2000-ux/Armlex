@@ -38,6 +38,7 @@ import { retrieve, warmRetrieval, VectorLegUnavailableError } from './retrieval/
 import { db } from './db/pool.js';
 import { ask, isConfigured } from './answer/ask.js';
 import { chat, discardFailedTurn } from './answer/chat.js';
+import { someInterludes } from './answer/interlude.js';
 import { DEFAULT_MODEL } from './answer/llm.js';
 
 const app = Fastify({
@@ -340,6 +341,14 @@ app.post<{ Body: ChatBody }>('/api/chat/stream', async (req, reply) => {
  * source, which is the honest thing to show — not the date the answer was
  * generated.
  */
+/*
+ * Statute to read while an answer is being prepared — see `interlude.ts` for
+ * why it is statute and not something written for the purpose. Public, like
+ * /api/corpus: it discloses nothing an unsigned-in reader cannot already read
+ * on ARLIS, and the client wants it before the first question is asked.
+ */
+app.get('/api/interlude', async () => ({ interludes: await someInterludes(8) }));
+
 app.get('/api/corpus', async () => {
   const [row] = await db()<
     { documents: string; chunks: string; last_checked: string | null }[]
