@@ -38,13 +38,32 @@ export function parseDates(header: string): { adopted: string | null; amended: s
  * in the same marks would make an editorial cut look like an exact citation.
  * The caller shows it plain, and the full text is a click away.
  *
- * The first paragraph only. Articles in this corpus open onto rate TABLES
- * often enough — «| Ժամանակահատված | Եկամտային հարկի դրույքաչափը |» — that
- * running past the blank line would print table plumbing as the preview.
+ * One paragraph only — the first that is actually a rule. Articles in this
+ * corpus open onto rate TABLES often enough, and onto amendment annotations
+ * («վերնագիրը փոփ. 24.10.25 ՀՕ-324-Ն») often enough, that taking the first
+ * paragraph blind previewed table plumbing and editorial notes as though they
+ * were the provision. Returns '' when the article is nothing but those, and
+ * the caller shows no preview at all.
  */
 export function opening(body: string, max = 180): string {
-  const firstParagraph = body.split(/\n\s*\n/)[0] ?? body;
-  const clean = firstParagraph.replace(/\s+/g, ' ').trim();
+  const paragraph = body
+    .split(/\n\s*\n/)
+    .map((p) => p.trim())
+    .find(
+      (p) =>
+        p !== '' &&
+        // A rate table. Pipes read as damage, and the table is only legible
+        // expanded — «| Եկամտի տեսակ | Դրույքաչափ |» as a preview tells the
+        // reader nothing and looks like the text arrived broken.
+        !p.startsWith('|') &&
+        // An amendment annotation — «(վերնագիրը փոփ. 24.10.25 ՀՕ-324-Ն)».
+        // Articles open with one often enough that it was being shown as
+        // though it were the provision. Anything wholly bracketed is editorial.
+        !/^\([^)]*\)$/.test(p.replace(/\s+/g, ' ')),
+    );
+  // Nothing but tables and annotations: better no preview than pipes.
+  if (!paragraph) return '';
+  const clean = paragraph.replace(/\s+/g, ' ').trim();
   if (clean.length <= max) return clean;
   const cut = clean.slice(0, max);
   const lastSpace = cut.lastIndexOf(' ');

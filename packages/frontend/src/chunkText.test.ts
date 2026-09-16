@@ -41,4 +41,25 @@ describe('opening', () => {
     assert.equal(out.length, 101);
     assert.ok(out.endsWith('…'));
   });
+
+  test('a table-only article gets no preview rather than a row of pipes', () => {
+    // Հավելված 3, աղյուսակ 5 and its kin are a heading and a grid, nothing else.
+    const body = '| Եկամտի տեսակ | Դրույքաչափ [3.2] |\n| --- | --- |\n| Տոկոսներ | 10 տոկոս |';
+    assert.equal(opening(body), '');
+  });
+
+  test('an amendment annotation is skipped for the rule underneath it', () => {
+    // Հոդված 147 opens on one of these, and it was being shown as the article.
+    const body =
+      '(վերնագիրը փոփ. 24.10.25 ՀՕ-324-Ն)\n\n' +
+      '1. Ֆիզիկական անձի համախառն եկամտից նվազեցվում են հետևյալ եկամուտները։';
+    assert.equal(opening(body), '1. Ֆիզիկական անձի համախառն եկամտից նվազեցվում են հետևյալ եկամուտները։');
+  });
+
+  test('a parenthesis inside a sentence does not disqualify it', () => {
+    // Only a WHOLLY bracketed paragraph is editorial; statute is full of
+    // parentheticals — «Նվազեցվող (չհարկվող) եկամուտները» is the rule itself.
+    const body = 'Նվազեցվող (չհարկվող) եկամուտները սահմանվում են սույն հոդվածով։';
+    assert.equal(opening(body), body);
+  });
 });

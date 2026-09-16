@@ -100,6 +100,10 @@ function ApparatusEntry({
   const title = headerField(header, 'Title');
   const segments = highlight(body, quotes);
   const marked = segments.filter((s) => s.mark).map((s) => s.text);
+  /* Shown only when there is no quote, and only when the article HAS an
+     opening to show: a table-only appendix has none, and an empty italic line
+     under the heading reads as a rendering fault. */
+  const preview = marked.length > 0 ? '' : opening(body);
   const related = useRelated(chunk.articleId, open);
 
   /*
@@ -162,11 +166,11 @@ function ApparatusEntry({
         <div className="entry-quote carried">{t('norm.carried')}</div>
       ) : marked.length > 0 ? (
         <div className="entry-quote" lang="hy">«{marked[0]}»</div>
-      ) : (
+      ) : preview ? (
         /* Named by the answer but not quoted from. Its opening, plain and
            unquoted — see `opening` for why it carries no guillemets. */
-        <div className="entry-opening" lang="hy">{opening(body)}</div>
-      )}
+        <div className="entry-opening" lang="hy">{preview}</div>
+      ) : null}
 
       {open ? (
         <div className="entry-body">
