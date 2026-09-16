@@ -560,9 +560,9 @@ export function Chat({
    * quotes a passage that occurs in that article. `citedIndexes` holds the
    * rule and the edge cases it has to survive.
    *
-   * While the answer is still being written, everything found is shown: the
-   * text has not finished naming what it uses, and entries would appear and
-   * vanish under the reader as it did.
+   * While the answer is being written the same rule runs, minus the fallback:
+   * the column starts empty and gains a provision as the answer cites it. The
+   * matching is monotone, so nothing shown is ever taken back.
    *
    * If nothing matches, everything is shown. An answer that cites in a form
    * this does not recognise must not leave the reader with no apparatus at all
@@ -570,9 +570,7 @@ export function Chat({
    */
   const citedOf = (t: Turn | undefined): Entry[] => {
     const all = sourcesOf(t);
-    const text = t?.text ?? '';
-    if (!text || t?.streaming) return all;
-    const keep = new Set(citedIndexes(all.map((e) => e.chunk), text));
+    const keep = new Set(citedIndexes(all.map((e) => e.chunk), t?.text ?? '', !t?.streaming));
     return all.filter((_, i) => keep.has(i));
   };
   const owningTurn =
@@ -591,7 +589,7 @@ export function Chat({
       className={[
         'workbench',
         railOpen ? null : 'rail-hidden',
-        entries.length === 0 ? 'no-apparatus' : null,
+        entries.length === 0 && !owningTurn?.streaming ? 'no-apparatus' : null,
       ]
         .filter(Boolean)
         .join(' ')}
@@ -890,6 +888,7 @@ export function Chat({
         entries={entries}
         quotes={shownQuotes}
         answer={owningTurn?.text ?? ''}
+        pending={owningTurn?.streaming ?? false}
         corpusSynced={corpusSynced}
         selectedId={selectedId}
         onSelect={setSelectedId}

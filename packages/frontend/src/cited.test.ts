@@ -55,3 +55,37 @@ describe('citedIndexes', () => {
     assert.deepEqual(citedIndexes(candidates, ''), [0]);
   });
 });
+
+describe('citedIndexes while the answer is still being written', () => {
+  const candidates = [chunk('Հոդված 150'), chunk('Հոդված 258'), chunk('Հոդված 19')];
+
+  test('an answer that has cited nothing yet shows nothing yet', () => {
+    // Not everything. Showing all sixteen retrieved provisions and then
+    // collapsing to two is the reader watching sources be taken away.
+    assert.deepEqual(citedIndexes(candidates, '', false), []);
+    assert.deepEqual(citedIndexes(candidates, 'Այս արտոնությունը', false), []);
+  });
+
+  test('the set only ever grows as the text arrives', () => {
+    const stream = [
+      '',
+      'Այս արտոնությունը (ՀՀ Հարկային օրենսգիրք, ',
+      'Այս արտոնությունը (ՀՀ Հարկային օրենսգիրք, Հոդված 150, մաս 1.1) սահմանում է',
+      'Այս արտոնությունը (ՀՀ Հարկային օրենսգիրք, Հոդված 150, մաս 1.1) սահմանում է․ տես նաև Հոդված 19։',
+    ];
+    let previous: number[] = [];
+    for (const text of stream) {
+      const now = citedIndexes(candidates, text, false);
+      assert.ok(
+        previous.every((i) => now.includes(i)),
+        `nothing is taken back: had ${previous} then ${now}`,
+      );
+      previous = now;
+    }
+    assert.deepEqual(previous, [0, 2]);
+  });
+
+  test('a settled answer still falls back to everything', () => {
+    assert.deepEqual(citedIndexes(candidates, 'Պատասխան առանց վկայակոչման։', true), [0, 1, 2]);
+  });
+});

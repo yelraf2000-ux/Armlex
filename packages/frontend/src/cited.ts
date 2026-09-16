@@ -55,13 +55,30 @@ function names(text: string, ref: string): boolean {
  *
  * Returns everything when nothing matches: an answer citing in a form this
  * does not recognise must not leave the reader with no apparatus at all.
+ *
+ * `settled` says whether the answer is finished. It governs that fallback and
+ * nothing else, because the fallback is the only part of this rule that is not
+ * monotone — the matching itself only ever gains provisions as the text grows,
+ * since a text containing «Հոդված 150» goes on containing it.
+ *
+ * An UNSETTLED answer therefore gets no fallback. Applying it mid-stream meant
+ * the column opened with all sixteen retrieved provisions, held them for the
+ * seconds before the first citation appeared, then collapsed to two — the
+ * reader watching fourteen sources they had begun reading be taken away. With
+ * the fallback held back the column starts empty and fills as the answer cites,
+ * which is also the truer account: these are the provisions used SO FAR.
  */
-export function citedIndexes(candidates: CitedCandidate[], answer: string): number[] {
-  if (!answer) return candidates.map((_, i) => i);
+export function citedIndexes(
+  candidates: CitedCandidate[],
+  answer: string,
+  settled = true,
+): number[] {
+  const all = (): number[] => candidates.map((_, i) => i);
+  if (!answer) return settled ? all() : [];
   const quoted = extractQuotes(answer);
   const used: number[] = [];
   candidates.forEach((c, i) => {
     if (names(answer, c.ref) || quoted.some((q) => c.text.includes(q))) used.push(i);
   });
-  return used.length > 0 ? used : candidates.map((_, i) => i);
+  return used.length > 0 || !settled ? used : all();
 }

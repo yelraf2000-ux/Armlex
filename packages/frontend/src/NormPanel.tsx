@@ -253,6 +253,7 @@ export function NormPanel({
   entries,
   quotes,
   answer,
+  pending,
   corpusSynced,
   selectedId,
   onSelect,
@@ -260,6 +261,8 @@ export function NormPanel({
   entries: Entry[];
   quotes: string[];
   answer: string;
+  /** The answer is still being written, so the column is still filling. */
+  pending: boolean;
   corpusSynced: string | null;
   /** Which entry the reader last addressed from the transcript. */
   selectedId: string | null;
@@ -317,6 +320,12 @@ export function NormPanel({
           <span className="app-count">{acts.length}</span>
         </div>
         <div className="app-rule" />
+
+        {/* Empty and still writing: say so, rather than leave a blank column
+            that reads as a failure to find anything. */}
+        {acts.length === 0 && pending ? (
+          <p className="app-pending">{t('norm.pending')}</p>
+        ) : null}
 
         {acts.map((act, i) => (
           <div className="act-group" key={act.arlisId}>
