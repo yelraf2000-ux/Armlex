@@ -1651,3 +1651,7 @@ a fresh workspace, re-inviting the same address then succeeds, and usage reads
   checked before the stream opens, so this waits one round trip). Any refused
   send leaves the question in the box. The invite button on the notice is gone,
   at the owner's request.
+
+- **2026-09-17 — Out-of-questions notice is blue.** Owner's rule: a note is
+  blue or black, never amber. Now `primary-50` ground, `primary-200` border,
+  `primary-600` left rule and icon.
