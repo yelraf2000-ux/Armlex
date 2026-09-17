@@ -74,29 +74,29 @@ describe('parseInvites', () => {
 });
 
 /*
- * The free allowance, as specified: the creator 10, every colleague 5, and the
- * firm's weekly pool is the sum. The form and the landing promise these
- * numbers, so a drift here makes the product say something untrue.
+ * The free allowance, as specified: the creator 5 (10 until 2026-09-17), every
+ * colleague 5, and the firm's weekly pool is the sum. The form and the landing
+ * promise these numbers, so a drift here makes the product say something untrue.
  */
 describe('free seats', () => {
-  test('the creator of a workspace gets 10 a week', () => {
-    assert.equal(allowanceFor('free', null, 0, true), 10);
+  test('the creator of a workspace gets 5 a week', () => {
+    assert.equal(allowanceFor('free', null, 0, true), 5);
   });
 
   test('a colleague who joins gets 5', () => {
     assert.equal(allowanceFor('free', null, 0, false), 5);
   });
 
-  test('admin 10 + user 5 + user 5 = 20, the example it was specified by', () => {
+  test('admin 5 + user 5 + user 5 = 15', () => {
     const seats = [true, false, false].map((owner) => allowanceFor('free', null, 0, owner)!);
-    assert.equal(seats.reduce((a, b) => a + b, 0), 20);
+    assert.equal(seats.reduce((a, b) => a + b, 0), 15);
   });
 
-  test('a full signup — creator plus four colleagues — is bounded at 30', () => {
+  test('a full signup — creator plus four colleagues — is bounded at 25', () => {
     // The exposure per account once every invitee joins: no referral bonus
     // stacks on top of the seats any more.
     const seats = [true, false, false, false, false].map((o) => allowanceFor('free', null, 0, o)!);
-    assert.equal(seats.reduce((a, b) => a + b, 0), 10 + 5 * MAX_INVITES);
+    assert.equal(seats.reduce((a, b) => a + b, 0), 5 + 5 * MAX_INVITES);
   });
 
   test('ownership only changes the FREE seat', () => {
@@ -105,6 +105,6 @@ describe('free seats', () => {
   });
 
   test('bonuses already credited still count on top of the seat', () => {
-    assert.equal(allowanceFor('free', null, 15, true), 25);
+    assert.equal(allowanceFor('free', null, 15, true), 20);
   });
 });

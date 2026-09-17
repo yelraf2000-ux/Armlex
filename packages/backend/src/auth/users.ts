@@ -74,16 +74,19 @@ const ALLOWANCE: Record<string, number | null> = {
 /*
  * The free seat of the person who created the workspace.
  *
- * A firm on the free plan is its creator's 10 plus 5 for every colleague who
- * joins — "admin 10 + user 5 + user 5 = 20", in the terms it was specified.
- * The 5 per colleague IS their own seat; there is no separate referral payment
- * on top, or each person would add 10 and a firm of three would reach 35.
+ * A firm on the free plan is its creator's 5 plus 5 for every colleague who
+ * joins. The 5 per colleague IS their own seat; there is no separate referral
+ * payment on top, or each person would add 10.
+ *
+ * Was 10 until 2026-09-17, when the owner lowered it to match the colleague
+ * seat. Kept as its own constant so the creator's seat can move again without
+ * touching every free member.
  *
  * Owner, not "first to register": ownership is what the workspace records,
  * and it moves when an owner is removed (see removeMember), so the larger seat
  * follows whoever is actually running the firm.
  */
-const FREE_OWNER = 10;
+const FREE_OWNER = 5;
 
 export function normaliseEmail(raw: string): string {
   return raw.trim().toLowerCase();
@@ -308,7 +311,7 @@ export async function monthlyUsage(user: User): Promise<Usage> {
     rather than being spent once. That is the generous reading, chosen because
     the alternative — a one-off pot that silently drains — is the kind of thing
     a user discovers only when it is gone, and the amounts are small enough
-    (10 + 5 per referral) that the cost is bounded by design.
+    (5 per referral) that the cost is bounded by design.
 
     `null` stays `null`: there is nothing to add to no limit.
   */

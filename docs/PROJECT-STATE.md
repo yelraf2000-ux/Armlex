@@ -19,7 +19,7 @@ what we intend. This file and its siblings are the state — what is true.
 
 Production is at commit `04170c2`; `/api/version` confirms. 199 commits total.
 
-- **Product:** accounts with workspaces, pooled weekly allowance (10 for the
+- **Product:** accounts with workspaces, pooled weekly allowance (5 for the
   creator, +5 per colleague), invitations with rank, email verification and
   password reset all LIVE (Resend configured), Google sign-in, 7-day idle
   sign-out with revocation. Armenian only.

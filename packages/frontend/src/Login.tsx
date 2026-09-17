@@ -53,7 +53,7 @@ interface Profile {
 /** Kept in step with the server; the form promises these numbers to the user. */
 export const MAX_INVITES = 4;
 /** The weekly questions the person who registers brings to the firm's pool. */
-export const CREATOR_ALLOWANCE = 10;
+export const CREATOR_ALLOWANCE = 5;
 /** What each colleague who joins adds to the firm's weekly questions — their seat. */
 export const SEAT_PER_COLLEAGUE = 5;
 

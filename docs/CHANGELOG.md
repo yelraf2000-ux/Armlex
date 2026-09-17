@@ -1621,3 +1621,9 @@ a fresh workspace, re-inviting the same address then succeeds, and usage reads
 - **2026-09-17 — Preview source cards removed** at the owner's request. The
   answer card goes straight from the shown text to the lock card;
   `/api/preview` is back to its earlier shape (no `acts`).
+
+- **2026-09-17 — Free creator seat 10 → 5 a week** (owner's decision). The
+  creator now brings 5, like every colleague: a firm is 5 + 5 per member, up to
+  25. Computed, not stored, so every existing free workspace moved at once;
+  `bonus_questions` already credited still add on top. Registration copy follows
+  `CREATOR_ALLOWANCE`.

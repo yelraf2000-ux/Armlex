@@ -91,9 +91,9 @@ export const MAX_INVITES = 4;
  *
  * There used to be two: +10 once for completing the invite step, and +5 to the
  * inviter each time an invitee registered. The allowance is now the firm's
- * pool — the creator's 10 plus each colleague's own 5-question seat — so a
+ * pool — the creator's seat plus each colleague's own 5-question seat — so a
  * colleague who joins adds 5 by being there. Paying the referral on top made
- * each person worth 10 and a firm of three worth 35 against a specified 20.
+ * each person worth 10.
  * Bonuses already credited stay in `bonus_questions`; nothing new is paid.
  */
 
