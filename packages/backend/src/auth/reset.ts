@@ -19,6 +19,7 @@ import { createHash, randomBytes } from 'node:crypto';
 import { db } from '../db/pool.js';
 import { hashPassword } from './password.js';
 import * as mailer from '../mail/mailer.js';
+import { mailLogo } from '../mail/brand.js';
 
 const TTL_MINUTES = 60;
 
@@ -66,6 +67,7 @@ export function render(link: string): { html: string; text: string } {
   const html = [
     '<div style="margin:0;padding:32px 16px;background:#f8f9ff;font-family:Noto Sans,Noto Sans Armenian,-apple-system,BlinkMacSystemFont,Roboto,Helvetica,Arial,sans-serif;color:#0f172a">',
     '<div style="max-width:520px;margin:0 auto;background:#ffffff;border:1px solid #e2e8f0;border-radius:16px;padding:32px">',
+    mailLogo(link),
     `<h1 style="margin:0 0 16px;font-size:22px;line-height:28px;font-weight:700">${c.heading}</h1>`,
     `<p style="margin:0 0 24px;font-size:15px;line-height:1.55;color:#334155">${c.body}</p>`,
     `<p style="margin:0 0 24px"><a href="${link}" style="display:inline-block;background:#2563eb;color:#ffffff;text-decoration:none;padding:12px 24px;border-radius:8px;font-size:15px;font-weight:600">${c.button}</a></p>`,
