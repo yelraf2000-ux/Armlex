@@ -215,7 +215,6 @@ const hy: Dict = {
   'preview.yourQuestion': 'Ձեր հարցը',
   'preview.newQuestion': 'Նոր հարց',
   'preview.answer': 'Պատասխան',
-  'preview.sources': 'Աղբյուրներ',
   'preview.lockTitle': 'Ամբողջական պատասխանը պատրաստ է',
   'preview.lockBody': 'Գրանցվեք անվճար՝ ամբողջական պատասխանը տեսնելու համար։',
   'preview.unlock': 'Գրանցվել և բացել պատասխանը',

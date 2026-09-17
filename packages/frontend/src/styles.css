@@ -4620,32 +4620,6 @@ a:hover { color: var(--primary-700); }
 .lp-result-body > .error { margin-top: var(--space-4); }
 .lp-answer { margin-top: var(--space-4); font-size: 15px; line-height: 28px; color: var(--text-secondary); }
 
-.lp-sources { margin-top: var(--space-6); }
-.lp-source-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
-  gap: var(--space-3);
-  margin-top: var(--space-3);
-}
-.lp-source {
-  padding: 14px var(--space-4);
-  border: var(--border-subtle);
-  border-radius: var(--radius-lg);
-  background: var(--surface-lowest);
-}
-.lp-source-act {
-  display: -webkit-box;
-  -webkit-line-clamp: 2;
-  -webkit-box-orient: vertical;
-  overflow: hidden;
-  font-size: 14px;
-  font-weight: 600;
-  line-height: 20px;
-  color: var(--text-primary);
-}
-.lp-source-ref { margin-top: 4px; font-size: 13px; line-height: 18px; color: var(--primary-600); }
-.lp-closed { font-family: var(--font-mono); letter-spacing: 0.04em; }
-
 /* The lock card, laid on the blurred text (the grid cell from .preview-gate). */
 .lp-gate { margin-top: var(--space-6); min-height: 380px; }
 .lp-lock {

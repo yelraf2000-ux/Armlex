@@ -1617,3 +1617,7 @@ a fresh workspace, re-inviting the same address then succeeds, and usage reads
   panel hidden under 900px, mark inside the card, no masthead); steps 2–3 are
   one card under the masthead; step 2 gains per-row ×, an info box and «Բաց
   թողնել հիմա». Allowance copy is 10 + 5 per colleague. Sign-in unchanged.
+
+- **2026-09-17 — Preview source cards removed** at the owner's request. The
+  answer card goes straight from the shown text to the lock card;
+  `/api/preview` is back to its earlier shape (no `acts`).

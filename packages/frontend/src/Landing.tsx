@@ -25,8 +25,6 @@ interface PreviewResult {
   shown: string;
   withheld: number;
   sources: number;
-  /** Which act each source is in — the server never sends the number. */
-  acts?: { act: string; kind: string }[];
   coverage: string | null;
 }
 
@@ -69,21 +67,6 @@ function blurLines(shown: string): string[] {
     lines.push(line.join(' '));
   }
   return lines;
-}
-
-/**
- * One card per act, counting its provisions by kind, in the order the server
- * listed them. Ten identical «Աշխատանքային օրենսգիրք · Հոդված [XX]» cards say
- * less than one card holding ten closed numbers.
- */
-function groupByAct(acts: { act: string; kind: string }[]): [string, [string, number][]][] {
-  const byAct = new Map<string, Map<string, number>>();
-  for (const { act, kind } of acts) {
-    const kinds = byAct.get(act) ?? new Map<string, number>();
-    kinds.set(kind, (kinds.get(kind) ?? 0) + 1);
-    byAct.set(act, kinds);
-  }
-  return [...byAct].map(([act, kinds]) => [act, [...kinds]]);
 }
 
 /**
@@ -427,39 +410,6 @@ export function Landing({
                   <div className="lp-answer">
                     <MarkdownView text={preview.shown} />
                   </div>
-
-                  {/*
-                    Which acts the answer rests on, with the provision number
-                    closed. The number is the thing a professional checks, so
-                    it stays behind registration — and it is never sent, so the
-                    [XX] is not a mask over something the page is holding.
-                  */}
-                  {preview.acts && preview.acts.length > 0 ? (
-                    <div className="lp-sources">
-                      <div className="lp-overline">
-                        {t('preview.sources')} · {preview.acts.length}
-                      </div>
-                      <div className="lp-source-grid">
-                        {groupByAct(preview.acts).map(([act, kinds]) => (
-                          <div key={act} className="lp-source">
-                            <div className="lp-source-act">{act}</div>
-                            <div className="lp-source-ref">
-                              {kinds.map(([kind, count], k) => (
-                                <span key={kind}>
-                                  {k > 0 ? ', ' : ''}
-                                  {kind || '№'}{' '}
-                                  <span className="lp-closed">
-                                    {Array.from({ length: Math.min(count, 3) }, () => '[XX]').join(' · ')}
-                                  </span>
-                                  {count > 3 ? ` +${count - 3}` : ''}
-                                </span>
-                              ))}
-                            </div>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  ) : null}
 
                   {preview.withheld > 0 ? (
                     <div className="preview-gate lp-gate">
