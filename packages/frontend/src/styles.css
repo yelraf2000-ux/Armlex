@@ -3881,10 +3881,10 @@ a:hover { color: var(--primary-700); }
 /* ── §6.1 Buttons ─────────────────────────────────────────────────────────── */
 
 /* Primary. */
-/* The four exemptions are the non-primary buttons that live inside .login-row;
+/* The exemptions are the non-primary buttons that live inside .login-row;
    :where() keeps the specificity where the rest of these rules expect it. */
 .popup-primary,
-.login-row button:where(:not(.linkish, .invite-add, .size-option, .password-eye)),
+.login-row button:where(:not(.linkish, .invite-add, .size-option, .password-eye, .invite-remove, .reg-skip)),
 .preview-cta-button,
 .landing-signup,
 .ws-invite button.primary,
@@ -3901,7 +3901,7 @@ a:hover { color: var(--primary-700); }
   filter: none;
 }
 .popup-primary:hover:not(:disabled),
-.login-row button:where(:not(.linkish, .invite-add, .size-option, .password-eye)):where(:hover:not(:disabled)),
+.login-row button:where(:not(.linkish, .invite-add, .size-option, .password-eye, .invite-remove, .reg-skip)):where(:hover:not(:disabled)),
 .preview-cta-button:hover,
 .landing-signup:hover,
 .ws-invite button.primary:hover:not(:disabled),
@@ -3912,7 +3912,7 @@ a:hover { color: var(--primary-700); }
   filter: none;
 }
 .popup-primary:disabled,
-.login-row button:where(:not(.linkish, .invite-add, .size-option, .password-eye)):disabled,
+.login-row button:where(:not(.linkish, .invite-add, .size-option, .password-eye, .invite-remove, .reg-skip)):disabled,
 .ws-invite button.primary:disabled,
 .controls button:disabled {
   border-color: var(--surface);
@@ -3921,7 +3921,7 @@ a:hover { color: var(--primary-700); }
   box-shadow: none;
   opacity: 1;
 }
-.login-row button:where(:not(.linkish, .invite-add, .size-option, .password-eye)) { min-height: 44px; padding: 10px var(--space-5); }
+.login-row button:where(:not(.linkish, .invite-add, .size-option, .password-eye, .invite-remove, .reg-skip)) { min-height: 44px; padding: 10px var(--space-5); }
 .preview-cta-button { min-height: 44px; padding: 10px var(--space-5); }
 .landing-signup { min-height: 38px; padding: 0 var(--space-4); }
 
@@ -4404,4 +4404,516 @@ a:hover { color: var(--primary-700); }
   .provenance .brand { font-size: 18px; }
   .landing-signin,
   .landing-signup { padding: 0 10px; }
+}
+
+/* ===========================================================================
+   Landing and registration (mockups adopted 2026-09-17)
+
+   New class names throughout (`lp-`, `reg-`), so nothing above has to be
+   un-styled first; the older .landing-* and .preview-* rules are left for the
+   CSS prune in OPEN-ITEMS 56. Where a shared rule would leak in — the primary
+   button inside .login-row — the selector is written one class stronger.
+   =========================================================================== */
+
+/* A white masthead with a hairline under it, on the landing and the later
+   registration steps. */
+.lp-header {
+  padding: 12px 44px;
+  background: var(--surface-lowest);
+  border-bottom: var(--border-subtle);
+}
+.lp-header .masthead-top { padding-bottom: 0; align-items: center; min-height: 44px; }
+
+.lp { max-width: 1120px; padding-top: var(--space-12); }
+
+/* ── Hero ─────────────────────────────────────────────────────────────────── */
+
+.lp-hero { max-width: 880px; margin: 0 auto; text-align: center; }
+.lp-title {
+  margin: 0;
+  font-size: 54px;
+  font-weight: 700;
+  line-height: 1.16;
+  letter-spacing: -0.02em;
+  color: var(--text-primary);
+  text-wrap: balance;
+}
+.lp-accent { color: var(--primary-600); }
+.lp-lede {
+  max-width: 780px;
+  margin: var(--space-6) auto 0;
+  font-size: 17px;
+  line-height: 30px;
+  color: var(--text-secondary);
+  text-wrap: pretty;
+}
+
+/* ── The question card ────────────────────────────────────────────────────── */
+
+.lp-try {
+  max-width: 920px;
+  margin: var(--space-10) auto 0;
+  padding: var(--space-6);
+  background: var(--surface-lowest);
+  border: var(--border-subtle);
+  border-radius: var(--radius-xl);
+  box-shadow: var(--shadow-lg);
+}
+.lp-try-label {
+  margin-bottom: var(--space-3);
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--primary-600);
+}
+
+/* The capsule: a speech-bubble mark, the box, and the arrow inside its end. */
+.lp-ask { position: relative; display: flex; }
+.lp-ask-icon {
+  position: absolute;
+  left: 20px;
+  top: 20px;
+  color: var(--text-muted);
+  pointer-events: none;
+}
+.lp-ask textarea {
+  flex: 1;
+  min-width: 0;
+  min-height: 60px;
+  max-height: 220px;
+  padding: 18px 64px 18px 52px;
+  border: var(--border-input);
+  border-radius: var(--radius-2xl);
+  background: var(--surface-lowest);
+  color: var(--text-primary);
+  font-family: var(--font-sans);
+  font-size: 15px;
+  line-height: 22px;
+  resize: none;
+  overflow-y: auto;
+  box-shadow: var(--shadow-sm);
+  transition: border-color 140ms ease, box-shadow 140ms ease;
+}
+.lp-ask textarea:focus { outline: none; border-color: var(--primary-600); box-shadow: var(--shadow-focus); }
+/* One line, cut with an ellipsis where the box is narrower than the example. */
+.lp-ask textarea::placeholder {
+  color: var(--text-subtle);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.lp-ask .send-arrow { right: 10px; bottom: 10px; width: 40px; height: 40px; }
+
+.lp-examples {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2);
+  margin-top: var(--space-4);
+}
+.lp-examples-label { margin-right: var(--space-1); font-size: 14px; color: var(--text-muted); }
+.lp-example {
+  min-height: 36px;
+  padding: 7px 14px;
+  border: 1px solid transparent;
+  border-radius: var(--radius-full);
+  background: var(--surface-low);
+  color: var(--text-secondary);
+  font-family: var(--font-sans);
+  font-size: 14px;
+  line-height: 20px;
+  cursor: pointer;
+}
+.lp-example:hover:not(:disabled) { background: var(--primary-50); border-color: var(--primary-200); color: var(--primary-700); }
+.lp-example:disabled { opacity: 0.5; cursor: default; }
+
+/* ── Status under the card ────────────────────────────────────────────────── */
+
+.lp-status {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-2);
+  margin: var(--space-6) auto 0;
+  text-align: center;
+}
+.lp-status-line {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  font-size: 13px;
+  line-height: 18px;
+  color: var(--text-muted);
+}
+.lp-scope {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: 5px 14px;
+  border: var(--border-highlight);
+  border-radius: var(--radius-full);
+  background: var(--primary-50);
+  color: var(--primary-700);
+  font-size: 13px;
+  line-height: 18px;
+}
+.lp-dot { flex: none; width: 6px; height: 6px; border-radius: 50%; background: var(--primary-600); }
+.lp-dot-live { width: 8px; height: 8px; background: var(--success-500); }
+
+/* ── The answer card ──────────────────────────────────────────────────────── */
+
+.lp-overline {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 11px;
+  font-weight: 700;
+  line-height: 14px;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+.lp-overline-accent { color: var(--primary-600); }
+
+.lp-result {
+  max-width: 1040px;
+  margin: 0 auto;
+  background: var(--surface-lowest);
+  border: var(--border-subtle);
+  border-radius: var(--radius-xl);
+  box-shadow: var(--shadow-md);
+  overflow: hidden;
+}
+.lp-result-head {
+  display: flex;
+  align-items: center;
+  gap: var(--space-4);
+  padding: var(--space-6) var(--space-10);
+  border-bottom: var(--border-subtle);
+}
+.lp-result-q { flex: 1; min-width: 0; }
+.lp-result-title {
+  margin: 6px 0 0;
+  font-size: 20px;
+  font-weight: 600;
+  line-height: 28px;
+  color: var(--text-primary);
+  overflow-wrap: anywhere;
+}
+.lp-new {
+  flex: none;
+  min-height: 40px;
+  padding: 8px var(--space-4);
+  border: var(--border-input);
+  border-radius: var(--radius-md);
+  background: var(--surface-lowest);
+  color: var(--text-primary);
+  font-family: var(--font-sans);
+  font-size: 14px;
+  font-weight: 500;
+  box-shadow: var(--shadow-sm);
+  cursor: pointer;
+}
+.lp-new:hover { background: var(--surface-hover); }
+
+.lp-result-body { padding: var(--space-6) var(--space-10) var(--space-8); }
+.lp-result-body > .stage,
+.lp-result-body > .error { margin-top: var(--space-4); }
+.lp-answer { margin-top: var(--space-4); font-size: 15px; line-height: 28px; color: var(--text-secondary); }
+
+.lp-sources { margin-top: var(--space-6); }
+.lp-source-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+  gap: var(--space-3);
+  margin-top: var(--space-3);
+}
+.lp-source {
+  padding: 14px var(--space-4);
+  border: var(--border-subtle);
+  border-radius: var(--radius-lg);
+  background: var(--surface-lowest);
+}
+.lp-source-act {
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  font-size: 14px;
+  font-weight: 600;
+  line-height: 20px;
+  color: var(--text-primary);
+}
+.lp-source-ref { margin-top: 4px; font-size: 13px; line-height: 18px; color: var(--primary-600); }
+.lp-closed { font-family: var(--font-mono); letter-spacing: 0.04em; }
+
+/* The lock card, laid on the blurred text (the grid cell from .preview-gate). */
+.lp-gate { margin-top: var(--space-6); min-height: 380px; }
+.lp-lock {
+  z-index: 1;
+  align-self: center;
+  justify-self: center;
+  width: min(600px, calc(100% - 16px));
+  padding: var(--space-8) var(--space-8) var(--space-6);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  background: var(--surface-lowest);
+  border: var(--border-highlight);
+  border-radius: var(--radius-xl);
+  box-shadow: var(--shadow-lg);
+}
+.lp-lock-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 44px;
+  border-radius: var(--radius-lg);
+  background: var(--primary-100);
+  color: var(--primary-600);
+}
+.lp-lock-title {
+  margin: var(--space-4) 0 0;
+  font-size: 22px;
+  font-weight: 700;
+  line-height: 28px;
+  letter-spacing: -0.01em;
+  color: var(--text-primary);
+}
+.lp-lock-body { margin: var(--space-2) 0 0; font-size: 15px; line-height: 22px; color: var(--text-muted); }
+.lp-lock-button {
+  width: 100%;
+  min-height: 48px;
+  margin-top: var(--space-5);
+  padding: 10px var(--space-5);
+  border: 1px solid var(--primary-600);
+  border-radius: var(--radius-md);
+  background: var(--primary-600);
+  color: var(--text-inverse);
+  font-family: var(--font-sans);
+  font-size: 15px;
+  font-weight: 600;
+  box-shadow: var(--shadow-sm);
+  cursor: pointer;
+}
+.lp-lock-button:hover { background: var(--primary-700); border-color: var(--primary-700); }
+.lp-lock-signin { margin: var(--space-4) 0 0; font-size: 14px; color: var(--text-secondary); }
+
+/* ── Registration, step 1: the split card ─────────────────────────────────── */
+
+.reg-split {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  max-width: 1080px;
+  margin: 8vh auto calc(var(--space-10) + var(--footer-h));
+  background: var(--surface-lowest);
+  border: var(--border-subtle);
+  border-radius: var(--radius-xl);
+  box-shadow: var(--shadow-lg);
+  overflow: hidden;
+}
+.reg-main { padding: var(--space-12) var(--space-12) var(--space-10); }
+.reg-main .brand.reg-brand {
+  padding: 0;
+  border: 0;
+  background: none;
+  font-size: 20px;
+  font-weight: 700;
+  color: var(--text-primary);
+  cursor: pointer;
+  line-height: 1.2;
+}
+.reg-title {
+  margin: var(--space-6) 0 0;
+  font-size: 28px;
+  font-weight: 700;
+  line-height: 36px;
+  letter-spacing: -0.02em;
+  color: var(--text-primary);
+  text-wrap: balance;
+}
+.reg-sub { margin: var(--space-2) 0 var(--space-8); font-size: 15px; line-height: 22px; color: var(--text-muted); }
+.reg-main > .error { margin-bottom: var(--space-4); }
+.reg-main .login-row .field { margin-bottom: var(--space-5); }
+.reg-main .reg-label {
+  display: block;
+  margin-bottom: var(--space-2);
+  font-size: 14px;
+  font-weight: 500;
+  letter-spacing: 0;
+  text-transform: none;
+  color: var(--text-primary);
+}
+.reg-main .login-row .reg-continue {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-2);
+  margin-top: var(--space-6);
+}
+.reg-foot {
+  display: flex;
+  justify-content: space-between;
+  gap: var(--space-6);
+  margin-top: var(--space-6);
+  font-size: 13px;
+  line-height: 18px;
+  color: var(--text-muted);
+}
+
+.reg-aside {
+  padding: var(--space-12);
+  background: var(--surface-hover);
+  border-left: var(--border-subtle);
+}
+.reg-benefits { margin: var(--space-5) 0 var(--space-8); padding: 0; list-style: none; }
+.reg-benefits li {
+  position: relative;
+  padding-left: 28px;
+  font-size: 15px;
+  line-height: 22px;
+  color: var(--text-secondary);
+}
+.reg-benefits li + li { margin-top: var(--space-3); }
+/* A check drawn as two borders — no image, and it takes the success colour. */
+.reg-benefits li::before {
+  content: "";
+  position: absolute;
+  left: 3px;
+  top: 5px;
+  width: 11px;
+  height: 6px;
+  border-left: 2px solid var(--success-500);
+  border-bottom: 2px solid var(--success-500);
+  transform: rotate(-45deg);
+}
+
+.reg-team {
+  padding: var(--space-6);
+  background: var(--surface-lowest);
+  border: var(--border-subtle);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-sm);
+}
+.reg-team-title { margin: 0; font-size: 18px; font-weight: 600; line-height: 24px; color: var(--text-primary); }
+.reg-team-sub { margin: 4px 0 var(--space-5); font-size: 14px; line-height: 20px; color: var(--text-muted); }
+.reg-tier + .reg-tier { margin-top: var(--space-4); }
+.reg-tier-row {
+  display: flex;
+  justify-content: space-between;
+  gap: var(--space-3);
+  font-size: 14px;
+  line-height: 20px;
+  color: var(--text-secondary);
+}
+.reg-tier-row strong { font-weight: 600; color: var(--text-primary); white-space: nowrap; }
+.reg-tier-row .reg-tier-more { color: var(--primary-600); }
+.reg-bar { height: 8px; margin-top: var(--space-2); border-radius: var(--radius-full); background: var(--surface); overflow: hidden; }
+.reg-bar i { display: block; height: 100%; border-radius: var(--radius-full); background: var(--primary-600); }
+
+/* ── Registration, steps 2 and 3: one card under the masthead ─────────────── */
+
+.reg-card {
+  max-width: 600px;
+  margin: 6vh auto calc(var(--space-10) + var(--footer-h));
+  padding: var(--space-10);
+  background: var(--surface-lowest);
+  border: var(--border-subtle);
+  border-radius: var(--radius-xl);
+  box-shadow: var(--shadow-md);
+}
+.reg-card .auth-head { margin-bottom: var(--space-8); }
+.reg-card .auth-title { font-family: var(--font-sans); font-size: 28px; line-height: 36px; letter-spacing: -0.02em; }
+.reg-card .auth-sub { margin-top: var(--space-2); font-size: 15px; line-height: 22px; color: var(--text-muted); }
+.reg-card > .error { margin-bottom: var(--space-4); }
+
+.reg-invite-title { margin: 0; font-size: 18px; font-weight: 600; line-height: 24px; color: var(--text-primary); }
+.reg-invite-offer { margin: 4px 0 var(--space-4); font-size: 14px; line-height: 22px; color: var(--text-secondary); }
+
+.reg-card .invite-row { grid-template-columns: minmax(0, 2fr) minmax(0, 3fr) 36px; }
+.reg-card .login-row .invite-remove {
+  width: 36px;
+  height: 36px;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 0;
+  border-radius: var(--radius-md);
+  background: none;
+  color: var(--text-muted);
+  box-shadow: none;
+}
+.reg-card .login-row .invite-remove:hover { background: var(--surface-low); color: var(--text-primary); }
+.reg-card .login-row .invite-add {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: var(--space-4);
+  font-weight: 600;
+}
+
+.reg-info {
+  display: flex;
+  gap: 10px;
+  margin: var(--space-5) 0 var(--space-2);
+  padding: var(--space-3) var(--space-4);
+  border-radius: var(--radius-md);
+  background: var(--info-50);
+  font-size: 13px;
+  line-height: 20px;
+  color: var(--text-secondary);
+}
+.reg-info svg { flex: none; margin-top: 3px; color: var(--info-500); }
+
+.reg-card .login-row > button:where(:not(.invite-add, .reg-skip)) { margin-top: var(--space-5); }
+.reg-card .login-row .reg-skip {
+  display: block;
+  width: auto;
+  margin: var(--space-4) auto 0;
+  padding: 6px 10px;
+  border: 0;
+  border-radius: var(--radius-md);
+  background: none;
+  color: var(--text-muted);
+  font-size: 14px;
+  font-weight: 500;
+  box-shadow: none;
+}
+.reg-card .login-row .reg-skip:hover { background: var(--primary-50); color: var(--primary-600); }
+
+.reg-switch { margin-top: var(--space-6); padding-top: var(--space-6); border-top: var(--border-subtle); }
+
+/* ── Narrow screens ───────────────────────────────────────────────────────── */
+
+@media (max-width: 900px) {
+  .reg-split { grid-template-columns: minmax(0, 1fr); max-width: 560px; }
+  /* The form is the task; the pitch goes. */
+  .reg-aside { display: none; }
+}
+
+@media (max-width: 700px) {
+  .lp-header { padding: 10px var(--space-4); }
+  .lp { padding: var(--space-8) var(--space-4) calc(30px + var(--footer-h)); }
+  .lp-title { font-size: 34px; }
+  .lp-lede { font-size: 15px; line-height: 26px; }
+  .lp-try { margin-top: var(--space-8); padding: var(--space-4); }
+  .lp-result-head { flex-wrap: wrap; padding: var(--space-5); }
+  .lp-result-body { padding: var(--space-5); }
+  .lp-lock { padding: var(--space-6) var(--space-5) var(--space-5); }
+  .reg-split,
+  .reg-card { margin: var(--space-4) var(--space-4) calc(var(--space-8) + var(--footer-h)); }
+  .reg-main,
+  .reg-card { padding: var(--space-8) var(--space-5); }
+  .reg-foot { flex-direction: column; gap: var(--space-2); }
+  .reg-title,
+  .reg-card .auth-title { font-size: 24px; line-height: 32px; }
+}
+
+.lp-short { display: none; }
+@media (max-width: 480px) {
+  .lp-long { display: none; }
+  .lp-short { display: inline; }
 }

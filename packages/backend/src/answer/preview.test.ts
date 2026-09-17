@@ -10,7 +10,7 @@
  */
 import { test, describe, beforeEach } from 'node:test';
 import assert from 'node:assert/strict';
-import { splitAnswer } from './preview.js';
+import { actTitle, previewSources, splitAnswer } from './preview.js';
 import { checkRate, resetRateLimits, PREVIEW_LIMIT } from './rateLimit.js';
 
 const PARA = (n: number): string =>
@@ -54,6 +54,48 @@ describe('splitAnswer', () => {
     const wall = Array.from({ length: 30 }, (_, i) => `Նախադասություն ${i + 1}։`).join(' ');
     const { shown } = splitAnswer(wall);
     assert.ok(shown.endsWith('։'));
+  });
+});
+
+describe('preview sources', () => {
+  const TAX = { documentTitle: 'ՀՀ ՀԱՐԿԱՅԻՆ ՕՐԵՆՍԳԻՐՔ', ref: 'Հոդված 150' };
+  const TAX_3 = { documentTitle: 'ՀՀ ՀԱՐԿԱՅԻՆ ՕՐԵՆՍԳԻՐՔ', ref: 'Հոդված 15' };
+  const DECISION = {
+    documentTitle: 'ՀՀ ԿԱՌԱՎԱՐՈՒԹՅԱՆ ՈՐՈՇՈՒՄԸ ՀՀ-ՈՒՄ ԱԱՀ-Ի ՎԵՐԱԴԱՐՁՄԱՆ ՄԱՍԻՆ',
+    ref: 'Կետ 5',
+  };
+
+  test('titles come out in sentence case with abbreviations kept', () => {
+    assert.equal(actTitle('ՀՀ ՀԱՐԿԱՅԻՆ ՕՐԵՆՍԳԻՐՔ'), 'ՀՀ հարկային օրենսգիրք');
+    assert.equal(
+      actTitle(DECISION.documentTitle),
+      'ՀՀ կառավարության որոշումը ՀՀ-ում ԱԱՀ-ի վերադարձման մասին',
+    );
+  });
+
+  test('never carries a provision number', () => {
+    // The number is withheld with the rest of the apparatus; anything sent to
+    // the browser can be read, so it must not be sent at all.
+    const out = previewSources([TAX, DECISION], 'Տե՛ս (ՀՀ ՀԱՐԿԱՅԻՆ ՕՐԵՆՍԳԻՐՔ, Հոդված 150)։');
+    assert.ok(!JSON.stringify(out).match(/[0-9]/), JSON.stringify(out));
+  });
+
+  test('lists only what the answer names, bounded on the right', () => {
+    // «Հոդված 15» is a prefix of «Հոդված 150» and is not named here.
+    const out = previewSources([TAX, TAX_3], 'Համաձայն Հոդված 150-ի, դրույքաչափը 10 տոկոս է։');
+    assert.deepEqual(out, [{ act: 'ՀՀ հարկային օրենսգիրք', kind: 'Հոդված' }]);
+  });
+
+  test('a naming in lowercase still counts', () => {
+    // Observed: the preview model writes «(ՀՀ աշխատանքային օրենսգիրք, հոդված 169, մաս 1)».
+    const out = previewSources([TAX, TAX_3], '(ՀՀ հարկային օրենսգիրք, հոդված 150, մաս 1)։');
+    assert.equal(out.length, 1);
+  });
+
+  test('an answer that names nothing lists everything it was given', () => {
+    const out = previewSources([TAX, DECISION], 'Պատասխան առանց հղումների։');
+    assert.equal(out.length, 2);
+    assert.equal(out[1]!.kind, 'Կետ');
   });
 });
 

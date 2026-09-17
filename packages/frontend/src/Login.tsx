@@ -12,6 +12,7 @@
 import { useEffect, useState } from 'react';
 import { BRAND } from './brand.js';
 import { BrandLine } from './BrandLine.js';
+import { BrandMark } from './BrandMark.js';
 import { useSettings } from './Settings.js';
 
 export interface Account {
@@ -51,6 +52,8 @@ interface Profile {
 
 /** Kept in step with the server; the form promises these numbers to the user. */
 export const MAX_INVITES = 4;
+/** The weekly questions the person who registers brings to the firm's pool. */
+export const CREATOR_ALLOWANCE = 10;
 /** What each colleague who joins adds to the firm's weekly questions — their seat. */
 export const SEAT_PER_COLLEAGUE = 5;
 
@@ -189,8 +192,14 @@ export function Login({
   initialTab,
   initialError,
   onTabChange,
+  onHome,
+  fromPreview,
 }: {
   onSuccess: () => void;
+  /** Back to the landing. Registration draws its own masthead, so it needs it. */
+  onHome?: (() => void) | undefined;
+  /** The visitor came from a preview, so registering opens that answer. */
+  fromPreview?: boolean | undefined;
   /** The reader switched forms. The caller owns the address, so it moves it. */
   onTabChange?: ((tab: Tab) => void) | undefined;
   googleEnabled?: boolean | undefined;
@@ -458,368 +467,504 @@ export function Login({
     }
   }
 
-  if (pending) {
-    return (
-      <div className="login">
-        <div className="login-head">
-          {/* No mark of its own: it is in the masthead above, where it also
-              sits once you are signed in. */}
-          <div className="login-sub">
-            <BrandLine text={t('masthead.sub')} />
-          </div>
-          <div className="masthead-rule" />
-        </div>
-        <div className="login-row">
-          <h2 className="login-verify-title">{t('auth.verify.title')}</h2>
-          <p className="login-verify-body">{t('auth.verify.body')}</p>
-          <p className="login-verify-email">{pending.email}</p>
-
-          {!pending.sent ? <div className="error">{t('auth.verify.sendFailed')}</div> : null}
-          {error ? <div className="error">{error}</div> : null}
-
-          <p className="login-verify-hint">{t('auth.verify.hint')}</p>
-
-          <button disabled={busy || resent} onClick={() => void resend()}>
-            {busy ? '…' : resent ? t('auth.verify.resent') : t('auth.verify.resend')}
+  /**
+   * The masthead registration draws for itself.
+   *
+   * Sign-in keeps the one the landing puts above it. Registration's first step
+   * has no masthead at all — the mark sits inside its card — and the later
+   * steps put it back, so only this component, which knows the step, can say
+   * whether there is one.
+   */
+  const masthead =
+    tab === 'register' ? (
+      <header className="provenance lp-header">
+        <div className="masthead-top">
+          <button className="brand" onClick={onHome}>
+            <BrandMark />
           </button>
         </div>
+      </header>
+    ) : null;
 
-        <button
-          className="linkish"
-          onClick={() => {
-            setPending(null);
-            setResent(false);
-            setError(null);
-            switchTab('signin');
-          }}
-        >
-          {t('auth.verify.toSignIn')}
-        </button>
-      </div>
+  const toSignIn = (): void => {
+    switchTab('signin');
+    setError(null);
+    // The arrival message described the door they came from, not the one they
+    // just chose.
+    setArrival(null);
+  };
+
+  if (pending) {
+    return (
+      <>
+        {masthead}
+        <div className="login">
+          <div className="login-head">
+            {/* No mark of its own: it is in the masthead above, where it also
+                sits once you are signed in. */}
+            <div className="login-sub">
+              <BrandLine text={t('masthead.sub')} />
+            </div>
+            <div className="masthead-rule" />
+          </div>
+          <div className="login-row">
+            <h2 className="login-verify-title">{t('auth.verify.title')}</h2>
+            <p className="login-verify-body">{t('auth.verify.body')}</p>
+            <p className="login-verify-email">{pending.email}</p>
+
+            {!pending.sent ? <div className="error">{t('auth.verify.sendFailed')}</div> : null}
+            {error ? <div className="error">{error}</div> : null}
+
+            <p className="login-verify-hint">{t('auth.verify.hint')}</p>
+
+            <button disabled={busy || resent} onClick={() => void resend()}>
+              {busy ? '…' : resent ? t('auth.verify.resent') : t('auth.verify.resend')}
+            </button>
+          </div>
+
+          <button
+            className="linkish"
+            onClick={() => {
+              setPending(null);
+              setResent(false);
+              setError(null);
+              switchTab('signin');
+            }}
+          >
+            {t('auth.verify.toSignIn')}
+          </button>
+        </div>
+      </>
     );
   }
 
-  return (
-    <div className="login">
-      {/*
-        A title and one line under it — the form says what it is, once, and the
-        way to the other form moves to the foot (see `auth-switch` below).
+  /*
+    Why the Google round trip sent them back. Sits above the fields, because the
+    form's own errors live beside the submit button — which on the register tab
+    does not exist until step 3, and `no_account` lands them on step 1.
+  */
+  const arrivalNote = arrival ? <div className="error">{arrival}</div> : null;
 
-        The tabs that stood here made the choice between signing in and
-        registering the first thing the page asked, before the reader had read
-        a word of either. The product introduction went too: it is on the
-        landing page they came from, and a form is a place to fill something
-        in, not to be told about the product again.
-      */}
-      <div className="auth-head">
-        <h1 className="auth-title">{tab === 'signin' ? t('auth.signIn') : t('auth.register')}</h1>
-        <p className="auth-sub">{tab === 'signin' ? t('auth.signInNote') : t('auth.registerNote')}</p>
-      </div>
+  /* Step 3, and the whole of sign-in: the credentials. */
+  const credentials = (
+    <div className="login-row">
+      <Field
+        id="armlex-email"
+        label={t('auth.email')}
+        type="email"
+        autoComplete="email"
+        autoFocus
+        value={email}
+        onChange={(e) => setEmail(e.target.value)}
+        onKeyDown={(e) => {
+          if (e.key === 'Enter') void submit();
+        }}
+      />
 
-      {/*
-        Why the Google round trip sent them back. Sits here, above the steps,
-        because the form's own errors live beside the submit button — which on
-        the register tab does not exist until step 3, and `no_account` lands
-        them on step 1.
-      */}
-      {arrival ? <div className="error">{arrival}</div> : null}
+      <PasswordBox
+        id="armlex-password"
+        label={t('login.password')}
+        autoComplete={tab === 'signin' ? 'current-password' : 'new-password'}
+        value={password}
+        onChange={setPassword}
+        onEnter={() => void submit()}
+        reveal={reveal}
+        onToggle={() => setReveal((r) => !r)}
+        revealLabel={reveal ? t('auth.hidePassword') : t('auth.showPassword')}
+      />
 
-      {/* Step 1 of registration: who you are and how big your firm is. */}
-      {tab === 'register' && step === 1 ? (
-        <div className="login-row">
-          <Field
-            id="armlex-name"
-            label={t('auth.fullName')}
-            required
-            type="text"
-            autoComplete="name"
-            autoFocus
-            value={profile.fullName}
-            onChange={(e) => setProfile((p) => ({ ...p, fullName: e.target.value }))}
-          />
-
-          <Field
-            id="armlex-company"
-            label={t('auth.companyName')}
-            required
-            type="text"
-            autoComplete="organization"
-            value={profile.companyName}
-            onChange={(e) => setProfile((p) => ({ ...p, companyName: e.target.value }))}
-          />
-
-          <span className="login-label">
-            {t('auth.companySize')} <span className="req">*</span>
-          </span>
-          {/*
-            Buttons rather than a <select>: four options is few enough to show
-            at once, and a dropdown hides the range someone is choosing between
-            until they open it.
-          */}
-          <div className="size-options" role="radiogroup" aria-label={t('auth.companySize')}>
-            {COMPANY_SIZES.map((size) => (
-              <button
-                key={size}
-                type="button"
-                role="radio"
-                aria-checked={profile.companySize === size}
-                className={profile.companySize === size ? 'size-option on' : 'size-option'}
-                onClick={() => setProfile((p) => ({ ...p, companySize: size }))}
-              >
-                {size === '30+' ? '30+' : size}
-              </button>
-            ))}
-          </div>
-
-          {/*
-            Placed under the size selector rather than above the form: this is
-            where the question actually occurs to someone, and a paragraph of
-            reassurance before they have started typing is friction answering a
-            doubt they do not have yet.
-
-            Says what the answers are FOR, not that they improve an
-            "experience". This audience verifies things for a living, and the
-            vague version of this sentence is the one they have learned to skim
-            past.
-          */}
-          <p className="login-why">{t('auth.whyWeAsk')}</p>
-
-          <button
-            onClick={() => {
-              setError(null);
-              setStep(2);
-            }}
-            disabled={!profileComplete}
-          >
-            {t('auth.next')}
-          </button>
-        </div>
-      ) : null}
-
-      {/* Step 2: invite colleagues. Optional, and the skip is a real button. */}
-      {tab === 'register' && step === 2 ? (
-        <div className="login-row">
-          <p className="invite-offer">
-            {t('auth.inviteOffer').replace('{m}', String(SEAT_PER_COLLEAGUE))}
-          </p>
-
-          <div className="invite-rows">
-            {invites.map((invite, i) => (
-              <div className="invite-row" key={i}>
-                <input
-                  type="text"
-                  aria-label={`${t('auth.fullName')} ${i + 1}`}
-                  aria-invalid={inviteCheck && !rowEmpty(invite) && !invite.name.trim()}
-                  placeholder={t('auth.fullName')}
-                  value={invite.name}
-                  onChange={(e) =>
-                    setInvites((list) =>
-                      list.map((x, j) => (j === i ? { ...x, name: e.target.value } : x)),
-                    )
-                  }
-                />
-                <input
-                  type="email"
-                  aria-label={`${t('auth.email')} ${i + 1}`}
-                  aria-invalid={
-                    inviteCheck && !rowEmpty(invite) && !LOOKS_LIKE_EMAIL.test(invite.email.trim())
-                  }
-                  placeholder={t('auth.email')}
-                  value={invite.email}
-                  onChange={(e) =>
-                    setInvites((list) =>
-                      list.map((x, j) => (j === i ? { ...x, email: e.target.value } : x)),
-                    )
-                  }
-                />
-                {/*
-                  The reward appears beside the address that would earn it, the
-                  moment it could be earned. A total at the bottom would say the
-                  same thing while making the reader do the attribution.
-                */}
-                <span className="invite-bonus" aria-hidden={!rowValid(invite)}>
-                  {rowValid(invite) ? `+${SEAT_PER_COLLEAGUE}` : ''}
-                </span>
-              </div>
-            ))}
-          </div>
-
-          {/*
-            Shown while there is room, but usable only once the last row has
-            something in it — a stack of empty rows asks for work nobody has
-            decided to do.
-          */}
-          {invites.length < MAX_INVITES ? (
-            <button
-              className="invite-add"
-              disabled={!canAddInvite}
-              onClick={() => setInvites((list) => [...list, { name: '', email: '' }])}
-            >
-              + {t('auth.inviteAnother')}
-            </button>
-          ) : null}
-
-          {/*
-            Says what will actually happen. The +5 lands when the colleague
-            registers, not when the address is typed — promising it up front
-            would be a number the product then has to take back.
-          */}
-          <p className="login-why">
-            {t('auth.inviteNote').replace('{m}', String(SEAT_PER_COLLEAGUE))}
-          </p>
-
-          {inviteCheck && invalidRows > 0 ? (
-            <div className="error" role="alert">
-              {t('auth.inviteFix')}
-            </div>
-          ) : null}
-
-          <button onClick={continueFromInvites}>{t('auth.next')}</button>
-
-        </div>
-      ) : null}
-
-      {/* Step 3, and the whole of sign-in: the credentials. */}
-      {tab === 'register' && step !== 3 ? null : (
-      <div className="login-row">
-        <Field
-          id="armlex-email"
-          label={t('auth.email')}
-          type="email"
-          autoComplete="email"
-          autoFocus
-          value={email}
-          onChange={(e) => setEmail(e.target.value)}
-          onKeyDown={(e) => {
-            if (e.key === 'Enter') void submit();
-          }}
-        />
-
+      {tab === 'register' ? (
         <PasswordBox
-          id="armlex-password"
-          label={t('login.password')}
-          autoComplete={tab === 'signin' ? 'current-password' : 'new-password'}
-          value={password}
-          onChange={setPassword}
+          id="armlex-password-confirm"
+          label={t('auth.confirmPassword')}
+          autoComplete="new-password"
+          value={confirm}
+          onChange={setConfirm}
           onEnter={() => void submit()}
           reveal={reveal}
           onToggle={() => setReveal((r) => !r)}
           revealLabel={reveal ? t('auth.hidePassword') : t('auth.showPassword')}
         />
+      ) : null}
 
-        {tab === 'register' ? (
-          <PasswordBox
-            id="armlex-password-confirm"
-            label={t('auth.confirmPassword')}
-            autoComplete="new-password"
-            value={confirm}
-            onChange={setConfirm}
-            onEnter={() => void submit()}
-            reveal={reveal}
-            onToggle={() => setReveal((r) => !r)}
-            revealLabel={reveal ? t('auth.hidePassword') : t('auth.showPassword')}
-          />
-        ) : null}
+      {mismatch ? <div className="error">{t('auth.passwordMismatch')}</div> : null}
+      {error ? <div className="error">{error}</div> : null}
 
-        {mismatch ? <div className="error">{t('auth.passwordMismatch')}</div> : null}
-        {error ? <div className="error">{error}</div> : null}
-
-        <button onClick={() => void submit()} disabled={busy || !credentialsReady}>
-          {busy ? '…' : tab === 'signin' ? t('login.enter') : t('auth.createAccount')}
-        </button>
-
-
-        {/*
-          Sign-in only. On the register tab there is no password to have
-          forgotten, and offering the escape hatch there would read as a hint
-          that an account already exists.
-
-          The confirmation is deliberately vague about whether that address is
-          registered — the endpoint answers identically either way, and saying
-          more here would hand back what it withholds.
-        */}
-        {tab === 'signin' ? (
-          forgotSent ? (
-            <p className="login-verify-hint">{t('reset.maybeSent')}</p>
-          ) : forgot ? (
-            <button
-              className="linkish"
-              disabled={busy || !LOOKS_LIKE_EMAIL.test(email.trim())}
-              onClick={() => void askReset()}
-            >
-              {busy ? '…' : t('reset.send')}
-            </button>
-          ) : (
-            <button className="linkish" onClick={() => setForgot(true)}>
-              {t('reset.forgot')}
-            </button>
-          )
-        ) : null}
-
-        {googleEnabled ? (
-          <>
-            {/* Ruled either side, as the design has it: this is the one place
-                a line separates two genuinely different ways of doing the
-                same thing, rather than dressing up a page. */}
-            <div className="login-or">
-              <span>{t('auth.or')}</span>
-            </div>
-            {/*
-              A link, not a fetch: OAuth is a browser redirect to Google and
-              back. The profile is stashed first, because that redirect destroys
-              component state — `App` posts it to /api/auth/profile once the
-              account exists on the other side.
-            */}
-            {/*
-              The intent travels so the server knows which door this was. From
-              here it is only a hint — it is re-signed into the OAuth state and
-              verified on the way back, because a query parameter the user can
-              edit is no basis for deciding who may create an account.
-            */}
-            <a
-              className="login-google"
-              href={`/api/auth/google?intent=${tab === 'register' ? 'register' : 'signin'}`}
-              onClick={() => {
-                if (tab === 'register' && profileComplete) {
-                  sessionStorage.setItem(PENDING_PROFILE, JSON.stringify(profile));
-                }
-              }}
-            >
-              <svg width="17" height="17" viewBox="0 0 18 18" aria-hidden="true">
-                <path fill="#4285F4" d="M17.6 9.2c0-.64-.06-1.25-.16-1.84H9v3.48h4.84a4.14 4.14 0 0 1-1.8 2.72v2.26h2.92c1.7-1.57 2.68-3.88 2.68-6.62z" />
-                <path fill="#34A853" d="M9 18c2.43 0 4.47-.8 5.96-2.18l-2.92-2.26c-.8.54-1.84.86-3.04.86-2.34 0-4.32-1.58-5.03-3.7H.94v2.33A9 9 0 0 0 9 18z" />
-                <path fill="#FBBC05" d="M3.97 10.72a5.4 5.4 0 0 1 0-3.44V4.95H.94a9 9 0 0 0 0 8.1l3.03-2.33z" />
-                <path fill="#EA4335" d="M9 3.58c1.32 0 2.5.45 3.44 1.35l2.58-2.59C13.46.89 11.43 0 9 0A9 9 0 0 0 .94 4.95l3.03 2.33C4.68 5.16 6.66 3.58 9 3.58z" />
-              </svg>
-              {t('auth.google')}
-            </a>
-          </>
-        ) : null}
-      </div>
-
-      )}
+      <button onClick={() => void submit()} disabled={busy || !credentialsReady}>
+        {busy ? '…' : tab === 'signin' ? t('login.enter') : t('auth.createAccount')}
+      </button>
 
       {/*
-        The other door, at the foot where people look for it once they have
-        read what this form is — "already have an account?" is a question that
-        only arises after seeing that this one is for making one.
+        Sign-in only. On the register tab there is no password to have
+        forgotten, and offering the escape hatch there would read as a hint
+        that an account already exists.
+
+        The confirmation is deliberately vague about whether that address is
+        registered — the endpoint answers identically either way, and saying
+        more here would hand back what it withholds.
       */}
-      <p className="auth-switch">
-        {tab === 'signin' ? t('auth.noAccount') : t('auth.haveAccount')}{' '}
-        <button
-          type="button"
-          className="auth-switch-link"
-          onClick={() => {
-            switchTab(tab === 'signin' ? 'register' : 'signin');
-            setError(null);
-            // The arrival message described the door they came from, not the
-            // one they just chose.
-            setArrival(null);
-          }}
-        >
-          {tab === 'signin' ? t('auth.register') : t('auth.signIn')}
-        </button>
-      </p>
+      {tab === 'signin' ? (
+        forgotSent ? (
+          <p className="login-verify-hint">{t('reset.maybeSent')}</p>
+        ) : forgot ? (
+          <button
+            className="linkish"
+            disabled={busy || !LOOKS_LIKE_EMAIL.test(email.trim())}
+            onClick={() => void askReset()}
+          >
+            {busy ? '…' : t('reset.send')}
+          </button>
+        ) : (
+          <button className="linkish" onClick={() => setForgot(true)}>
+            {t('reset.forgot')}
+          </button>
+        )
+      ) : null}
+
+      {googleEnabled ? (
+        <>
+          {/* Ruled either side: this is the one place a line separates two
+              genuinely different ways of doing the same thing. */}
+          <div className="login-or">
+            <span>{t('auth.or')}</span>
+          </div>
+          {/*
+            A link, not a fetch: OAuth is a browser redirect to Google and back.
+            The profile is stashed first, because that redirect destroys
+            component state — `App` posts it to /api/auth/profile once the
+            account exists on the other side.
+
+            The intent travels so the server knows which door this was. From
+            here it is only a hint — it is re-signed into the OAuth state and
+            verified on the way back, because a query parameter the user can
+            edit is no basis for deciding who may create an account.
+          */}
+          <a
+            className="login-google"
+            href={`/api/auth/google?intent=${tab === 'register' ? 'register' : 'signin'}`}
+            onClick={() => {
+              if (tab === 'register' && profileComplete) {
+                sessionStorage.setItem(PENDING_PROFILE, JSON.stringify(profile));
+              }
+            }}
+          >
+            <svg width="17" height="17" viewBox="0 0 18 18" aria-hidden="true">
+              <path fill="#4285F4" d="M17.6 9.2c0-.64-.06-1.25-.16-1.84H9v3.48h4.84a4.14 4.14 0 0 1-1.8 2.72v2.26h2.92c1.7-1.57 2.68-3.88 2.68-6.62z" />
+              <path fill="#34A853" d="M9 18c2.43 0 4.47-.8 5.96-2.18l-2.92-2.26c-.8.54-1.84.86-3.04.86-2.34 0-4.32-1.58-5.03-3.7H.94v2.33A9 9 0 0 0 9 18z" />
+              <path fill="#FBBC05" d="M3.97 10.72a5.4 5.4 0 0 1 0-3.44V4.95H.94a9 9 0 0 0 0 8.1l3.03-2.33z" />
+              <path fill="#EA4335" d="M9 3.58c1.32 0 2.5.45 3.44 1.35l2.58-2.59C13.46.89 11.43 0 9 0A9 9 0 0 0 .94 4.95l3.03 2.33C4.68 5.16 6.66 3.58 9 3.58z" />
+            </svg>
+            {t('auth.google')}
+          </a>
+        </>
+      ) : null}
     </div>
+  );
+
+  /* Sign-in: unchanged — a title, a line under it, the credentials, the other door. */
+  if (tab === 'signin') {
+    return (
+      <div className="login">
+        <div className="auth-head">
+          <h1 className="auth-title">{t('auth.signIn')}</h1>
+          <p className="auth-sub">{t('auth.signInNote')}</p>
+        </div>
+        {arrivalNote}
+        {credentials}
+        <p className="auth-switch">
+          {t('auth.noAccount')}{' '}
+          <button
+            type="button"
+            className="auth-switch-link"
+            onClick={() => {
+              switchTab('register');
+              setError(null);
+              setArrival(null);
+            }}
+          >
+            {t('auth.register')}
+          </button>
+        </p>
+      </div>
+    );
+  }
+
+  /*
+    Registration, step 1: who you are and how big your firm is — a card split
+    in two, the form on the left and what registering gets you on the right.
+  */
+  if (step === 1) {
+    const soloWidth = CREATOR_ALLOWANCE / (CREATOR_ALLOWANCE + MAX_INVITES * SEAT_PER_COLLEAGUE);
+    const pairWidth =
+      (CREATOR_ALLOWANCE + SEAT_PER_COLLEAGUE) / (CREATOR_ALLOWANCE + MAX_INVITES * SEAT_PER_COLLEAGUE);
+    return (
+      <div className="reg-split">
+        <section className="reg-main">
+          {/* The mark is the way home here, in the card, as the design has it. */}
+          <button className="brand reg-brand" onClick={onHome}>
+            <BrandMark />
+          </button>
+          <h1 className="reg-title">{fromPreview ? t('reg.titlePreview') : t('reg.title')}</h1>
+          <p className="reg-sub">{t('reg.sub')}</p>
+
+          {arrivalNote}
+
+          <div className="login-row">
+            <Field
+              id="armlex-name"
+              label={t('auth.fullName')}
+              required
+              type="text"
+              autoComplete="name"
+              autoFocus
+              value={profile.fullName}
+              onChange={(e) => setProfile((p) => ({ ...p, fullName: e.target.value }))}
+            />
+
+            <Field
+              id="armlex-company"
+              label={t('auth.companyName')}
+              required
+              type="text"
+              autoComplete="organization"
+              value={profile.companyName}
+              onChange={(e) => setProfile((p) => ({ ...p, companyName: e.target.value }))}
+            />
+
+            <span className="login-label reg-label">
+              {t('auth.companySize')} <span className="req">*</span>
+            </span>
+            {/*
+              Buttons rather than a <select>: four options is few enough to show
+              at once, and a dropdown hides the range someone is choosing between
+              until they open it.
+            */}
+            <div className="size-options" role="radiogroup" aria-label={t('auth.companySize')}>
+              {COMPANY_SIZES.map((size) => (
+                <button
+                  key={size}
+                  type="button"
+                  role="radio"
+                  aria-checked={profile.companySize === size}
+                  className={profile.companySize === size ? 'size-option on' : 'size-option'}
+                  onClick={() => setProfile((p) => ({ ...p, companySize: size }))}
+                >
+                  {size}
+                </button>
+              ))}
+            </div>
+
+            {/*
+              Under the size selector rather than above the form: this is where
+              the question actually occurs to someone. Says what the answers are
+              FOR — this audience verifies things for a living, and the vague
+              version of this sentence is the one they have learned to skim past.
+            */}
+            <p className="login-why">{t('auth.whyWeAsk')}</p>
+
+            <button
+              className="reg-continue"
+              onClick={() => {
+                setError(null);
+                setStep(2);
+              }}
+              disabled={!profileComplete}
+            >
+              {t('auth.next')}
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                <path d="M5 12h14M13 6l6 6-6 6" />
+              </svg>
+            </button>
+          </div>
+
+          <div className="reg-foot">
+            <span>
+              {t('auth.haveAccount')}{' '}
+              <button type="button" className="auth-switch-link" onClick={toSignIn}>
+                {t('reg.signIn')}
+              </button>
+            </span>
+            {/* Plain text until the terms page exists — a link to nothing is worse
+                than no link. */}
+            <span>{t('reg.terms')}</span>
+          </div>
+        </section>
+
+        {/* Hidden on narrow screens: the form is the task, this is the pitch. */}
+        <aside className="reg-aside">
+          <div className="lp-overline lp-overline-accent">{t('reg.benefits')}</div>
+          <ul className="reg-benefits">
+            {fromPreview ? <li>{t('reg.benefitAnswer')}</li> : null}
+            <li>{t('reg.benefitWeekly').replace('{n}', String(CREATOR_ALLOWANCE))}</li>
+            <li>{t('reg.benefitTeam')}</li>
+          </ul>
+
+          <div className="reg-team">
+            <h2 className="reg-team-title">{t('reg.teamTitle')}</h2>
+            <p className="reg-team-sub">{t('reg.teamSub')}</p>
+            <div className="reg-tier">
+              <div className="reg-tier-row">
+                <span>{t('reg.teamSolo')}</span>
+                <strong>
+                  {CREATOR_ALLOWANCE} {t('reg.perWeek')}
+                </strong>
+              </div>
+              <div className="reg-bar">
+                <i style={{ width: `${soloWidth * 100}%` }} />
+              </div>
+            </div>
+            <div className="reg-tier">
+              <div className="reg-tier-row">
+                <span>{t('reg.teamPlusOne')}</span>
+                <strong className="reg-tier-more">
+                  {CREATOR_ALLOWANCE}+{SEAT_PER_COLLEAGUE} {t('reg.perWeek')}
+                </strong>
+              </div>
+              <div className="reg-bar">
+                <i style={{ width: `${pairWidth * 100}%` }} />
+              </div>
+            </div>
+          </div>
+        </aside>
+      </div>
+    );
+  }
+
+  /* Registration, steps 2 and 3: the masthead back, one card. */
+  return (
+    <>
+      {masthead}
+      <div className="reg-card">
+        <div className="auth-head">
+          <h1 className="auth-title">{t('auth.register')}</h1>
+          <p className="auth-sub">{t('reg.plan').replace('{n}', String(CREATOR_ALLOWANCE))}</p>
+        </div>
+
+        {arrivalNote}
+
+        {step === 2 ? (
+          <div className="login-row">
+            <h2 className="reg-invite-title">{t('reg.inviteTitle')}</h2>
+            <p className="reg-invite-offer">
+              {t('reg.inviteOffer')
+                .replace('{m}', String(SEAT_PER_COLLEAGUE))
+                .replace('{max}', String(MAX_INVITES + 1))}
+            </p>
+
+            <div className="invite-rows">
+              {invites.map((invite, i) => (
+                <div className="invite-row" key={i}>
+                  <input
+                    type="text"
+                    aria-label={`${t('auth.fullName')} ${i + 1}`}
+                    aria-invalid={inviteCheck && !rowEmpty(invite) && !invite.name.trim()}
+                    placeholder={t('auth.fullName')}
+                    value={invite.name}
+                    onChange={(e) =>
+                      setInvites((list) =>
+                        list.map((x, j) => (j === i ? { ...x, name: e.target.value } : x)),
+                      )
+                    }
+                  />
+                  <input
+                    type="email"
+                    aria-label={`${t('auth.email')} ${i + 1}`}
+                    aria-invalid={
+                      inviteCheck && !rowEmpty(invite) && !LOOKS_LIKE_EMAIL.test(invite.email.trim())
+                    }
+                    placeholder={t('auth.email')}
+                    value={invite.email}
+                    onChange={(e) =>
+                      setInvites((list) =>
+                        list.map((x, j) => (j === i ? { ...x, email: e.target.value } : x)),
+                      )
+                    }
+                  />
+                  {/* The last remaining row is emptied rather than removed: the
+                      step always offers one row to fill. */}
+                  <button
+                    type="button"
+                    className="invite-remove"
+                    aria-label={`${t('reg.removeRow')} ${i + 1}`}
+                    title={t('reg.removeRow')}
+                    onClick={() =>
+                      setInvites((list) =>
+                        list.length === 1 ? ONE_INVITE : list.filter((_, j) => j !== i),
+                      )
+                    }
+                  >
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" aria-hidden="true">
+                      <path d="M6 6l12 12M18 6L6 18" />
+                    </svg>
+                  </button>
+                </div>
+              ))}
+            </div>
+
+            {/*
+              Shown while there is room, but usable only once the last row has
+              something in it — a stack of empty rows asks for work nobody has
+              decided to do.
+            */}
+            {invites.length < MAX_INVITES ? (
+              <button
+                className="invite-add"
+                disabled={!canAddInvite}
+                onClick={() => setInvites((list) => [...list, { name: '', email: '' }])}
+              >
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" aria-hidden="true">
+                  <path d="M12 5v14M5 12h14" />
+                </svg>
+                {t('auth.inviteAnother')}
+              </button>
+            ) : null}
+
+            {/*
+              Says what will actually happen. The +5 lands when the colleague
+              registers, not when the address is typed — promising it up front
+              would be a number the product then has to take back.
+            */}
+            <div className="reg-info">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                <circle cx="12" cy="12" r="10" />
+                <path d="M12 16v-4M12 8h.01" />
+              </svg>
+              <span>{t('reg.inviteInfo').replace('{m}', String(SEAT_PER_COLLEAGUE))}</span>
+            </div>
+
+            {inviteCheck && invalidRows > 0 ? (
+              <div className="error" role="alert">
+                {t('auth.inviteFix')}
+              </div>
+            ) : null}
+
+            <button onClick={continueFromInvites}>{t('auth.next')}</button>
+
+            {/* Skipping discards whatever was typed: a half-filled row is not an
+                invitation anyone meant to send. */}
+            <button
+              type="button"
+              className="reg-skip"
+              onClick={() => {
+                setInvites(ONE_INVITE);
+                setInviteCheck(false);
+                setStep(3);
+              }}
+            >
+              {t('reg.skip')}
+            </button>
+          </div>
+        ) : (
+          credentials
+        )}
+
+        <p className="auth-switch reg-switch">
+          {t('auth.haveAccount')}{' '}
+          <button type="button" className="auth-switch-link" onClick={toSignIn}>
+            {t('auth.signIn')}
+          </button>
+        </p>
+      </div>
+    </>
   );
 }

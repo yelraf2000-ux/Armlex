@@ -11,10 +11,8 @@
  * pay twice for the same thing.
  */
 import { useLayoutEffect, useRef, useState } from 'react';
-import { BRAND } from './brand.js';
 import { Login, type Tab } from './Login.js';
 import { MarkdownView } from './MarkdownView.js';
-import { BrandLine } from './BrandLine.js';
 import { useSettings } from './Settings.js';
 import { navigate, usePath } from './router.js';
 import { BrandMark } from './BrandMark.js';
@@ -27,6 +25,8 @@ interface PreviewResult {
   shown: string;
   withheld: number;
   sources: number;
+  /** Which act each source is in — the server never sends the number. */
+  acts?: { act: string; kind: string }[];
   coverage: string | null;
 }
 
@@ -71,11 +71,27 @@ function blurLines(shown: string): string[] {
   return lines;
 }
 
-/** Real questions, from the harvested set — not invented marketing copy. */
-const EXAMPLES = [
-  'Գործատուն ուշացնում է աշխատավարձը։ Ի՞նչ իրավունքներ ունեմ։',
-  'Որքա՞ն է ԱԱՀ-ի դրույքաչափը։',
-];
+/**
+ * One card per act, counting its provisions by kind, in the order the server
+ * listed them. Ten identical «Աշխատանքային օրենսգիրք · Հոդված [XX]» cards say
+ * less than one card holding ten closed numbers.
+ */
+function groupByAct(acts: { act: string; kind: string }[]): [string, [string, number][]][] {
+  const byAct = new Map<string, Map<string, number>>();
+  for (const { act, kind } of acts) {
+    const kinds = byAct.get(act) ?? new Map<string, number>();
+    kinds.set(kind, (kinds.get(kind) ?? 0) + 1);
+    byAct.set(act, kinds);
+  }
+  return [...byAct].map(([act, kinds]) => [act, [...kinds]]);
+}
+
+/**
+ * The example chips. Short topics rather than full questions, as the design has
+ * them; a click asks the topic as it reads — tax, labour and a government
+ * decision, one each of what the corpus holds.
+ */
+const EXAMPLES = ['landing.example.1', 'landing.example.2', 'landing.example.3'];
 
 export function Landing({
   googleEnabled,
@@ -166,8 +182,8 @@ export function Landing({
 
   const openAuth = showAuth;
 
-  /** A question is in flight, or its answer is on screen. */
-  const answering = busy || preview !== null;
+  /** A question is in flight, or its answer — or its failure — is on screen. */
+  const answering = busy || preview !== null || (error !== null && askedText !== null);
 
   /*
    * The main page, from anywhere a visitor can be.
@@ -219,6 +235,29 @@ export function Landing({
     }
   }
 
+  /*
+    Registration draws its own chrome: step one is a card with the mark inside
+    it and no masthead, the later steps put the masthead back. Only the form
+    knows which step it is on, so it is handed the way home and left to decide.
+  */
+  if (openAuth === 'register') {
+    return (
+      <div className="page">
+        <Login
+          googleEnabled={googleEnabled}
+          onSuccess={onAuthed}
+          initialTab="register"
+          initialError={oauthError}
+          onHome={goHome}
+          fromPreview={preview !== null || sessionStorage.getItem(PENDING_QUESTION) !== null}
+          onTabChange={(tab) =>
+            navigate(tab === 'signin' ? '/login' : '/registration', { replace: true })
+          }
+        />
+      </div>
+    );
+  }
+
   if (openAuth) {
     return (
       <div className="page">
@@ -250,16 +289,12 @@ export function Landing({
   return (
     /*
       The signed-in page's own shape: a full-width masthead over a centred
-      reading column.
-
-      The mark used to be a 42px centred title here and a 24px word in the
-      top-left once signed in, so registering appeared to change which product
-      you were looking at. Both doors keep the other end of the masthead line —
-      someone who already has an account arrived to USE the tool, and making
-      them type a question first is a toll on the likeliest paying customer.
+      column. Both doors keep the other end of the masthead line — someone who
+      already has an account arrived to USE the tool, and making them type a
+      question first is a toll on the likeliest paying customer.
     */
     <div className="page">
-      <header className="provenance">
+      <header className="provenance lp-header">
         <div className="masthead-top">
           <button className="brand" onClick={goHome}>
             <BrandMark />
@@ -268,136 +303,206 @@ export function Landing({
           <button className="landing-signin" onClick={() => openForm('signin')}>
             {t('auth.signIn')}
           </button>
+          {/* Two labels, one shown: the full one wraps onto a second header
+              row on a 375px phone, next to the mark and Sign in. */}
           <button className="landing-signup" onClick={() => openForm('register')}>
-            {t('auth.register')}
+            <span className="lp-long">{t('landing.signup')}</span>
+            <span className="lp-short">{t('landing.signupShort')}</span>
           </button>
         </div>
       </header>
 
-      <div className="wrap landing">
+      <div className="wrap lp">
         {/*
           Everything that introduces the page goes the moment a question is asked
-          — the standing subtitle, the lede, the examples and the box itself. What
-          the visitor wants from that point on is their answer, and a page still
-          offering to explain itself underneath it is asking them to read an
-          advertisement while their own question is being worked on.
+          — the headline, the lede, the box and the examples. What the visitor
+          wants from that point on is their answer, and a page still offering to
+          explain itself above it is an advertisement in the way.
         */}
-        {answering ? (
-          <div className="measure landing-thread">
-            <div className="turn user">
-              <div className="turn-role">{t('turn.question')}</div>
-              <div className="turn-text">{askedText}</div>
-            </div>
-            {busy ? (
-              <div className="stage">
-                <span className="stage-who">{BRAND}</span>
-                <span className="stage-dots" aria-hidden="true">
-                  <i />
-                  <i />
-                  <i />
-                </span>
-                <span className="stage-line">{t('preview.thinking')}</span>
-              </div>
-            ) : null}
-          </div>
-        ) : (
-        <>
-        <div className="login-head">
-          <div className="login-sub">
-            <BrandLine text={t('masthead.sub')} />
-          </div>
-        </div>
+        {answering ? null : (
+          <>
+            <section className="lp-hero">
+              <h1 className="lp-title">
+                {t('landing.title')}
+                <span className="lp-accent">{t('landing.titleAccent')}</span>
+              </h1>
+              <p className="lp-lede">{t('landing.lede')}</p>
+            </section>
 
-        <p className="landing-lede">{t('preview.lede')}</p>
-        <div className="landing-examples">
-          {EXAMPLES.map((e) => (
-            <button key={e} className="landing-example" onClick={() => void ask(e)} disabled={busy}>
-              {e}
-            </button>
-          ))}
-        </div>
-
-        <div className="landing-ask">
-          {/* Same arrow-inside-the-field as the signed-in composer, so the box a
-              visitor meets first is the box they will use after registering. */}
-          <div className="composer-field">
-            <textarea
-              ref={askRef}
-              value={question}
-              onChange={(e) => setQuestion(e.target.value)}
-              onKeyDown={(e) => {
-                if (e.key === 'Enter' && !e.shiftKey) {
-                  e.preventDefault();
-                  void ask(question);
-                }
-              }}
-              placeholder={t('composer.first')}
-              rows={3}
-              disabled={busy}
-            />
-            <button
-              className={busy ? 'send-arrow busy' : 'send-arrow'}
-              onClick={() => void ask(question)}
-              disabled={busy || !question.trim()}
-              aria-label={busy ? t('preview.thinking') : t('preview.ask')}
-              title={busy ? t('preview.thinking') : t('preview.ask')}
-            >
-              {busy ? null : (
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-                  <path d="M5 12h14M13 6l6 6-6 6" />
+            <div className="lp-try">
+              <div className="lp-try-label">{t('landing.try')}</div>
+              <div className="lp-ask">
+                <svg className="lp-ask-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                  <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
                 </svg>
-              )}
-            </button>
-          </div>
-        </div>
-        </>
+                <textarea
+                  ref={askRef}
+                  value={question}
+                  onChange={(e) => setQuestion(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter' && !e.shiftKey) {
+                      e.preventDefault();
+                      void ask(question);
+                    }
+                  }}
+                  placeholder={t('landing.placeholder')}
+                  aria-label={t('landing.try')}
+                  rows={1}
+                  disabled={busy}
+                />
+                {/* The arrow the signed-in composer uses, so the box a visitor
+                    meets first is the box they will use after registering. */}
+                <button
+                  className={busy ? 'send-arrow busy' : 'send-arrow'}
+                  onClick={() => void ask(question)}
+                  disabled={busy || !question.trim()}
+                  aria-label={busy ? t('preview.thinking') : t('preview.ask')}
+                  title={busy ? t('preview.thinking') : t('preview.ask')}
+                >
+                  {busy ? null : (
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                      <path d="M5 12h14M13 6l6 6-6 6" />
+                    </svg>
+                  )}
+                </button>
+              </div>
+              <div className="lp-examples">
+                <span className="lp-examples-label">{t('landing.examples')}</span>
+                {EXAMPLES.map((key) => (
+                  <button key={key} className="lp-example" onClick={() => void ask(t(key))} disabled={busy}>
+                    {t(key)}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            <div className="lp-status">
+              <span className="lp-status-line">
+                <i className="lp-dot lp-dot-live" aria-hidden="true" />
+                {t('landing.status')}
+              </span>
+              <span className="lp-scope">
+                <i className="lp-dot" aria-hidden="true" />
+                {t('landing.scope')}
+              </span>
+            </div>
+          </>
         )}
 
-        {error ? <div className="error measure">{error}</div> : null}
-
-        {preview ? (
-          <div className="measure preview">
-            <div className="turn-role">{BRAND}</div>
-            <div className="turn-text">
-              <MarkdownView text={preview.shown} />
-            </div>
-
-            {preview.withheld > 0 ? (
-              <div className="preview-gate">
-                <div className="preview-cta">
-                  <div className="preview-cta-text">
-                    {t('preview.rest')}
-                    {preview.sources > 0 ? (
-                      <span className="preview-sources">
-                        {' '}
-                        · {preview.sources} {t('preview.sources')}
-                      </span>
-                    ) : null}
-                  </div>
-                  <button className="preview-cta-button" onClick={() => openForm('register')}>
-                    {t('preview.unlock')}
-                  </button>
-                  <div className="preview-cta-note">{t('preview.free')}</div>
-                </div>
-
-                {/*
-                  Behind the prompt, which sits on it as a card: the offer is
-                  what the visitor needs to read, and the blurred text showing
-                  around its edges is the evidence that there is more behind
-                  it. First in the markup regardless, so a screen reader reaches
-                  the offer and never the decoration. See `blurLines` for why
-                  this is reordered words rather than the withheld text itself.
-                */}
-                <div className="preview-blur" aria-hidden="true">
-                  {blurLines(preview.shown).map((line, i) => (
-                    <span key={i}>{line}</span>
-                  ))}
-                </div>
+        {answering ? (
+          <article className="lp-result">
+            <header className="lp-result-head">
+              <div className="lp-result-q">
+                <div className="lp-overline">{t('preview.yourQuestion')}</div>
+                <h2 className="lp-result-title">{askedText}</h2>
               </div>
-            ) : null}
-          </div>
-        ) : null}
+              <button className="lp-new" onClick={goHome}>
+                {t('preview.newQuestion')}
+              </button>
+            </header>
 
+            <div className="lp-result-body">
+              <div className="lp-overline lp-overline-accent">
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                  <path d="M12 3l1.9 5.1L19 10l-5.1 1.9L12 17l-1.9-5.1L5 10l5.1-1.9z" />
+                </svg>
+                {t('preview.answer')}
+              </div>
+
+              {busy ? (
+                <div className="stage">
+                  <span className="stage-dots" aria-hidden="true">
+                    <i />
+                    <i />
+                    <i />
+                  </span>
+                  <span className="stage-line">{t('preview.thinking')}</span>
+                </div>
+              ) : null}
+
+              {error ? <div className="error">{error}</div> : null}
+
+              {preview ? (
+                <>
+                  <div className="lp-answer">
+                    <MarkdownView text={preview.shown} />
+                  </div>
+
+                  {/*
+                    Which acts the answer rests on, with the provision number
+                    closed. The number is the thing a professional checks, so
+                    it stays behind registration — and it is never sent, so the
+                    [XX] is not a mask over something the page is holding.
+                  */}
+                  {preview.acts && preview.acts.length > 0 ? (
+                    <div className="lp-sources">
+                      <div className="lp-overline">
+                        {t('preview.sources')} · {preview.acts.length}
+                      </div>
+                      <div className="lp-source-grid">
+                        {groupByAct(preview.acts).map(([act, kinds]) => (
+                          <div key={act} className="lp-source">
+                            <div className="lp-source-act">{act}</div>
+                            <div className="lp-source-ref">
+                              {kinds.map(([kind, count], k) => (
+                                <span key={kind}>
+                                  {k > 0 ? ', ' : ''}
+                                  {kind || '№'}{' '}
+                                  <span className="lp-closed">
+                                    {Array.from({ length: Math.min(count, 3) }, () => '[XX]').join(' · ')}
+                                  </span>
+                                  {count > 3 ? ` +${count - 3}` : ''}
+                                </span>
+                              ))}
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  ) : null}
+
+                  {preview.withheld > 0 ? (
+                    <div className="preview-gate lp-gate">
+                      <div className="lp-lock">
+                        <span className="lp-lock-icon" aria-hidden="true">
+                          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                            <rect x="5" y="11" width="14" height="10" rx="2" />
+                            <path d="M8 11V7a4 4 0 0 1 8 0v4" />
+                          </svg>
+                        </span>
+                        <h3 className="lp-lock-title">{t('preview.lockTitle')}</h3>
+                        <p className="lp-lock-body">{t('preview.lockBody')}</p>
+                        <button className="lp-lock-button" onClick={() => openForm('register')}>
+                          {t('preview.unlock')}
+                        </button>
+                        <p className="lp-lock-signin">
+                          {t('auth.haveAccount')}{' '}
+                          <button className="auth-switch-link" onClick={() => openForm('signin')}>
+                            {t('preview.signIn')}
+                          </button>
+                        </p>
+                      </div>
+
+                      {/*
+                        Behind the card, which sits on it: the blurred text
+                        showing around its edges is the evidence that there is
+                        more. Later in the markup, so a screen reader reaches
+                        the offer and never the decoration. See `blurLines` for
+                        why this is reordered words rather than the withheld
+                        text itself.
+                      */}
+                      <div className="preview-blur" aria-hidden="true">
+                        {blurLines(preview.shown).map((line, i) => (
+                          <span key={i}>{line}</span>
+                        ))}
+                      </div>
+                    </div>
+                  ) : null}
+                </>
+              ) : null}
+            </div>
+          </article>
+        ) : null}
       </div>
     </div>
   );

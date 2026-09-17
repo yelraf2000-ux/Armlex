@@ -94,9 +94,89 @@ export interface Preview {
   shown: string;
   /** Characters withheld — the UI uses it to size the blurred area honestly. */
   withheld: number;
-  /** How many articles the answer rests on. Shown as a count, never listed. */
+  /** How many provisions the answer rests on — `acts.length`. */
   sources: number;
+  /**
+   * Which ACT each of those provisions is in, and what kind of provision it is
+   * («Հոդված», «Կետ») — never which one.
+   *
+   * The article number is the product: it is what a professional checks, and
+   * it is withheld with the rest of the apparatus. Leaving it out HERE, rather
+   * than masking it in the page, is what keeps it withheld — anything sent to
+   * the browser is one inspector away from being read.
+   */
+  acts: PreviewSource[];
   coverage: string | null;
+}
+
+export interface PreviewSource {
+  /** The act's title in sentence case, as a person would write it. */
+  act: string;
+  /** The first word of the provision's reference, with its number dropped. */
+  kind: string;
+}
+
+/**
+ * Abbreviations that stay in capitals when a title is lowered.
+ *
+ * Titles are stored as ARLIS prints them, entirely in capitals. Lowering every
+ * word turns «ՀՀ» into «հհ» and «ԱԱՀ» into «աահ», which no accountant would
+ * write. A list rather than a length rule: «ՀՀ-ՈՒՄ» must come
+ * out «ՀՀ-ում», and a rule keeping every short part in capitals keeps «ՈՒՄ» too.
+ */
+const KEEP_UPPER = new Set(['ՀՀ', 'ԱԱՀ', 'ՊԵԿ', 'ՀԴՄ', 'ԱՁ', 'ՌԴ', 'ԵԱՏՄ', 'ԵԱՀՄ', 'ՍՊԸ', 'ՓԲԸ', 'ԲԲԸ']);
+
+/** «ՀՀ ՀԱՐԿԱՅԻՆ ՕՐԵՆՍԳԻՐՔ» → «ՀՀ հարկային օրենսգիրք». */
+export function actTitle(stored: string): string {
+  const lowered = stored
+    .trim()
+    .split(' ')
+    .map((word) =>
+      word
+        .split('-')
+        .map((part) => (KEEP_UPPER.has(part) ? part : part.toLocaleLowerCase('hy')))
+        .join('-'),
+    )
+    .join(' ');
+  const first = lowered.charAt(0);
+  return first.toLocaleUpperCase('hy') + lowered.slice(1);
+}
+
+/**
+ * Does the answer name this reference?
+ *
+ * Bounded on the right: «Հոդված 3» occurs inside «Հոդված 30». Short references
+ * («կետ 1») are not evidence of anything and never count. The same rule the
+ * sources column applies (`frontend/src/cited.ts`), on a settled answer — but
+ * blind to case, because the cheap model writes «հոդված 169» mid-sentence.
+ */
+function answerNames(answer: string, ref: string): boolean {
+  if (ref.length < 8) return false;
+  const text = answer.toLocaleLowerCase('hy');
+  const needle = ref.toLocaleLowerCase('hy');
+  let from = 0;
+  for (;;) {
+    const at = text.indexOf(needle, from);
+    if (at === -1) return false;
+    const next = text.charAt(at + needle.length);
+    if (!/[0-9]/.test(next)) return true;
+    from = at + 1;
+  }
+}
+
+/**
+ * The provisions a preview card lists: the ones the full answer names, or —
+ * when it names none — everything it was given, which is what it rested on.
+ */
+export function previewSources(
+  chunks: { documentTitle: string; ref: string }[],
+  answer: string,
+): PreviewSource[] {
+  const named = chunks.filter((c) => answerNames(answer, c.ref));
+  return (named.length > 0 ? named : chunks).map((c) => ({
+    act: actTitle(c.documentTitle),
+    kind: c.ref.split(/[ ,]/)[0] ?? '',
+  }));
 }
 
 /** Truncated, so the address itself is never stored. */
@@ -134,11 +214,13 @@ export async function generatePreview(question: string, ip: string): Promise<Pre
     VALUES (${question}, ${shown}, ${checked.sanitized.length}, ${PREVIEW_MODEL}, ${hashIp(ip)})
     RETURNING id`;
 
+  const acts = previewSources(chunks, checked.sanitized);
   return {
     id: rows[0]!.id,
     shown,
     withheld,
-    sources: chunks.length,
+    sources: acts.length,
+    acts,
     coverage: cov.coverage,
   };
 }

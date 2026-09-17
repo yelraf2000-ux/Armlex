@@ -1604,3 +1604,16 @@ a fresh workspace, re-inviting the same address then succeeds, and usage reads
   `favicon.svg` removed. All three emails open with the lockup. Source images
   arrived on black and were cut out by border flood-fill plus un-multiplied
   glow (counters inside letters cleared separately).
+
+- **2026-09-17 — Landing and registration redesigned to the owner's mockups.**
+  Landing: headline, lede, a question card (one-line capsule with our arrow,
+  three short example chips that ask as written), a status line and a scope
+  pill. After asking, the intro goes and the answer sits in a card: «Ձեր
+  հարցը» with «Նոր հարց», the shown answer, source cards and a lock card over
+  the blurred text. Source cards name the ACT and close the number
+  («Հոդված [XX]») — `/api/preview` now returns `acts: {act, kind}[]` and never
+  the number; matching is case-blind because the preview model writes
+  «հոդված 169». Registration step 1 is a split card (form + benefits panel,
+  panel hidden under 900px, mark inside the card, no masthead); steps 2–3 are
+  one card under the masthead; step 2 gains per-row ×, an info box and «Բաց
+  թողնել հիմա». Allowance copy is 10 + 5 per colleague. Sign-in unchanged.

@@ -581,3 +581,16 @@ wording is the data.
 59. **Local `npm run build` sometimes exits 134 / 0x80000003 after a
     successful build** on Windows (teardown crash). Production builds on Linux
     are unaffected.
+
+60. **Landing copy promises work that is not done yet** (kept by the owner's
+    decision, 2026-09-17, "it will become like that"). «Թարմացվում է
+    անընդհատ՝ փոփոխությունների հրապարակմանը զուգընթաց» needs new-document
+    discovery and automatic apply (item 14; today a weekly check of the 33
+    held acts, applied by hand). «Հաշվապահական հաշվառման նորմատիվ ակտեր» needs
+    the accounting standards ingested (only the accounting-and-audit LAW is
+    held). «5+ hours a week» is unmeasured. «Գրանցվելով՝ ընդունում եք
+    պայմանները» is plain text until a terms page exists.
+
+61. **Landing lock card: the row of three items under the sign-in link**
+    (mockup: «Ամբողջական…», «[N] անվճար հարց», «Թիմով՝ ավելի շատ») was left
+    out — the owner will specify it.
