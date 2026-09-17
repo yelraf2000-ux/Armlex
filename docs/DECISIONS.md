@@ -470,3 +470,35 @@ phase-1 obligations — temporal/freshness machinery becomes the calendar,
 line-level form knowledge becomes the draft filler, firm trust becomes
 distribution. Full autopilot only after the accountant-in-the-loop error rate
 earns it; a filing product has no disclaimer to hide behind.
+
+
+## Product decisions, 2026-09-09 → 09-17 (from the owner)
+
+- **Armenian only.** No Russian or English anywhere — interface, emails,
+  answers. `docs/DESIGN.md` §1 lists English; that line is overridden.
+- **Light theme only.** The dark theme was removed, not derived.
+- **`docs/DESIGN.md` is the visual spec.** Deviations are listed in its §0 (all
+  for text contrast: destructive red `#dc2626`, not `#ef4444`).
+- **New components in the spec are not built unless asked** (Հաշվապահ / Դիտորդ
+  roles, status pills, metric tiles, verified badge). Existing screens only.
+- **Allowance:** 10 free questions for the account creator, +5 per colleague,
+  pooled per workspace, weekly.
+- **Idle sign-out after 7 days**, with real revocation (`session_version`).
+- **Sources column = only what the answer used.** Nothing before the first
+  citation; entries only ever added while streaming; expanding shows only the
+  cited part(s), with ARLIS for the rest — no in-panel whole article when a part
+  can be located.
+- **Waiting text is verbatim statute with its citation,** never hand-written
+  "interesting facts" — anything legal-sounding in the product is read as law.
+- **Header logo:** lockup while the sidebar is open; book + name when it cannot
+  be shown (narrow screens); nothing while collapsed on wide screens.
+
+## Why the part is the unit of trimming, not the sentence
+
+Trimming a provision to its operative sentence is a legal judgment and drops
+conditions: the 10% IT rate in Հոդված 150, մաս 1.1 reads as unconditional until
+you include the Government criteria and the commission's conclusion in the same
+part. The legislator's part boundary carries its conditions; a sentence does
+not. A NAMED part (`Հոդված 150, մաս 1.1`) decides alone; a quote counts only if
+it occurs in exactly one part — «10 տոկոս դրույքաչափով» occurs in four parts of
+Հոդված 150 and would otherwise select all four.

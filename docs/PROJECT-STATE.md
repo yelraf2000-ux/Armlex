@@ -15,6 +15,28 @@ what we intend. This file and its siblings are the state — what is true.
 
 ---
 
+## Since the last status (as of 2026-09-17)
+
+Production is at commit `04170c2`; `/api/version` confirms. 199 commits total.
+
+- **Product:** accounts with workspaces, pooled weekly allowance (10 for the
+  creator, +5 per colleague), invitations with rank, email verification and
+  password reset all LIVE (Resend configured), Google sign-in, 7-day idle
+  sign-out with revocation. Armenian only.
+- **Answer screen:** the sources column shows only what the answer used, fills
+  as it cites, and opens each provision at the part cited. The wait shows
+  verbatim statute. See `CHANGELOG.md` 2026-09-15 → 09-16.
+- **Design:** `docs/DESIGN.md` adopted, light only, new logo in headers,
+  favicons and mail.
+- **Next:** the open list is `OPEN-ITEMS.md` §"Open as of 2026-09-17" — first,
+  rotate the two secrets (51); then the retrieval gap (52) and the
+  quote-per-citation decision (53).
+- Before touching the frontend, read `GOTCHAS.md` §"Frontend and tooling
+  traps"; before revisiting a product call, `DECISIONS.md` §"Product decisions,
+  2026-09-09 → 09-17".
+
+---
+
 ## Status at a glance (2026-09-07)
 
 **Live:** https://matyanai.am on a Hetzner CPX22 in Helsinki (77.42.35.20),

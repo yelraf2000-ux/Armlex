@@ -494,3 +494,48 @@ safe one.
 **The guard matches on PATH, not method.** `GET /api/auth/me` must stay public,
 so any mutation sharing that path would be public too. Changing the account
 therefore lives at `PATCH /api/account`, not `PATCH /api/auth/me`.
+
+
+## Frontend and tooling traps, 2026-09-09 → 09-17
+
+- **Class-name collisions inherit silently.** The act-grouping wrapper was
+  named `act`, which already styled a small-caps label — every statute in the
+  sources column rendered in letter-spaced CAPITALS for days, and `innerText`
+  measurements came back uppercase and looked like the corpus. Same bug earlier
+  with `.ws-role`. Grep a class name before reusing it.
+- **The open conversation class is on the ROW.** `Sessions.tsx` sets
+  `.session-row.active`; a rule on `.session-item.active` matches nothing.
+- **`\b` does not work against Armenian in JS regex** — word boundaries are
+  ASCII-only. Spell the boundary out (`[ ]`, `\s`).
+- **Monotonic streaming needs care in three places:** the turn must be
+  `streaming` from creation, not from the first token; the "nothing matched →
+  show all" fallback must wait for a settled answer; and the end of growing
+  text is not a right boundary («Հոդված 12» is a prefix of «Հոդված 125»).
+- **The SPA fallback answers any missing static file with `index.html`
+  (200, text/html).** After adding or removing a file in `public/`, check its
+  content type with curl, not just the status.
+- **A header row aligned on `baseline` breaks when the brand becomes flex** — a
+  flex container takes its baseline from its first item, an image's bottom
+  edge. Keep the brand inline with `vertical-align: middle`.
+- **Specificity with `:not()` counts its argument.**
+  `.login-row button:hover:not(:disabled)` is (0,3,1) and beat the exemption
+  rules; use `:where()` to keep it low.
+- **Email images must be absolute** and need `width`/`height` attributes
+  (Outlook ignores CSS size). Style the alt text so blocked images read as the
+  name.
+
+### Working in this environment
+- **Backslashes get eaten** passing through the shell tool and perl — `\s`
+  arrived as `s`, `\b` as a literal 0x08 byte. Write scripts with the file
+  tool, or avoid the backslash (`[ ]`).
+- **The hidden browser pane freezes rendering:** `requestAnimationFrame` never
+  fires, CSS animations stall, screenshots time out. Use `setTimeout` and
+  computed-style measurements; retry screenshots.
+- **Verifying signed-in screens on production:** scp a throwaway
+  `ui-check.ts` to `packages/backend/src/`, run it with `DATABASE_URL` and
+  `SESSION_SECRET` exported individually (sourcing `/opt/armlex/.env` fails on
+  an unquoted parenthesis), set the printed cookie in the pane, then delete the
+  script and `DELETE FROM users WHERE email LIKE 'ui-check-%@example.invalid'`.
+  Anything left under `packages/backend/src/` makes the next deploy's `git pull`
+  abort.
+- **`deploy/update.sh` shows as modified on the box** — a chmod only. Leave it.

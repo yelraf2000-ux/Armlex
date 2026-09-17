@@ -530,7 +530,7 @@ wording is the data.
     against it no longer resolve. Share links build from
     `window.location.origin`, so new ones follow the new domain by themselves.
 
-50. **Turn on email verification.** The code is deployed and dormant. To
+50. ~~**Turn on email verification.**~~ **DONE** — the Resend key and sender are set on the box (checked 2026-09-17); invitation, verification and reset mail send. The code is deployed and dormant. To
     activate, in order:
     - Create a Resend account and add `matyanai.am` as a sending domain.
     - Add the DKIM and SPF records Resend names, in name.am DNS Կառավարում.
@@ -540,3 +540,44 @@ wording is the data.
     - Register a throwaway address and confirm the link arrives and works.
       The gate turns itself on the moment both variables exist, so this is the
       first moment a real sign-up can be blocked by it.
+
+
+## Open as of 2026-09-17
+
+51. **Rotate two secrets pasted into a chat session.** The Resend API key and
+    the Google OAuth client secret appeared in a conversation transcript.
+    Rotate both in their consoles, update `/opt/armlex/.env`, restart.
+    Nothing in code changes. Raised repeatedly; never done.
+
+52. **Turnover-tax rate provision retrieved but not used.** For a company on
+    turnover tax asking about IT income-tax relief, `Հոդված 258` came back at
+    rank 6 and the answer never used it. Retrieval/generation, not display —
+    measure on the golden set before changing anything (`CLAUDE.md`).
+
+53. **Require a verbatim quote per cited provision.** 38% of real answers cite
+    more provisions than they quote; those entries cannot be trimmed to the
+    part and show the whole article. Enforce a quote (with a length floor) in
+    generation; it changes answers, so measure it. Not yet decided by the user.
+
+54. **A failed answer shows every retrieved provision.** When generation fails
+    (the Anthropic balance ran out on 2026-09-16), the turn settles with no
+    text and the cited-provisions fallback shows all of them beside an answer
+    that does not exist. Offered to show nothing instead; not decided.
+
+55. **No alert when the Anthropic balance runs out.** It happened once in
+    production on 2026-09-16: answers silently stopped.
+
+56. **Old CSS under the design-system layer.** `styles.css` still carries the
+    pre-redesign rules the new layer overrides (about +4 KB gzipped). Prune
+    when convenient; the layer restates the media variants it depends on.
+
+57. **Welcome line wraps to two lines** at 22px bold (spec H2). About 20px
+    would fit one line; the user has not asked for it.
+
+58. **Logo artwork defects.** The supplied book has a black notch at the spine
+    and grey streaks on the left page edge — invisible at header size, visible
+    if used large. Ask for a clean or vector source.
+
+59. **Local `npm run build` sometimes exits 134 / 0x80000003 after a
+    successful build** on Windows (teardown crash). Production builds on Linux
+    are unaffected.
