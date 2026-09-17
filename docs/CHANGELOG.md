@@ -1627,3 +1627,11 @@ a fresh workspace, re-inviting the same address then succeeds, and usage reads
   25. Computed, not stored, so every existing free workspace moved at once;
   `bonus_questions` already credited still add on top. Registration copy follows
   `CREATOR_ALLOWANCE`.
+
+- **2026-09-17 — Provision numbers closed in the preview answer.**
+  `closeReferences` in `answer/preview.ts` turns «Հոդված 132, մաս 1»,
+  «125-րդ հոդվածի», lists («Հոդվածներ 105, 109») and order numbers («N 298-Ն»)
+  into `[XX]` before the response; the stored row keeps the original. Rates,
+  amounts, dates and form line numbers are left alone. Checked over the 39 real
+  answers in `data/eval/numbers-sample-answers.jsonl`: 233 closed, no
+  provision reference left visible.

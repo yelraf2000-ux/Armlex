@@ -10,7 +10,7 @@
  */
 import { test, describe, beforeEach } from 'node:test';
 import assert from 'node:assert/strict';
-import { splitAnswer } from './preview.js';
+import { closeReferences, splitAnswer } from './preview.js';
 import { checkRate, resetRateLimits, PREVIEW_LIMIT } from './rateLimit.js';
 
 const PARA = (n: number): string =>
@@ -54,6 +54,64 @@ describe('splitAnswer', () => {
     const wall = Array.from({ length: 30 }, (_, i) => `Նախադասություն ${i + 1}։`).join(' ');
     const { shown } = splitAnswer(wall);
     assert.ok(shown.endsWith('։'));
+  });
+});
+
+describe('closeReferences', () => {
+  test('closes the citation forms real previews produced', () => {
+    // Both observed on 2026-09-17, from the preview model.
+    assert.equal(
+      closeReferences('(ՀՀ ՀԱՐԿԱՅԻՆ ՕՐԵՆՍԳԻՐՔ, Հոդված 132, մաս 1)։'),
+      '(ՀՀ ՀԱՐԿԱՅԻՆ ՕՐԵՆՍԳԻՐՔ, Հոդված [XX], մաս [XX])։',
+    );
+    assert.equal(
+      closeReferences('(ՀՀ աշխատանքային օրենսգիրք, հոդված 169, մաս 1.1)'),
+      '(ՀՀ աշխատանքային օրենսգիրք, հոդված [XX], մաս [XX])',
+    );
+  });
+
+  test('closes ordinals written before the word', () => {
+    assert.equal(
+      closeReferences('Օրենսգրքի 125-րդ հոդվածի 4-րդ մասով սահմանված'),
+      'Օրենսգրքի [XX]-րդ հոդվածի [XX]-րդ մասով սահմանված',
+    );
+    assert.equal(closeReferences('1-ին մասի 2-րդ կետում'), '[XX]-ին մասի [XX]-րդ կետում');
+    assert.equal(closeReferences('18-20-րդ կետերում'), '[XX]-րդ կետերում');
+    assert.equal(closeReferences('Հավելված 1, աղյուսակ 3'), 'Հավելված [XX], աղյուսակ [XX]');
+  });
+
+  test('closes every item of a list, and order numbers', () => {
+    // All from real answers in data/eval/numbers-sample-answers.jsonl.
+    assert.equal(closeReferences('(Հոդվածներ 105, 109, 115, 126)'), '(Հոդվածներ [XX], [XX], [XX], [XX])');
+    assert.equal(closeReferences('Օրենսգրքի 71-րդ, 72-րդ հոդվածներ'), 'Օրենսգրքի [XX]-րդ, [XX]-րդ հոդվածներ');
+    assert.equal(closeReferences('38-րդ և 39-րդ հոդվածներով'), '[XX]-րդ և [XX]-րդ հոդվածներով');
+    assert.equal(closeReferences('են 2-րդ բաժնի'), 'են [XX]-րդ բաժնի');
+    assert.equal(closeReferences('N 298-Ն հրամանի, Հավելված N 1'), 'N [XX]-Ն հրամանի, Հավելված N [XX]');
+  });
+
+  test('a citation at the end of a sentence is closed', () => {
+    assert.equal(closeReferences('տե՛ս Հոդված 132.'), 'տե՛ս Հոդված [XX].');
+    assert.equal(closeReferences('տե՛ս մաս 1.1։'), 'տե՛ս մաս [XX]։');
+  });
+
+  test('a citation followed by a date is not a list', () => {
+    assert.equal(
+      closeReferences('Հոդված 132, 2023 թվականի հունվարի 1-ից'),
+      'Հոդված [XX], 2023 թվականի հունվարի 1-ից',
+    );
+  });
+
+  test('leaves rates, amounts, dates and form lines alone', () => {
+    // These are the answer, not where it comes from.
+    for (const s of [
+      'հաշվարկվում է 10 տոկոս դրույքաչափով',
+      '115 միլիոն դրամը չգերազանցող',
+      'Հարկերի և վճարների մասին 2023 թվականի հունվարի 1-ից',
+      '20 աշխատանքային օր',
+      'լրացվում է 20-րդ տողում',
+    ]) {
+      assert.equal(closeReferences(s), s);
+    }
   });
 });
 

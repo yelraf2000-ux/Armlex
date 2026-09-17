@@ -89,6 +89,55 @@ export function splitAnswer(answer: string): { shown: string; withheld: number }
   return { shown: text.slice(0, cut).trim(), withheld: text.length - cut };
 }
 
+/**
+ * The words that name a PROVISION, with the case endings they take in answers.
+ *
+ * Not «ին»: «մասին» is "about", and «… վճարների մասին 2023 թվականի» would lose
+ * its year. Not «տող» either — a form's line number is the answer to "which
+ * line", not a reference to where the answer comes from.
+ */
+const PROVISION =
+  '(?:[Հհ]ոդված|[Եե]նթակետ|[Կկ]ետ|[Մմ]աս|[Հհ]ավելված|[Աա]ղյուսակ|[Գգ]լուխ|[Գգ]լխ(?=ի|ում|ով)|[Բբ]աժին|[Բբ]աժն(?=ի|ում|ով))' +
+  '(?:ներում|ներով|ների|ներ|երում|երով|երի|եր|ում|ով|ի|ը)?';
+/** «132», «1.1», «18-20», «2–18». */
+const NUMBER = '\\d+(?:[.\\-–]\\d+)*';
+/** Between items of a list: «105, 109» or «13 և 35». */
+const AND = '(?:,\\s*|\\s+և\\s+)';
+/**
+ * A list item must not be a quantity. «Հոդված 132, 2023 թվականի հունվարի» is a
+ * citation followed by a date, not a list of two provisions.
+ */
+const NOT_QUANTITY = '(?![.\\-–]?\\d|\\s*(?:թվական|տոկոս|%|դրամ|միլիոն|հազար|օր|ամս|տար))';
+const ORDINAL = `${NUMBER}-(?:րդ|ին)`;
+
+/** «125-րդ հոդվածի», «1-ին մասով», «71-րդ, 72-րդ հոդվածներ». */
+const NUMBER_BEFORE = new RegExp(`(?:${ORDINAL}${AND})*${ORDINAL}\\s+${PROVISION}`, 'gu');
+/** «Հոդված 132», «հոդված 169, մաս 1», «Հոդվածներ 105, 109, 115». */
+const NUMBER_AFTER = new RegExp(
+  `(${PROVISION}\\s+)(${NUMBER}${NOT_QUANTITY}(?:${AND}${NUMBER}${NOT_QUANTITY})*)`,
+  'gu',
+);
+/** An order or decision's own number: «N 298-Ն», «№ 1». */
+const ACT_NUMBER = /([N№]\s*)\d+(-Ն)?(?![\d.])/gu;
+
+const DIGITS = new RegExp(NUMBER, 'gu');
+
+/**
+ * Close every provision number in the text a visitor sees.
+ *
+ * Which article answers the question is what registering buys — the same
+ * reason the apparatus is withheld. Done here, before the response, so the
+ * number is never in the page for an inspector to find. Rates, amounts and
+ * dates are untouched: «10 տոկոս» is part of the answer, not its address. So
+ * are a form's line numbers («5.7 տողում»), which ARE the answer to "which line".
+ */
+export function closeReferences(text: string): string {
+  return text
+    .replace(NUMBER_BEFORE, (m) => m.replace(DIGITS, '[XX]'))
+    .replace(NUMBER_AFTER, (_m, word: string, list: string) => word + list.replace(DIGITS, '[XX]'))
+    .replace(ACT_NUMBER, (_m, n: string, suffix: string | undefined) => `${n}[XX]${suffix ?? ''}`);
+}
+
 export interface Preview {
   id: string;
   shown: string;
@@ -134,9 +183,10 @@ export async function generatePreview(question: string, ip: string): Promise<Pre
     VALUES (${question}, ${shown}, ${checked.sanitized.length}, ${PREVIEW_MODEL}, ${hashIp(ip)})
     RETURNING id`;
 
+  // Stored as generated, sent closed: the row is ours to read, the page is not.
   return {
     id: rows[0]!.id,
-    shown,
+    shown: closeReferences(shown),
     withheld,
     sources: chunks.length,
     coverage: cov.coverage,

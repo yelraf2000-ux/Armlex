@@ -48,7 +48,8 @@ function blurLines(shown: string): string[] {
     .split(/\s+/)
     // Numbers and list markers out: "1." survives a blur as a recognisable
     // shape and gives the block away as chopped-up markdown.
-    .filter((w) => w.length > 1 && !/\d/.test(w));
+    // The closed «[XX]» references go too, for the same reason.
+    .filter((w) => w.length > 1 && !/\d/.test(w) && !w.includes('XX'));
   if (words.length < 8) return [];
 
   const lines: string[] = [];
