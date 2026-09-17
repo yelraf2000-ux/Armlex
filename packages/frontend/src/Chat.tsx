@@ -148,6 +148,8 @@ export function Chat({
   const [input, setInput] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  /** The firm's weekly allowance ran out on the last send. Cleared by the next one. */
+  const [quotaOut, setQuotaOut] = useState<{ limit: number } | null>(null);
   /** Provision pinned into the norm panel; null follows the newest answer. */
   const [selectedId, setSelectedId] = useState<string | null>(null);
   /** Bumped when a turn completes, so the session list refetches. */
@@ -347,8 +349,11 @@ export function Chat({
     // stays tall and empty after sending.
     if (inputRef.current) inputRef.current.style.height = 'auto';
     setError(null);
+    setQuotaOut(null);
     setTurns((t) => [...t, { role: 'user', text: message }]);
     setLoading(true);
+    /** Set when the send is taken back, so `finally` leaves the transcript alone. */
+    let withdrawn = false;
 
     // The assistant turn is appended empty and filled in as events arrive, so
     // there is exactly one place text accumulates. Time to first token is ~9s
@@ -386,10 +391,34 @@ export function Chat({
 
       if (!res.ok || !res.body) {
         const raw = await res.text();
+        let body: { error?: string; detail?: string; usage?: { limit?: number | null } } = {};
+        try {
+          body = JSON.parse(raw) as typeof body;
+        } catch {
+          // Not JSON — a proxy page or an empty body; handled below.
+        }
+
+        /*
+          Out of questions is not a failure, and it must not read as one. The
+          raw «HTTP 429: {"error":"quota_exceeded",…}» a professional saw here
+          looked like the product breaking. The question was never asked, so
+          it is taken back out of the transcript and returned to the box —
+          nobody should retype it on Monday.
+        */
+        if (res.status === 429 && body.error === 'quota_exceeded') {
+          withdrawn = true;
+          setTurns((list) => list.slice(0, -2));
+          setInput(message);
+          setQuotaOut({ limit: body.usage?.limit ?? 0 });
+          return;
+        }
+
         setError(
-          raw.trim()
-            ? `HTTP ${res.status}: ${raw.slice(0, 200)}`
-            : `${t('error.noApi')} (HTTP ${res.status})`,
+          body.detail
+            ? body.detail
+            : raw.trim()
+              ? `HTTP ${res.status}: ${raw.slice(0, 200)}`
+              : `${t('error.noApi')} (HTTP ${res.status})`,
         );
         return;
       }
@@ -508,7 +537,9 @@ export function Chat({
       // — including when the stream failed part-way.
       if (timer) clearInterval(timer);
       setReloadKey((k) => k + 1);
-      patchLast({ text: shown + pending, streaming: false });
+      // A withdrawn send has already removed its turns; patching "the last
+      // turn" now would overwrite the previous answer with an empty one.
+      if (!withdrawn) patchLast({ text: shown + pending, streaming: false });
       setLoading(false);
     }
   }
@@ -846,6 +877,41 @@ export function Chat({
       })}
 
       {error ? <div className="error measure">{error}</div> : null}
+
+      {quotaOut ? (
+        <div className="quota-out measure" role="alert">
+          <svg className="quota-out-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+            <circle cx="12" cy="12" r="10" />
+            <path d="M12 6v6l4 2" />
+          </svg>
+          <div className="quota-out-text">
+            <div className="quota-out-title">{t('quota.title')}</div>
+            <p className="quota-out-body">
+              {t('quota.body').replace('{n}', String(quotaOut.limit))}
+            </p>
+            {/*
+              The one way to more questions that exists today and costs nothing:
+              every colleague who joins adds their own seat. Offered to admins,
+              who are the ones able to invite.
+            */}
+            {account?.role === 'admin' && onOpenWorkspace ? (
+              <button className="quota-out-action" onClick={onOpenWorkspace}>
+                {t('quota.invite')}
+              </button>
+            ) : null}
+          </div>
+          <button
+            className="quota-out-close"
+            onClick={() => setQuotaOut(null)}
+            aria-label={t('quota.close')}
+            title={t('quota.close')}
+          >
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" aria-hidden="true">
+              <path d="M6 6l12 12M18 6L6 18" />
+            </svg>
+          </button>
+        </div>
+      ) : null}
 
       {/* Anchor the auto-scroll to the end of the transcript. */}
       <div ref={endRef} />

@@ -1635,3 +1635,11 @@ a fresh workspace, re-inviting the same address then succeeds, and usage reads
   amounts, dates and form line numbers are left alone. Checked over the 39 real
   answers in `data/eval/numbers-sample-answers.jsonl`: 233 closed, no
   provision reference left visible.
+
+- **2026-09-17 — Out-of-questions notice instead of a raw 429.** Sending past
+  the firm's weekly allowance showed «HTTP 429: {"error":"quota_exceeded",…}».
+  Now the question is taken back out of the transcript and returned to the box,
+  and a warning card says the week's N questions are used and return Monday
+  00:00; admins get a button to the workspace to invite colleagues (+5 each).
+  Other failed sends show the server's `detail` sentence rather than raw JSON,
+  in chat and in the one-shot modes.

@@ -4891,3 +4891,51 @@ a:hover { color: var(--primary-700); }
   .lp-long { display: none; }
   .lp-short { display: inline; }
 }
+
+/* Out of weekly questions: §2.4 warning, not an error. The product did not
+   fail; the week ran out, and it comes back on Monday. */
+.quota-out {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-3);
+  margin: var(--space-4) auto var(--space-3);
+  padding: var(--space-4);
+  border: 1px solid #fde68a;
+  border-left: 3px solid var(--warning-500);
+  border-radius: var(--radius-md);
+  background: var(--warning-50);
+}
+.quota-out-icon { flex: none; margin-top: 1px; color: var(--warning-500); }
+.quota-out-text { flex: 1; min-width: 0; }
+.quota-out-title { font-size: 15px; font-weight: 600; line-height: 22px; color: var(--text-primary); }
+.quota-out-body { margin: 2px 0 0; font-size: 14px; line-height: 22px; color: var(--text-secondary); }
+.quota-out-action {
+  margin-top: var(--space-3);
+  min-height: 36px;
+  padding: 6px var(--space-4);
+  border: var(--border-input);
+  border-radius: var(--radius-md);
+  background: var(--surface-lowest);
+  color: var(--text-primary);
+  font-family: var(--font-sans);
+  font-size: 14px;
+  font-weight: 500;
+  box-shadow: var(--shadow-sm);
+  cursor: pointer;
+}
+.quota-out-action:hover { background: var(--surface-hover); }
+.quota-out-close {
+  flex: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  padding: 0;
+  border: 0;
+  border-radius: var(--radius-md);
+  background: none;
+  color: var(--text-muted);
+  cursor: pointer;
+}
+.quota-out-close:hover { background: rgba(245, 158, 11, 0.12); color: var(--text-primary); }

@@ -109,7 +109,8 @@ function useOneShot(mode: 'search' | 'ask') {
 
       if (!res.ok) {
         const e = data as { error?: string; detail?: string };
-        setError([e.error, e.detail].filter(Boolean).join(' — ') || `HTTP ${res.status}`);
+        // The detail is the sentence written for a person; the code is for us.
+        setError(e.detail || e.error || `HTTP ${res.status}`);
         return;
       }
 
