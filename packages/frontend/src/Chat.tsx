@@ -344,28 +344,17 @@ export function Chat({
     const message = (override ?? input).trim();
     if (!message || loading) return;
 
-    setInput('');
-    // The textarea grew to fit the question; collapse it back, or the composer
-    // stays tall and empty after sending.
-    if (inputRef.current) inputRef.current.style.height = 'auto';
     setError(null);
     setQuotaOut(null);
-    setTurns((t) => [...t, { role: 'user', text: message }]);
     setLoading(true);
-    /** Set when the send is taken back, so `finally` leaves the transcript alone. */
-    let withdrawn = false;
-
-    // The assistant turn is appended empty and filled in as events arrive, so
-    // there is exactly one place text accumulates. Time to first token is ~9s
-    // warm and the full answer takes ~45-60s; without streaming that is a
-    // minute of blank screen.
-    // `streaming` from birth, not from the first token. The pacer used to set
-    // it, so for the nine seconds of retrieval and contextualising the turn
-    // looked FINISHED with an empty answer — and an empty settled answer is
-    // exactly the case where the apparatus falls back to showing everything
-    // retrieved. The column filled with fifteen provisions, then emptied when
-    // the first word arrived. The `finally` below always clears it.
-    setTurns((t) => [...t, { role: 'assistant', text: '', streaming: true }]);
+    /**
+     * Whether the question has entered the transcript. Not until the server
+     * accepts it: a refused send used to flip an empty screen into a
+     * conversation, scroll to the bottom, and flip back — the page visibly
+     * dropped. The allowance is checked before the stream opens, so waiting for
+     * the headers costs one round trip, not the answer's latency.
+     */
+    let appended = false;
 
     const patchLast = (patch: Partial<Turn>): void => {
       setTurns((t) => {
@@ -401,14 +390,10 @@ export function Chat({
         /*
           Out of questions is not a failure, and it must not read as one. The
           raw «HTTP 429: {"error":"quota_exceeded",…}» a professional saw here
-          looked like the product breaking. The question was never asked, so
-          it is taken back out of the transcript and returned to the box —
+          looked like the product breaking. The question stays in the box —
           nobody should retype it on Monday.
         */
         if (res.status === 429 && body.error === 'quota_exceeded') {
-          withdrawn = true;
-          setTurns((list) => list.slice(0, -2));
-          setInput(message);
           setQuotaOut({ limit: body.usage?.limit ?? 0 });
           return;
         }
@@ -422,6 +407,23 @@ export function Chat({
         );
         return;
       }
+
+      // Accepted: now the question joins the transcript, and the box empties.
+      setInput('');
+      // The textarea grew to fit the question; collapse it back, or the composer
+      // stays tall and empty after sending.
+      if (inputRef.current) inputRef.current.style.height = 'auto';
+      // The assistant turn is appended empty and filled in as events arrive, so
+      // there is exactly one place text accumulates. `streaming` from birth, not
+      // from the first token: for the nine seconds of retrieval an empty SETTLED
+      // answer is exactly the case where the apparatus falls back to showing
+      // everything retrieved. The `finally` below always clears it.
+      setTurns((list) => [
+        ...list,
+        { role: 'user', text: message },
+        { role: 'assistant', text: '', streaming: true },
+      ]);
+      appended = true;
 
       const reader = res.body.getReader();
       const decoder = new TextDecoder();
@@ -537,9 +539,9 @@ export function Chat({
       // — including when the stream failed part-way.
       if (timer) clearInterval(timer);
       setReloadKey((k) => k + 1);
-      // A withdrawn send has already removed its turns; patching "the last
-      // turn" now would overwrite the previous answer with an empty one.
-      if (!withdrawn) patchLast({ text: shown + pending, streaming: false });
+      // A refused send never added its turns; patching "the last turn" then
+      // would overwrite the previous answer with an empty one.
+      if (appended) patchLast({ text: shown + pending, streaming: false });
       setLoading(false);
     }
   }
@@ -889,16 +891,6 @@ export function Chat({
             <p className="quota-out-body">
               {t('quota.body').replace('{n}', String(quotaOut.limit))}
             </p>
-            {/*
-              The one way to more questions that exists today and costs nothing:
-              every colleague who joins adds their own seat. Offered to admins,
-              who are the ones able to invite.
-            */}
-            {account?.role === 'admin' && onOpenWorkspace ? (
-              <button className="quota-out-action" onClick={onOpenWorkspace}>
-                {t('quota.invite')}
-              </button>
-            ) : null}
           </div>
           <button
             className="quota-out-close"

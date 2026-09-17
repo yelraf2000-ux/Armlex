@@ -4909,21 +4909,6 @@ a:hover { color: var(--primary-700); }
 .quota-out-text { flex: 1; min-width: 0; }
 .quota-out-title { font-size: 15px; font-weight: 600; line-height: 22px; color: var(--text-primary); }
 .quota-out-body { margin: 2px 0 0; font-size: 14px; line-height: 22px; color: var(--text-secondary); }
-.quota-out-action {
-  margin-top: var(--space-3);
-  min-height: 36px;
-  padding: 6px var(--space-4);
-  border: var(--border-input);
-  border-radius: var(--radius-md);
-  background: var(--surface-lowest);
-  color: var(--text-primary);
-  font-family: var(--font-sans);
-  font-size: 14px;
-  font-weight: 500;
-  box-shadow: var(--shadow-sm);
-  cursor: pointer;
-}
-.quota-out-action:hover { background: var(--surface-hover); }
 .quota-out-close {
   flex: none;
   display: flex;

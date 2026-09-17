@@ -1643,3 +1643,11 @@ a fresh workspace, re-inviting the same address then succeeds, and usage reads
   00:00; admins get a button to the workspace to invite colleagues (+5 each).
   Other failed sends show the server's `detail` sentence rather than raw JSON,
   in chat and in the one-shot modes.
+
+- **2026-09-17 — A refused send no longer moves the page.** The question joined
+  the transcript before the server answered, so hitting the weekly limit flipped
+  the empty screen into a conversation, scrolled to the bottom and flipped back.
+  Turns are now added only once `/api/chat/stream` accepts (the allowance is
+  checked before the stream opens, so this waits one round trip). Any refused
+  send leaves the question in the box. The invite button on the notice is gone,
+  at the owner's request.
