@@ -594,3 +594,40 @@ wording is the data.
 61. **Landing lock card: the row of three items under the sign-in link**
     (mockup: «Ամբողջական…», «[N] անվճար հարց», «Թիմով՝ ավելի շատ») was left
     out — the owner will specify it.
+
+62. **Document types to add, on an expert's advice (recorded 2026-09-21).** The
+    head of a large accounting firm said it matters to hold more than codes
+    and laws. The corpus has 4 of ARLIS's ~60 document types (ՕՐԵՆՍԳԻՐՔ 2,
+    ՕՐԵՆՔ 10, ՈՐՈՇՈՒՄ 10, ՀՐԱՄԱՆ 11 = 33 acts), and only a selection within
+    each. To add later, in this order:
+    1. **ՊԱՇՏՈՆԱԿԱՆ ՊԱՐԶԱԲԱՆՈՒՄ** — the SRC's official clarifications: how the
+       authority applies the Code in practice, quoted by accountants daily.
+       Planned in the spec as `src_clarification`; never ingested.
+    2. **ՀԱՄԱՁԱՅՆԱԳԻՐ / ԿՈՆՎԵՆՑԻԱ** — the double-taxation treaties. Every
+       payment to a non-resident turns on the treaty with that country;
+       today only the Code's general rule can be cited.
+    3. **More ՈՐՈՇՈՒՄ and ՀՐԱՄԱՆ** — the Code delegates the working detail
+       («Կառավարության սահմանած կարգով», «…ցանկում ներառված»): forms, lists,
+       procedures, deadlines. Concrete case: `Հոդված 258` row 8 gives 1%
+       turnover tax to activities on «Կառավարության սահմանած բարձր
+       տեխնոլոգիաների ոլորտի գործունեության տեսակների ցանկ» — that list is a
+       government decision we do not hold, so the answer cannot say whether
+       a given IT business qualifies (see item 52).
+    Most other types (constitution drafts, reports, notices, press) do not
+    matter for this audience. Add one type at a time and re-score the golden
+    set: near-miss documents cost recall (`DECISIONS.md`).
+
+63. **Generation does not know the hierarchy of legal acts.** Nothing in the
+    system prompt says which act prevails when two conflict. As understood
+    (to be confirmed by a lawyer before encoding): Constitution Art. 5 ranks
+    norms — Constitution, then ratified international treaties (which prevail
+    over a conflicting law), then laws and codes, then by-laws (government
+    decisions, then ministerial and SRC orders). A by-law must conform to the
+    law it implements; where they conflict, **the law prevails**, not the
+    decision. What practitioners experience as a decision "overriding" the
+    Code is usually the decision *filling in* what the Code delegated to it —
+    the operational rule an accountant actually follows. An expert stated
+    the reverse ("the decision prevails over the Code") on 2026-09-21; worth
+    asking what case prompted it, since a real conflict would be a finding.
+    When encoded: cite the Code for the rule and the decision for the
+    procedure, and flag a conflict rather than silently choosing.

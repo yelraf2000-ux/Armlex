@@ -30,7 +30,9 @@ Production is at commit `04170c2`; `/api/version` confirms. 199 commits total.
   favicons and mail.
 - **Next:** the open list is `OPEN-ITEMS.md` §"Open as of 2026-09-17" — first,
   rotate the two secrets (51); then the retrieval gap (52) and the
-  quote-per-citation decision (53).
+  quote-per-citation decision (53). Corpus breadth, on an expert's advice:
+  SRC official clarifications, double-taxation treaties, more decisions and
+  orders (62); and generation does not know the hierarchy of acts (63).
 - Before touching the frontend, read `GOTCHAS.md` §"Frontend and tooling
   traps"; before revisiting a product call, `DECISIONS.md` §"Product decisions,
   2026-09-09 → 09-17".
