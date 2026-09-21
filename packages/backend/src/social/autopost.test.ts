@@ -70,10 +70,10 @@ describe('promotional text is held to the facts', () => {
   });
 });
 
-test('the rotation is 11 posts: 4 live answers, 4 features, one of each other kind', () => {
+test('the rotation is 11 posts: 4 live answers and 7 problems solved', () => {
   assert.equal(ROTATION.length, 11);
-  const count = (k: string) => ROTATION.filter((x) => x === k).length;
-  assert.deepEqual([count('demo'), count('feature'), count('problem'), count('offer'), count('difference')], [4, 4, 1, 1, 1]);
+  assert.equal(ROTATION.filter((x) => x === 'demo').length, 4);
+  assert.equal(ROTATION.filter((x) => x === 'problem').length, 7);
 });
 
 test('a quote from an unnumbered citation drops the provision number', () => {

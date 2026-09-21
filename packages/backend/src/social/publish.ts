@@ -1,12 +1,18 @@
 /**
- * The approval tap: ✅ publishes a draft to the Telegram channel, the Facebook
- * Page and Instagram; ⏭ discards it. Only the team chat's buttons count — a
- * callback from anyone else is refused.
+ * The team chat's buttons.
+ *
+ *   ✅ / ⏭   on a draft: publish it to the Telegram channel, the Facebook Page
+ *           and Instagram, or discard it.
+ *   🗑       under a post report: ask to delete it everywhere;
+ *   Այո / Ոչ on that question: delete, or put the 🗑 back.
+ *
+ * Only the team chat's taps count — a callback from anyone else is refused.
  */
 import { db } from '../db/pool.js';
 import { tg, CAPTION_LIMIT } from './bot.js';
-import { describe, markOwnPost } from './channel.js';
+import { markOwnPost } from './channel.js';
 import { publishFacebook, publishInstagram, type PublishResult } from './meta.js';
+import { confirmButtons, deleteButton, removeEverywhere, reportPublished } from './remove.js';
 
 const PUBLIC_URL = process.env['PUBLIC_URL'] ?? 'https://matyanai.am';
 
@@ -14,13 +20,15 @@ interface Callback {
   id: string;
   from?: { id?: number };
   data?: string;
-  message?: { message_id: number; chat: { id: number } };
+  message?: { message_id: number; chat: { id: number }; text?: string };
 }
 
+export type Action = 'pub' | 'skip' | 'del' | 'delyes' | 'delno';
+
 /** The action a button carries, if it is one of ours. */
-export function readAction(data: string | undefined): { action: 'pub' | 'skip'; draftId: string } | null {
-  const m = /^(pub|skip):([0-9a-f-]{36})$/.exec(data ?? '');
-  return m ? { action: m[1] as 'pub' | 'skip', draftId: m[2]! } : null;
+export function readAction(data: string | undefined): { action: Action; draftId: string } | null {
+  const m = /^(pub|skip|del|delyes|delno):([0-9a-f-]{36})$/.exec(data ?? '');
+  return m ? { action: m[1] as Action, draftId: m[2]! } : null;
 }
 
 /** Post the photo and text to the channel. The channel is `TELEGRAM_CHANNEL`. */
@@ -58,12 +66,47 @@ export async function publishEverywhere(body: string, imageName: string): Promis
   return { telegram, facebook, instagram };
 }
 
+const answer = (cb: Callback, text: string): Promise<unknown> =>
+  tg('answerCallbackQuery', { callback_query_id: cb.id, text }).catch(() => {});
+
+const setButtons = (cb: Callback, markup: unknown): Promise<unknown> =>
+  cb.message
+    ? tg('editMessageReplyMarkup', {
+        chat_id: cb.message.chat.id,
+        message_id: cb.message.message_id,
+        reply_markup: markup,
+      }).catch(() => {})
+    : Promise.resolve();
+
 export async function handleCallback(cb: Callback): Promise<void> {
   const owner = Number(process.env['TELEGRAM_CHAT_ID']);
   const act = readAction(cb.data);
   if (!act) return;
   if (!owner || cb.from?.id !== owner) {
-    await tg('answerCallbackQuery', { callback_query_id: cb.id, text: 'Թույլատրված չէ' }).catch(() => {});
+    await answer(cb, 'Թույլատրված չէ');
+    return;
+  }
+
+  if (act.action === 'del') {
+    await answer(cb, 'Հաստատեք ջնջումը');
+    await setButtons(cb, confirmButtons(act.draftId));
+    return;
+  }
+  if (act.action === 'delno') {
+    await answer(cb, 'Չեղարկված է');
+    await setButtons(cb, deleteButton(act.draftId));
+    return;
+  }
+  if (act.action === 'delyes') {
+    await answer(cb, 'Ջնջվում է…');
+    await setButtons(cb, { inline_keyboard: [] });
+    const lines = await removeEverywhere(act.draftId);
+    await tg('sendMessage', {
+      chat_id: owner,
+      text: ['Ջնջում', ...lines].join('\n'),
+      disable_web_page_preview: true,
+      ...(cb.message ? { reply_to_message_id: cb.message.message_id } : {}),
+    }).catch(() => {});
     return;
   }
 
@@ -74,30 +117,16 @@ export async function handleCallback(cb: Callback): Promise<void> {
      WHERE id = ${act.draftId} AND status = 'pending'
     RETURNING body, image_name`;
   const draft = rows[0];
-  await tg('answerCallbackQuery', {
-    callback_query_id: cb.id,
-    text: !draft ? 'Արդեն որոշված է' : act.action === 'pub' ? 'Հրապարակվում է…' : 'Բաց թողնված է',
-  }).catch(() => {});
+  await answer(cb, !draft ? 'Արդեն որոշված է' : act.action === 'pub' ? 'Հրապարակվում է…' : 'Բաց թողնված է');
   // The buttons go either way: a decided draft offers no second decision.
-  if (cb.message) {
-    await tg('editMessageReplyMarkup', {
-      chat_id: cb.message.chat.id,
-      message_id: cb.message.message_id,
-      reply_markup: { inline_keyboard: [] },
-    }).catch(() => {});
-  }
+  await setButtons(cb, { inline_keyboard: [] });
   if (!draft || act.action === 'skip') return;
 
-  const { telegram, facebook, instagram } = await publishEverywhere(draft.body, draft.image_name);
-  const ok = [telegram, facebook, instagram].some((r) => r.id);
+  const result = await publishEverywhere(draft.body, draft.image_name);
+  const ok = [result.telegram, result.facebook, result.instagram].some((r) => r.id);
   await db()`
     UPDATE social_drafts
-       SET status = ${ok ? 'published' : 'failed'},
-           results = ${db().json({ telegram, facebook, instagram } as never)}
+       SET status = ${ok ? 'published' : 'failed'}, results = ${db().json(result as never)}
      WHERE id = ${act.draftId}`;
-  await tg('sendMessage', {
-    chat_id: owner,
-    text: ['Հրապարակում', describe('Telegram', telegram), describe('Facebook', facebook), describe('Instagram', instagram)].join('\n'),
-    ...(cb.message ? { reply_to_message_id: cb.message.message_id } : {}),
-  }).catch(() => {});
+  await reportPublished(act.draftId, 'Հրապարակվեց', result).catch(() => {});
 }

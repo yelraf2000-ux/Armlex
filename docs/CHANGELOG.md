@@ -1700,3 +1700,14 @@ a fresh workspace, re-inviting the same address then succeeds, and usage reads
   facts, prices, links and overclaims are refused, with hand-written true
   fallbacks. Each post goes to the channel, the Page and Instagram and the team
   chat gets the links. Off unless `SOCIAL_AUTOPUBLISH=on`.
+
+- **2026-09-21 — Autopost: Gemini only, 4 live + 7 problem posts, 🗑 delete.**
+  Owner's decisions: everything except the live answers is written by Gemini
+  (`gemini-3.5-flash`), with a second Gemini pass proofreading the Armenian;
+  the rotation is 4 live answers and 7 "problem → solved" posts, one problem
+  per post from `facts.ts` PROBLEMS; the hand-written fallbacks are gone — a
+  slot whose text fails the checks three times is skipped. Every post report
+  in the team chat carries 🗑 (then «Այո» to confirm), which deletes the post
+  from the channel (bots: within 48 h), the Page and Instagram
+  (`social/remove.ts`; Instagram needs `instagram_manage_contents` on the
+  token, else the report gives the link). Status `deleted`, migration 021.

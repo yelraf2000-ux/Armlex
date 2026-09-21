@@ -78,3 +78,11 @@ describe('buttons and guards', () => {
     assert.ok(lines[2]!.endsWith('…'));
   });
 });
+
+test('the delete buttons are read, and only on a real id', () => {
+  const id = '0d8f6a2e-4b1c-4a5e-9f3d-2c7b8e1a6d90';
+  assert.deepEqual(readAction(`del:${id}`), { action: 'del', draftId: id });
+  assert.deepEqual(readAction(`delyes:${id}`), { action: 'delyes', draftId: id });
+  assert.deepEqual(readAction(`delno:${id}`), { action: 'delno', draftId: id });
+  assert.equal(readAction('delyes:everything'), null);
+});

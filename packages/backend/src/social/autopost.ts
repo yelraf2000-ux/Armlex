@@ -1,15 +1,21 @@
 /**
  * One automatic post: build it, check it, publish it to the Telegram channel,
- * the Facebook Page and Instagram, and tell the team chat what went out.
+ * the Facebook Page and Instagram, and report it to the team chat with a 🗑
+ * button that deletes it everywhere.
  *
- * Run by the armlex-autopost timer (deploy/), 11 times a week. No person
- * approves these (the owner's decision, 2026-09-21), so everything a post says
- * is either the product's own live answer with a quote cut from the law by
- * code, or a rephrasing of `facts.ts`. A post that fails a check is not
- * published; the team chat is told why.
+ * Run by the armlex-autopost timer (deploy/), 11 times a week: 4 live answers
+ * and 7 "problem → solved" posts. No person approves these (the owner's
+ * decision, 2026-09-21), so:
+ *   - a live answer is the product's own answer, with the quote cut from the
+ *     law by code, and is skipped unless coverage is full and every number is
+ *     in the cited article;
+ *   - everything else is written by Gemini (the owner's choice), may only
+ *     restate `facts.ts`, is proofread by a second Gemini pass, and is refused
+ *     on any number outside the facts, a price, a link or an overclaim. After
+ *     three refusals the slot is skipped — there is no hand-written fallback.
  *
  * Off unless SOCIAL_AUTOPUBLISH=on. Manual run (`--dry`: to the team chat only):
- *   npx tsx packages/backend/src/social/autopost.ts [demo|feature|problem|offer|difference] [--dry]
+ *   npx tsx packages/backend/src/social/autopost.ts [demo|problem] [--dry]
  */
 import 'dotenv/config';
 import { randomBytes, randomUUID } from 'node:crypto';
@@ -25,97 +31,40 @@ import { MEDIA_DIR } from './channel.js';
 import { renderDemoCard, demoFits } from './demoCard.js';
 import { renderPromoCard, promoFits, type PromoCard } from './promoCard.js';
 import { demoParts, type AnswerChunk } from './demoPost.js';
-import { ALLOWED_NUMBERS, DEMO_QUESTIONS, FACTS, OVERCLAIMS } from './facts.js';
-import { publishEverywhere, type Published } from './publish.js';
+import { ALLOWED_NUMBERS, DEMO_QUESTIONS, FACTS, OVERCLAIMS, PROBLEMS } from './facts.js';
+import { publishEverywhere } from './publish.js';
+import { reportPublished } from './remove.js';
 import { tg } from './bot.js';
 
-export type Kind = 'demo' | 'feature' | 'problem' | 'offer' | 'difference';
+export type Kind = 'demo' | 'problem';
 
-/** A week of 11: four live answers, four features, one each of the rest. */
+/** A week of 11: four live answers, seven problems solved, interleaved. */
 export const ROTATION: Kind[] = [
-  'demo', 'feature', 'demo', 'problem', 'feature', 'demo', 'offer', 'feature', 'demo', 'difference', 'feature',
+  'demo', 'problem', 'problem', 'demo', 'problem', 'problem', 'demo', 'problem', 'problem', 'demo', 'problem',
 ];
 
-const LABELS: Record<Exclude<Kind, 'demo'>, string> = {
-  feature: 'Ինչու MatyanAI',
-  problem: 'Խնդիրը և լուծումը',
-  offer: 'Անվճար փաթեթ',
-  difference: 'Ոչ թե պարզապես չաթբոտ',
-};
+/** Gemini writes everything but the live answers (owner's decision). */
+const PROMO_MODEL = process.env['SOCIAL_PROMO_MODEL'] ?? 'gemini-3.5-flash';
+const PUBLIC_URL = process.env['PUBLIC_URL'] ?? 'https://matyanai.am';
+const CTA = 'Փորձեք անվճար · matyanai.am';
+const LABEL = 'Խնդիրը և լուծումը';
 
-const BRIEF: Record<Exclude<Kind, 'demo'>, string> = {
-  feature: 'Pick ONE fact and build the post around that single benefit.',
-  problem:
-    'Open with a real pain of an accountant (hunting through ARLIS, comparing amended versions, not knowing which article applies), then show how the facts solve it.',
-  offer: 'Invite them to register free: the free plan and the team rule, from the facts, nothing more.',
-  difference:
-    'Contrast with a general-purpose AI chatbot WITHOUT naming any product: MatyanAI answers only from the law text, cites the article, and says so when the law does not answer. Never claim the other is always wrong.',
-};
+const PROMO_SYSTEM = `You write one social-media post, in Armenian, for MatyanAI. The audience: accountants, tax specialists and heads of accounting firms in Armenia.
 
-const PROMO_SYSTEM = `You write one promotional social-media post, in Armenian, for MatyanAI. The audience: accountants, tax specialists and heads of accounting firms in Armenia.
-
-You may ONLY restate these facts — no other claims about the product, no numbers that are not in them, no prices:
+The post takes ONE everyday problem of an accountant and shows how MatyanAI solves it. You may ONLY use these facts about MatyanAI — no other claims, no numbers that are not in them, no prices:
 ${FACTS.map((f, i) => `${i + 1}. ${f}`).join('\n')}
 
-Style: professional, calm, concrete; a colleague recommending a tool, not an advert shouting. Correct Armenian spelling and punctuation (։ at sentence end). No emojis, no hashtags, no links.
+Style: professional, calm, concrete — a colleague recommending a tool, not an advert shouting. Correct Armenian grammar, case endings, spelling and punctuation (։ at sentence end). No emojis, no hashtags, no links.
 
 Reply with JSON only:
 {"headline": "...", "points": ["...", "...", "..."], "body": "..."}
-- headline: at most 50 characters.
-- points: exactly three, each at most 60 characters.
-- body: 250-600 characters, 2-3 short paragraphs.`;
+- headline: the problem, as the accountant feels it; at most 50 characters; may be a question.
+- points: exactly three short ways MatyanAI solves it, each at most 60 characters, each restating a fact.
+- body: 250-600 characters, 2-3 short paragraphs: the problem, then how MatyanAI solves it.`;
 
-/** Hand-written, true, and used when generation fails every check. */
-const FALLBACKS: Record<Exclude<Kind, 'demo'>, Omit<PromoCard, 'label' | 'cta'> & { body: string }> = {
-  feature: {
-    headline: 'Պատասխան, որը կարող եք ստուգել',
-    points: [
-      'Յուրաքանչյուր պատասխան՝ ակտով և հոդվածով',
-      'Մեջբերումները բառացի են և ստուգվում են ծրագրով',
-      'Հղում ARLIS-ի պաշտոնական տեքստին',
-    ],
-    body: 'Հարկային կամ աշխատանքային հարցի պատասխանը քիչ արժե, եթե չգիտեք՝ որտեղից է այն։\n\nMatyanAI-ի յուրաքանչյուր պատասխան հղում է կոնկրետ ակտին և հոդվածին, իսկ օրենքից մեջբերումները բառացի են և ստուգվում են ծրագրով։ Մեկ սեղմումով բացում եք հոդվածը ARLIS-ում։',
-  },
-  problem: {
-    headline: 'ARLIS-ը թերթելու փոխարեն՝ մեկ հարց',
-    points: [
-      'Հարցրեք ազատ ձևով՝ հայերեն',
-      'Պատասխան՝ մոտ մեկ րոպեում',
-      'Կոնկրետ հոդված և բառացի մեջբերում',
-    ],
-    body: 'Ճիշտ հոդվածը գտնելը հաճախ ավելի երկար է տևում, քան հարցի պատասխանը։\n\nMatyanAI-ին հարցնում եք այնպես, ինչպես կհարցնեիք գործընկերոջը, և մոտ մեկ րոպեում ստանում եք պատասխան՝ կոնկրետ հոդվածով և օրենքից բառացի մեջբերումով։',
-  },
-  offer: {
-    headline: 'Սկսեք անվճար',
-    points: [
-      'Շաբաթական 5 հարց՝ անվճար',
-      'Յուրաքանչյուր գործընկեր՝ ևս 5 հարց',
-      'Մեկ աշխատանքային տարածք՝ մինչև 5 անդամ',
-    ],
-    body: 'Գրանցումն անվճար է։ Անվճար փաթեթով ստանում եք շաբաթական 5 հարց, և յուրաքանչյուր միացող գործընկեր ավելացնում է ևս 5 հարց։\n\nԹիմը աշխատում է մեկ աշխատանքային տարածքում՝ մինչև 5 անդամ։',
-  },
-  difference: {
-    headline: 'Օրենքի տեքստից, ոչ թե հիշողությունից',
-    points: [
-      'Պատասխանում է միայն օրենքի տեքստից',
-      'Ցույց է տալիս ակտը և հոդվածը',
-      'Եթե պատասխան չկա, ուղղակի ասում է',
-    ],
-    body: 'Ընդհանուր նշանակության AI օգնականը կարող է վստահ պատասխանել՝ առանց աղբյուրի։\n\nMatyanAI-ը պատասխանում է միայն ՀՀ օրենսդրության տեքստից, նշում է ակտը և հոդվածը, իսկ եթե գտնված հոդվածները հարցին չեն պատասխանում, դա ուղղակի ասում է։',
-  },
-};
+const PROOFREAD_SYSTEM = `You are a meticulous Armenian copy editor. You receive a JSON object with Armenian text. Correct grammar (case endings, agreement), spelling and punctuation only. Do not add, remove or change any claim, number or meaning, and keep each string about the same length. Reply with the same JSON object only.`;
 
-const CTA = 'Փորձեք անվճար · matyanai.am';
-
-/**
- * Promotional text goes out unread, so its Armenian has to be right the first
- * time. Gemini Flash wrote «հղում է կոնկրետ ակտի» (for «ակտին») in the first
- * rehearsal; Sonnet's Armenian is markedly better, at about $0.02 a post.
- */
-const PROMO_MODEL = process.env['SOCIAL_PROMO_MODEL'] ?? 'claude-sonnet-5';
-const PUBLIC_URL = process.env['PUBLIC_URL'] ?? 'https://matyanai.am';
-
-/** Every problem with a generated promo, or none. */
+/** Every problem with a generated post, or none. */
 export function promoProblems(p: { headline: string; points: string[]; body: string }): string[] {
   const problems: string[] = [];
   const all = [p.headline, ...p.points, p.body].join('\n');
@@ -130,46 +79,53 @@ export function promoProblems(p: { headline: string; points: string[]; body: str
   return problems;
 }
 
-async function promo(kind: Exclude<Kind, 'demo'>, recent: string[]): Promise<{ card: PromoCard; body: string; source: string }> {
-  const label = LABELS[kind];
+type Promo = { headline: string; points: string[]; body: string };
+
+/** Run a Gemini call and read the JSON object out of its reply. */
+async function geminiJson(system: string, user: string): Promise<Promo> {
+  let reply = '';
+  await generate({ system, history: [], user, onText: (d) => (reply += d) }, PROMO_MODEL);
+  const json = JSON.parse(reply.slice(reply.indexOf('{'), reply.lastIndexOf('}') + 1)) as Partial<Promo>;
+  return {
+    headline: String(json.headline ?? '').trim(),
+    points: (json.points ?? []).map((x) => String(x).trim()),
+    body: String(json.body ?? '').trim(),
+  };
+}
+
+async function problemPost(
+  recentTopics: string[],
+): Promise<{ card: PromoCard; body: string; topic: string } | { skip: string }> {
+  const fresh = PROBLEMS.filter((p) => !recentTopics.includes(`auto:problem:${p}`));
+  const problem = (fresh.length ? fresh : PROBLEMS)[Math.floor(Math.random() * (fresh.length || PROBLEMS.length))]!;
+  const reasons: string[] = [];
   for (let attempt = 0; attempt < 3; attempt++) {
-    let reply = '';
     try {
-      await generate(
-        {
-          system: PROMO_SYSTEM,
-          history: [],
-          user: `${BRIEF[kind]}\n\nDo not repeat these recent headlines:\n${recent.map((h) => `- ${h}`).join('\n') || '(none)'}`,
-          onText: (d) => {
-            reply += d;
-          },
-        },
-        PROMO_MODEL,
-      );
-      const json = JSON.parse(reply.slice(reply.indexOf('{'), reply.lastIndexOf('}') + 1)) as {
-        headline?: string;
-        points?: string[];
-        body?: string;
-      };
-      const p = {
-        headline: String(json.headline ?? '').trim(),
-        points: (json.points ?? []).map((x) => String(x).trim()),
-        body: String(json.body ?? '').trim(),
-      };
-      const card = { label, headline: p.headline, points: p.points, cta: CTA };
-      if (promoProblems(p).length === 0 && promoFits(card)) {
-        return { card, body: `${p.body}\n\nՓորձեք անվճար՝ matyanai.am`, source: PROMO_MODEL };
+      const draft = await geminiJson(PROMO_SYSTEM, `The problem: ${problem}`);
+      const draftProblems = promoProblems(draft);
+      if (draftProblems.length) {
+        reasons.push(draftProblems.join(', '));
+        continue;
       }
-    } catch {
-      // fall through to the next attempt
+      // Proofread; keep the draft if the edit breaks a rule it had kept.
+      let final = draft;
+      try {
+        const edited = await geminiJson(PROOFREAD_SYSTEM, JSON.stringify(draft));
+        if (promoProblems(edited).length === 0) final = edited;
+      } catch {
+        // proofreading is best effort
+      }
+      const card = { label: LABEL, headline: final.headline, points: final.points, cta: CTA };
+      if (!promoFits(card)) {
+        reasons.push('does not fit the card');
+        continue;
+      }
+      return { card, body: `${final.body}\n\nՓորձեք անվճար՝ matyanai.am`, topic: `auto:problem:${problem}` };
+    } catch (err) {
+      reasons.push((err as Error).message.slice(0, 120));
     }
   }
-  const f = FALLBACKS[kind];
-  return {
-    card: { label, headline: f.headline, points: f.points, cta: CTA },
-    body: `${f.body}\n\nՓորձեք անվճար՝ matyanai.am`,
-    source: 'fallback',
-  };
+  return { skip: `«${problem}»: ${reasons.join('; ')}` };
 }
 
 /** The internal account the live answers are asked from. Nobody can sign in to it. */
@@ -263,36 +219,13 @@ async function demo(recentTopics: string[]): Promise<{ image: Buffer; body: stri
   return { skip: reasons.join('; ') };
 }
 
-async function permalinks(p: Published): Promise<string[]> {
-  const out: string[] = [];
-  const channel = process.env['TELEGRAM_CHANNEL']?.replace(/^@/, '');
-  if (p.telegram.id && channel) out.push(`Telegram: https://t.me/${channel}/${p.telegram.id}`);
-  if (p.facebook.id) out.push(`Facebook: https://www.facebook.com/${p.facebook.id}`);
-  if (p.instagram.id) {
-    try {
-      const r = await fetch(
-        `https://graph.facebook.com/v25.0/${p.instagram.id}?fields=permalink&access_token=${process.env['META_PAGE_TOKEN']}`,
-      );
-      const j = (await r.json()) as { permalink?: string };
-      out.push(`Instagram: ${j.permalink ?? p.instagram.id}`);
-    } catch {
-      out.push(`Instagram: ${p.instagram.id}`);
-    }
-  }
-  const failed = Object.entries(p)
-    .filter(([, r]) => !r.id)
-    .map(([k, r]) => `${k}: ❌ ${r.error ?? r.skipped}`);
-  return [...out, ...failed];
-}
-
 export async function autopost(forced?: Kind, dry = false): Promise<void> {
-  const published = await db()<{ topic: string; headline: string }[]>`
-    SELECT topic, headline FROM social_drafts
-     WHERE topic LIKE 'auto:%' AND status = 'published'
+  const published = await db()<{ topic: string }[]>`
+    SELECT topic FROM social_drafts
+     WHERE topic LIKE 'auto:%' AND status IN ('published', 'deleted')
      ORDER BY created_at DESC`;
   const kind = forced ?? ROTATION[published.length % ROTATION.length]!;
   const recentTopics = published.slice(0, 30).map((r) => r.topic);
-  const recentHeadlines = published.slice(0, 10).map((r) => r.headline);
 
   let image: Buffer;
   let body: string;
@@ -310,12 +243,17 @@ export async function autopost(forced?: Kind, dry = false): Promise<void> {
     headline = 'Հարց և պատասխան՝ օրենքի հոդվածով';
     model = 'live';
   } else {
-    const p = await promo(kind, recentHeadlines);
+    const p = await problemPost(recentTopics);
+    if ('skip' in p) {
+      console.log(`skipped: ${p.skip}`);
+      await sendToTeam(`Ավտոմատ գրառումը բաց թողնվեց (խնդիր → լուծում)՝ ${p.skip}`);
+      return;
+    }
     image = renderPromoCard(p.card);
     body = p.body;
-    topic = `auto:${kind}`;
+    topic = p.topic;
     headline = p.card.headline;
-    model = p.source;
+    model = PROMO_MODEL;
   }
 
   const imageName = `${randomUUID()}.jpg`;
@@ -337,12 +275,13 @@ export async function autopost(forced?: Kind, dry = false): Promise<void> {
     INSERT INTO social_drafts (topic, headline, subline, body, source_label, source_url, image_name, model, status, decided_at)
     VALUES (${topic}, ${headline}, '', ${body}, ${kind}, ${PUBLIC_URL}, ${imageName}, ${model}, 'publishing', now())
     RETURNING id`;
+  const id = rows[0]!.id;
   const result = await publishEverywhere(body, imageName);
   const ok = [result.telegram, result.facebook, result.instagram].some((r) => r.id);
   await db()`
     UPDATE social_drafts SET status = ${ok ? 'published' : 'failed'}, results = ${db().json(result as never)}
-     WHERE id = ${rows[0]!.id}`;
-  await sendToTeam([`Ավտոմատ գրառում (${kind})`, ...(await permalinks(result))].join('\n'));
+     WHERE id = ${id}`;
+  await reportPublished(id, `Ավտոմատ գրառում (${kind === 'demo' ? 'կենդանի պատասխան' : 'խնդիր → լուծում'})`, result);
 }
 
 // Run directly (the timer, or by hand).
