@@ -22,9 +22,9 @@ const BACKEND = join(HERE, '..', '..');
  * resvg's fallback left empty boxes, and switching family mid-line with
  * <tspan>s made resvg drop the WHOLE line — observed on the first cards.
  */
-const FONTS = ['MatyanCard-Regular.ttf', 'MatyanCard-Bold.ttf'].map((f) => join(BACKEND, 'assets', 'fonts', f));
-const FAMILY = 'Matyan Card';
-const LOGO = join(BACKEND, '..', 'frontend', 'public', 'logo.png');
+export const FONTS = ['MatyanCard-Regular.ttf', 'MatyanCard-Bold.ttf'].map((f) => join(BACKEND, 'assets', 'fonts', f));
+export const FAMILY = 'Matyan Card';
+export const LOGO = join(BACKEND, '..', 'frontend', 'public', 'logo.png');
 
 export const CARD = { width: 1080, height: 1350 } as const;
 
@@ -37,7 +37,7 @@ export interface CardText {
   source: string;
 }
 
-const escape = (s: string): string =>
+export const escape = (s: string): string =>
   s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
 
 /**
