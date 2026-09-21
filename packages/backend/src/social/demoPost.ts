@@ -37,7 +37,11 @@ export function firstSentence(text: string, max = 230): string {
 /** The body of part `n` of an article, or the article's first provision. */
 export function partText(article: string, part: string | undefined): string | null {
   const body = article.includes('\n---\n') ? article.slice(article.indexOf('\n---\n') + 5) : article;
-  if (!part) return body.split('\n').find((l) => l.trim().length > 20)?.trim() ?? null;
+  if (!part) {
+    const first = body.split('\n').find((l) => l.trim().length > 20)?.trim();
+    // The provision's own number («1. », «2.1. ») is not part of the sentence.
+    return first ? first.replace(/^\d+(?:\.\d+)*\.\s+/, '') : null;
+  }
   const m = new RegExp(`(?:^|\\n)${part.replace('.', '\\.')}\\.\\s+([^\\n]+)`).exec(body);
   return m ? m[1]!.trim() : null;
 }

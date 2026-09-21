@@ -28,7 +28,6 @@ import { demoParts, type AnswerChunk } from './demoPost.js';
 import { ALLOWED_NUMBERS, DEMO_QUESTIONS, FACTS, OVERCLAIMS } from './facts.js';
 import { publishEverywhere, type Published } from './publish.js';
 import { tg } from './bot.js';
-import { DRAFT_MODEL } from './draft.js';
 
 export type Kind = 'demo' | 'feature' | 'problem' | 'offer' | 'difference';
 
@@ -107,6 +106,13 @@ const FALLBACKS: Record<Exclude<Kind, 'demo'>, Omit<PromoCard, 'label' | 'cta'> 
 };
 
 const CTA = 'Փորձեք անվճար · matyanai.am';
+
+/**
+ * Promotional text goes out unread, so its Armenian has to be right the first
+ * time. Gemini Flash wrote «հղում է կոնկրետ ակտի» (for «ակտին») in the first
+ * rehearsal; Sonnet's Armenian is markedly better, at about $0.02 a post.
+ */
+const PROMO_MODEL = process.env['SOCIAL_PROMO_MODEL'] ?? 'claude-sonnet-5';
 const PUBLIC_URL = process.env['PUBLIC_URL'] ?? 'https://matyanai.am';
 
 /** Every problem with a generated promo, or none. */
@@ -138,7 +144,7 @@ async function promo(kind: Exclude<Kind, 'demo'>, recent: string[]): Promise<{ c
             reply += d;
           },
         },
-        DRAFT_MODEL,
+        PROMO_MODEL,
       );
       const json = JSON.parse(reply.slice(reply.indexOf('{'), reply.lastIndexOf('}') + 1)) as {
         headline?: string;
@@ -152,7 +158,7 @@ async function promo(kind: Exclude<Kind, 'demo'>, recent: string[]): Promise<{ c
       };
       const card = { label, headline: p.headline, points: p.points, cta: CTA };
       if (promoProblems(p).length === 0 && promoFits(card)) {
-        return { card, body: `${p.body}\n\nՓորձեք անվճար՝ matyanai.am`, source: DRAFT_MODEL };
+        return { card, body: `${p.body}\n\nՓորձեք անվճար՝ matyanai.am`, source: PROMO_MODEL };
       }
     } catch {
       // fall through to the next attempt

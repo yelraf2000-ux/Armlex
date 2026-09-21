@@ -75,3 +75,7 @@ test('the rotation is 11 posts: 4 live answers, 4 features, one of each other ki
   const count = (k: string) => ROTATION.filter((x) => x === k).length;
   assert.deepEqual([count('demo'), count('feature'), count('problem'), count('offer'), count('difference')], [4, 4, 1, 1, 1]);
 });
+
+test('a quote from an unnumbered citation drops the provision number', () => {
+  assert.equal(partText('[h]\n---\n1. Առաջին դրույթը բավական երկար է։', undefined), 'Առաջին դրույթը բավական երկար է։');
+});
