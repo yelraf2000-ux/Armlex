@@ -20,4 +20,4 @@ export const BRAND = 'MatyanAI';
  * The company's Telegram account, without the @ — where «Գրել Telegram-ով»
  * leads. Empty hides the link rather than pointing at the wrong person.
  */
-export const TELEGRAM_ACCOUNT = '';
+export const TELEGRAM_ACCOUNT = 'MatyanAI';
