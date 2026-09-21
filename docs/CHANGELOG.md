@@ -1674,3 +1674,16 @@ a fresh workspace, re-inviting the same address then succeeds, and usage reads
   `META_PAGE_TOKEN` and `META_IG_USER_ID` are set. The bot reports per
   platform to the team chat. Not yet: albums beyond the first photo, video,
   edits, deletions.
+
+- **2026-09-21 — Drafted posts with approval.** `social/draft.ts`: a topic (a
+  hand-verified golden-set question, or one given) is retrieved against the
+  corpus; Gemini (`gemini-3.5-flash`, `SOCIAL_MODEL`) writes headline, subline
+  and body from those fragments only; the source line and ARLIS link are added
+  by code; `validateNumbers` refuses a draft whose legal numbers are not in the
+  law (one retry). A 1080×1350 card is drawn (`social/card.ts`, resvg + a
+  merged Noto font — two font families dropped whole lines in resvg). The bot
+  sends card + text to the team chat with ✅ / ⏭ buttons; ✅ publishes to the
+  channel, the Page and Instagram (`social/publish.ts`), only from the team
+  chat. `social_drafts`, migration 020. Run now with
+  `npx tsx packages/backend/src/social/draft-now.ts [count|topic]`; no schedule
+  yet.

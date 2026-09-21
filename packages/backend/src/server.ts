@@ -37,6 +37,7 @@ import { allowContact, hashIp as hashContactIp, readContact, submitContact } fro
 import { readCookie, verify as verifySession } from './auth/cookie.js';
 import { findById } from './auth/users.js';
 import { handleChannelPost, MEDIA_DIR, readChannelPost } from './social/channel.js';
+import { handleCallback } from './social/publish.js';
 import { readFile } from 'node:fs/promises';
 import { startCheckout, webhook } from './billing/routes.js';
 import { retrieve, warmRetrieval, VectorLegUnavailableError } from './retrieval/retrieve.js';
@@ -221,6 +222,9 @@ app.post('/api/telegram/webhook', async (req, reply) => {
   }
   const post = readChannelPost(req.body, process.env['TELEGRAM_CHANNEL']);
   if (post) void handleChannelPost(post);
+  // A tap on a draft's Publish / Skip button (social/publish.ts).
+  const cb = (req.body as { callback_query?: Parameters<typeof handleCallback>[0] } | null)?.callback_query;
+  if (cb) void handleCallback(cb).catch((err) => req.log.error({ err }, 'draft callback failed'));
   return { ok: true };
 });
 

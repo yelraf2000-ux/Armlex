@@ -88,8 +88,28 @@ async function savePhoto(fileId: string): Promise<string> {
   return name;
 }
 
+/**
+ * Posts the bot itself is putting in the channel (an approved draft, which it
+ * also sends to Facebook and Instagram directly). If Telegram echoes such a
+ * post back as a channel update, it must not be reposted a second time.
+ * Remembered by text for ten minutes.
+ */
+const ownPosts = new Map<string, number>();
+const norm = (s: string): string => s.replace(/\s+/g, ' ').trim();
+
+export function markOwnPost(text: string, now = Date.now()): void {
+  for (const [k, t] of ownPosts) if (now - t > 10 * 60_000) ownPosts.delete(k);
+  ownPosts.set(norm(text), now);
+}
+
+export function isOwnPost(text: string, now = Date.now()): boolean {
+  const t = ownPosts.get(norm(text));
+  return t !== undefined && now - t <= 10 * 60_000;
+}
+
 /** Store, repost, report. Never throws: the webhook has already answered. */
 export async function handleChannelPost(post: ChannelPost): Promise<void> {
+  if (post.text && isOwnPost(post.text)) return;
   try {
     // A photo of an album we already handled: the first photo speaks for it.
     if (post.mediaGroupId) {

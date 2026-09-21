@@ -25,7 +25,7 @@ const set = (await (
   await api('setWebhook', {
     url: `${base}/api/telegram/webhook`,
     secret_token: secret,
-    allowed_updates: ['channel_post'],
+    allowed_updates: ['channel_post', 'callback_query'],
     drop_pending_updates: true,
   })
 ).json()) as { ok: boolean; description?: string };
