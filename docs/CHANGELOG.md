@@ -1687,3 +1687,16 @@ a fresh workspace, re-inviting the same address then succeeds, and usage reads
   chat. `social_drafts`, migration 020. Run now with
   `npx tsx packages/backend/src/social/draft-now.ts [count|topic]`; no schedule
   yet.
+
+- **2026-09-21 — Automatic posting, 11 a week, no approval (owner's decision).**
+  `social/autopost.ts`, run by `deploy/armlex-autopost.timer` (Mon–Thu 10:00
+  and 18:00, Fri–Sun 12:00, Yerevan). Rotation of 11: 4 live answers
+  ("show it working" — asked of the running app from an internal
+  `social-bot@matyanai.invalid` account on the unlimited plan; card lines are
+  the answer up to its first citation, the quote is cut by code from the cited
+  part; skipped unless coverage is full and every number is in the article),
+  4 feature posts, and one each of problem→solution, offer, and "not just a
+  chatbot" — Gemini may only rephrase `social/facts.ts`; numbers outside the
+  facts, prices, links and overclaims are refused, with hand-written true
+  fallbacks. Each post goes to the channel, the Page and Instagram and the team
+  chat gets the links. Off unless `SOCIAL_AUTOPUBLISH=on`.

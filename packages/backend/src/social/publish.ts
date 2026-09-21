@@ -41,6 +41,23 @@ async function publishTelegram(body: string, imageUrl: string): Promise<PublishR
   }
 }
 
+export interface Published {
+  telegram: PublishResult;
+  facebook: PublishResult;
+  instagram: PublishResult;
+}
+
+/** One post to all three, at once. `imageName` is a file under the media directory. */
+export async function publishEverywhere(body: string, imageName: string): Promise<Published> {
+  const imageUrl = `${PUBLIC_URL}/media/${imageName}`;
+  const [telegram, facebook, instagram] = await Promise.all([
+    publishTelegram(body, imageUrl),
+    publishFacebook(body, imageUrl),
+    publishInstagram(body, imageUrl),
+  ]);
+  return { telegram, facebook, instagram };
+}
+
 export async function handleCallback(cb: Callback): Promise<void> {
   const owner = Number(process.env['TELEGRAM_CHAT_ID']);
   const act = readAction(cb.data);
@@ -71,12 +88,7 @@ export async function handleCallback(cb: Callback): Promise<void> {
   }
   if (!draft || act.action === 'skip') return;
 
-  const imageUrl = `${PUBLIC_URL}/media/${draft.image_name}`;
-  const [telegram, facebook, instagram] = await Promise.all([
-    publishTelegram(draft.body, imageUrl),
-    publishFacebook(draft.body, imageUrl),
-    publishInstagram(draft.body, imageUrl),
-  ]);
+  const { telegram, facebook, instagram } = await publishEverywhere(draft.body, draft.image_name);
   const ok = [telegram, facebook, instagram].some((r) => r.id);
   await db()`
     UPDATE social_drafts

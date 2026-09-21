@@ -1,0 +1,15 @@
+[Unit]
+Description=11 automatic social posts a week (Yerevan time)
+
+[Timer]
+# Monday-Thursday twice (8), Friday-Sunday once (3).
+OnCalendar=Mon..Thu *-*-* 10:00:00 Asia/Yerevan
+OnCalendar=Mon..Thu *-*-* 18:00:00 Asia/Yerevan
+OnCalendar=Fri..Sun *-*-* 12:00:00 Asia/Yerevan
+# A few minutes of jitter so posts do not land on the exact hour every time.
+RandomizedDelaySec=600
+# A missed slot (server down) is skipped, not posted late in a burst.
+Persistent=false
+
+[Install]
+WantedBy=timers.target

@@ -1,0 +1,16 @@
+[Unit]
+Description=MatyanAI automatic social post (Telegram channel, Facebook, Instagram)
+# Live-answer posts ask the running app, so it has to be up.
+After=armlex.service
+Wants=armlex.service
+
+[Service]
+Type=oneshot
+WorkingDirectory=/opt/armlex
+Environment=NODE_ENV=production
+# No EnvironmentFile, as in armlex.service: the script loads /opt/armlex/.env
+# through dotenv. Posting is off unless SOCIAL_AUTOPUBLISH=on is set there.
+ExecStart=/usr/bin/npx tsx packages/backend/src/social/autopost.ts
+TimeoutStartSec=900
+StandardOutput=journal
+StandardError=journal

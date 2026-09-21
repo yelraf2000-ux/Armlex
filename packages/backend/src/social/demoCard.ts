@@ -89,6 +89,13 @@ export function demoCardSvg(c: DemoCard): string {
 </svg>`;
 }
 
+/** Whether the window and the button fit on the card — checked before rendering. */
+export function demoFits(c: DemoCard): boolean {
+  const svg = demoCardSvg(c);
+  const cta = /<rect x="\d+" y="(\d+(?:\.\d+)?)" width="\d+" height="88"/.exec(svg);
+  return cta !== null && Number(cta[1]) + 88 <= CARD.height - 70;
+}
+
 export function renderDemoCard(c: DemoCard): Buffer {
   const png = new Resvg(demoCardSvg(c), {
     font: { fontFiles: FONTS, loadSystemFonts: false, defaultFontFamily: FAMILY },
