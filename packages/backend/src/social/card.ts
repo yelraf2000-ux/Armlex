@@ -47,7 +47,7 @@ const escape = (s: string): string =>
  */
 export function wrap(text: string, maxWidth: number, fontSize: number, bold: boolean, maxLines: number): string[] {
   const per = (ch: string): number =>
-    ch === ' ' ? 0.28 : /[0-9.,:;%()«»՝։-]/.test(ch) ? 0.56 : bold ? 0.66 : 0.6;
+    ch === ' ' ? 0.28 : /[0-9.,:;%()«»՝։-]/.test(ch) ? 0.58 : bold ? 0.7 : 0.64;
   const width = (s: string): number => [...s].reduce((w, ch) => w + per(ch), 0) * fontSize;
 
   const lines: string[] = [];
@@ -74,9 +74,9 @@ export function cardSvg(c: CardText): string {
   const logo = readFileSync(LOGO).toString('base64');
 
   const headSize = 68;
-  const headLines = wrap(c.headline, inner - 28, headSize, true, 5);
+  const headLines = wrap(c.headline, inner - 40, headSize, true, 5);
   const subSize = 36;
-  const subLines = wrap(c.subline, inner, subSize, false, 6);
+  const subLines = wrap(c.subline, inner - 40, subSize, false, 6);
 
   const headTop = 330;
   const headLead = Math.round(headSize * 1.22);
