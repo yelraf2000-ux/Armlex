@@ -62,3 +62,4 @@ data/audit/*.md
 data/eval/accountant-am.jsonl
 data/eval/triage-results*.jsonl
 data/eval/threshold-scores.json
+media/

@@ -36,6 +36,8 @@ import { checkRate } from './answer/rateLimit.js';
 import { allowContact, hashIp as hashContactIp, readContact, submitContact } from './contact/contact.js';
 import { readCookie, verify as verifySession } from './auth/cookie.js';
 import { findById } from './auth/users.js';
+import { handleChannelPost, MEDIA_DIR, readChannelPost } from './social/channel.js';
+import { readFile } from 'node:fs/promises';
 import { startCheckout, webhook } from './billing/routes.js';
 import { retrieve, warmRetrieval, VectorLegUnavailableError } from './retrieval/retrieve.js';
 import { db } from './db/pool.js';
@@ -200,6 +202,40 @@ app.post('/api/contact', async (req, reply) => {
   } catch (err) {
     req.log.error({ err }, 'contact failed');
     return reply.code(500).send({ error: 'contact_failed' });
+  }
+});
+
+/**
+ * Telegram delivers the bot's updates here — for now, new posts in our channel,
+ * which are reposted to Facebook and Instagram (social/channel.ts).
+ *
+ * The secret header is set when the webhook is registered
+ * (social/set-webhook.ts); without it anyone could make us post. Answered at
+ * once and handled after, because Telegram retries a slow answer and the
+ * reposting takes up to two minutes.
+ */
+app.post('/api/telegram/webhook', async (req, reply) => {
+  const secret = process.env['TELEGRAM_WEBHOOK_SECRET'];
+  if (!secret || req.headers['x-telegram-bot-api-secret-token'] !== secret) {
+    return reply.code(403).send({ error: 'forbidden' });
+  }
+  const post = readChannelPost(req.body, process.env['TELEGRAM_CHANNEL']);
+  if (post) void handleChannelPost(post);
+  return { ok: true };
+});
+
+/**
+ * Photos saved from channel posts, for Meta to download when it publishes.
+ * Only names this server generated can be asked for.
+ */
+app.get<{ Params: { name: string } }>('/media/:name', async (req, reply) => {
+  const { name } = req.params;
+  if (!/^[0-9a-f-]{36}\.jpg$/.test(name)) return reply.code(404).send();
+  try {
+    const bytes = await readFile(join(MEDIA_DIR, name));
+    return reply.type('image/jpeg').header('Cache-Control', 'public, max-age=86400').send(bytes);
+  } catch {
+    return reply.code(404).send();
   }
 });
 

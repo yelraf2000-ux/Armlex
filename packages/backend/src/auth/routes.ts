@@ -110,6 +110,9 @@ const PUBLIC_PATHS = new Set([
   // The «Հարց ունե՞ք» form: written to by people who have no account yet. Its
   // own per-address limit and a hidden trap field protect it (server.ts).
   '/api/contact',
+  // Telegram has no session; a secret header set at registration stands in
+  // for one (server.ts, social/set-webhook.ts).
+  '/api/telegram/webhook',
   // The payment provider has no session. This one is verified by HMAC signature
   // instead, which is a stronger check than a cookie: see billing/routes.ts.
   '/api/billing/webhook',

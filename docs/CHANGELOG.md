@@ -1664,3 +1664,13 @@ a fresh workspace, re-inviting the same address then succeeds, and usage reads
   only. Public route with a 5-per-hour-per-address limit and a hidden trap
   field. A person answers; no model. «Գրել Telegram-ով» appears once
   `TELEGRAM_ACCOUNT` in `frontend/src/brand.ts` is set.
+
+- **2026-09-21 — Channel reposting, Telegram side.** The bot, as an admin of
+  `@matyanAI_channel`, receives each new post at `/api/telegram/webhook`
+  (secret header, `set-webhook.ts`). Text and one photo are stored
+  (`social_posts`, migration 019; photos under `media/`, served at
+  `/media/<uuid>.jpg` for Meta to fetch) and published to the Facebook Page
+  and Instagram (`social/meta.ts`, Graph API v25.0) once `META_PAGE_ID`,
+  `META_PAGE_TOKEN` and `META_IG_USER_ID` are set. The bot reports per
+  platform to the team chat. Not yet: albums beyond the first photo, video,
+  edits, deletions.
