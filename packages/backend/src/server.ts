@@ -33,6 +33,9 @@ import {
 import { workspaceQuota } from './auth/workspace.js';
 import { generatePreview, hashIp } from './answer/preview.js';
 import { checkRate } from './answer/rateLimit.js';
+import { allowContact, hashIp as hashContactIp, readContact, submitContact } from './contact/contact.js';
+import { readCookie, verify as verifySession } from './auth/cookie.js';
+import { findById } from './auth/users.js';
 import { startCheckout, webhook } from './billing/routes.js';
 import { retrieve, warmRetrieval, VectorLegUnavailableError } from './retrieval/retrieve.js';
 import { db } from './db/pool.js';
@@ -161,6 +164,42 @@ app.post<{ Body: QueryBody }>('/api/preview', async (req, reply) => {
     }
     req.log.error({ err }, 'preview failed');
     return reply.code(502).send({ error: 'preview_failed' });
+  }
+});
+
+/**
+ * The «Հարց ունե՞ք» form. Public — its senders are mostly people without an
+ * account — so it carries its own per-address limit. Stored first, then sent to
+ * the team's Telegram group; a failed notification still leaves the row.
+ */
+app.post('/api/contact', async (req, reply) => {
+  const input = readContact(req.body);
+  if ('error' in input) return reply.code(400).send({ error: input.error });
+
+  // A hidden field real people never see; a bot filling every input does.
+  const trap = (req.body as { website?: unknown } | null)?.website;
+  if (typeof trap === 'string' && trap.trim()) return { ok: true };
+
+  if (!allowContact(hashContactIp(req.ip))) {
+    return reply.code(429).send({ error: 'too_many' });
+  }
+
+  // Signed in or not, both are welcome; if signed in, the team sees who.
+  const session = verifySession(readCookie(req.headers.cookie));
+  const user = session ? await findById(session.userId) : null;
+  const known = user && session && session.version === user.session_version ? user : null;
+
+  try {
+    const { delivered } = await submitContact(input, {
+      userId: known?.id ?? null,
+      email: known?.email ?? null,
+      ip: req.ip,
+    });
+    if (!delivered) req.log.warn('contact message stored but not delivered to Telegram');
+    return { ok: true };
+  } catch (err) {
+    req.log.error({ err }, 'contact failed');
+    return reply.code(500).send({ error: 'contact_failed' });
   }
 });
 

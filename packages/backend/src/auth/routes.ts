@@ -107,6 +107,9 @@ const PUBLIC_PATHS = new Set([
   // is not unprotected — it carries a per-address rate limit and the cheap
   // model — but the protection is its own, not the session's.
   '/api/preview',
+  // The «Հարց ունե՞ք» form: written to by people who have no account yet. Its
+  // own per-address limit and a hidden trap field protect it (server.ts).
+  '/api/contact',
   // The payment provider has no session. This one is verified by HMAC signature
   // instead, which is a stronger check than a cookie: see billing/routes.ts.
   '/api/billing/webhook',

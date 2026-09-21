@@ -1655,3 +1655,12 @@ a fresh workspace, re-inviting the same address then succeeds, and usage reads
 - **2026-09-17 — Out-of-questions notice is blue.** Owner's rule: a note is
   blue or black, never amber. Now `primary-50` ground, `primary-200` border,
   `primary-600` left rule and icon.
+
+- **2026-09-21 — «Հարց ունե՞ք» contact button on the public pages.** A corner
+  button opens a short form (name, how to reach you, the question). The
+  message is stored in `contact_messages` (migration 018) and sent to the
+  team's Telegram group by the bot (`contact/telegram.ts`, needs
+  `TELEGRAM_BOT_TOKEN` and `TELEGRAM_CHAT_ID`); without them it is stored
+  only. Public route with a 5-per-hour-per-address limit and a hidden trap
+  field. A person answers; no model. «Գրել Telegram-ով» appears once
+  `TELEGRAM_ACCOUNT` in `frontend/src/brand.ts` is set.

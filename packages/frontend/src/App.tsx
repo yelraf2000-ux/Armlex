@@ -12,6 +12,7 @@ import { ChunkCard } from './ChunkCard.js';
 import { BRAND } from './brand.js';
 import { Chat } from './Chat.js';
 import { Landing } from './Landing.js';
+import { ContactWidget } from './ContactWidget.js';
 import { type Account, PENDING_PROFILE } from './Login.js';
 import { AccountMenu } from './AccountMenu.js';
 import { Workspace } from './Workspace.js';
@@ -471,7 +472,13 @@ function Workbench() {
       description of "grounded answers with verbatim citations" persuades
       nobody who has not watched it happen to their own question.
     */
-    return <Landing googleEnabled={account?.google} onAuthed={() => void loadAccount()} />;
+    return (
+      <>
+        <Landing googleEnabled={account?.google} onAuthed={() => void loadAccount()} />
+        {/* Questions about the product, answered by a person — see ContactWidget. */}
+        <ContactWidget />
+      </>
+    );
   }
 
   return (
