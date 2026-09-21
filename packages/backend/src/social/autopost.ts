@@ -8,8 +8,8 @@
  * code, or a rephrasing of `facts.ts`. A post that fails a check is not
  * published; the team chat is told why.
  *
- * Off unless SOCIAL_AUTOPUBLISH=on. Manual run:
- *   npx tsx packages/backend/src/social/autopost.ts [demo|feature|problem|offer|difference]
+ * Off unless SOCIAL_AUTOPUBLISH=on. Manual run (`--dry`: to the team chat only):
+ *   npx tsx packages/backend/src/social/autopost.ts [demo|feature|problem|offer|difference] [--dry]
  */
 import 'dotenv/config';
 import { randomBytes, randomUUID } from 'node:crypto';
@@ -27,6 +27,7 @@ import { renderPromoCard, promoFits, type PromoCard } from './promoCard.js';
 import { demoParts, type AnswerChunk } from './demoPost.js';
 import { ALLOWED_NUMBERS, DEMO_QUESTIONS, FACTS, OVERCLAIMS } from './facts.js';
 import { publishEverywhere, type Published } from './publish.js';
+import { tg } from './bot.js';
 import { DRAFT_MODEL } from './draft.js';
 
 export type Kind = 'demo' | 'feature' | 'problem' | 'offer' | 'difference';
@@ -278,7 +279,7 @@ async function permalinks(p: Published): Promise<string[]> {
   return [...out, ...failed];
 }
 
-export async function autopost(forced?: Kind): Promise<void> {
+export async function autopost(forced?: Kind, dry = false): Promise<void> {
   const published = await db()<{ topic: string; headline: string }[]>`
     SELECT topic, headline FROM social_drafts
      WHERE topic LIKE 'auto:%' AND status = 'published'
@@ -313,6 +314,18 @@ export async function autopost(forced?: Kind): Promise<void> {
   const imageName = `${randomUUID()}.jpg`;
   await mkdir(MEDIA_DIR, { recursive: true });
   await writeFile(join(MEDIA_DIR, imageName), image);
+
+  // A rehearsal: the finished post goes to the team chat only.
+  if (dry) {
+    await tg('sendPhoto', {
+      chat_id: process.env['TELEGRAM_CHAT_ID'],
+      photo: `${PUBLIC_URL}/media/${imageName}`,
+      caption: `ՓՈՐՁ (չի հրապարակվել)՝ ${kind}\n\n${body}`.slice(0, 1024),
+    });
+    console.log(`dry run: ${kind} sent to the team chat`);
+    return;
+  }
+
   const rows = await db()<{ id: string }[]>`
     INSERT INTO social_drafts (topic, headline, subline, body, source_label, source_url, image_name, model, status, decided_at)
     VALUES (${topic}, ${headline}, '', ${body}, ${kind}, ${PUBLIC_URL}, ${imageName}, ${model}, 'publishing', now())
@@ -327,12 +340,13 @@ export async function autopost(forced?: Kind): Promise<void> {
 
 // Run directly (the timer, or by hand).
 if (process.argv[1]?.endsWith('autopost.ts')) {
-  const forced = process.argv[2] as Kind | undefined;
-  if (process.env['SOCIAL_AUTOPUBLISH'] !== 'on') {
+  const dry = process.argv.includes('--dry');
+  const forced = process.argv.slice(2).find((a) => !a.startsWith('--')) as Kind | undefined;
+  if (!dry && process.env['SOCIAL_AUTOPUBLISH'] !== 'on') {
     console.log('SOCIAL_AUTOPUBLISH is not "on" — nothing posted');
     process.exit(0);
   }
-  autopost(forced && (ROTATION as string[]).includes(forced) ? forced : undefined)
+  autopost(forced && (ROTATION as string[]).includes(forced) ? forced : undefined, dry)
     .then(() => process.exit(0))
     .catch(async (err) => {
       console.error(err);
