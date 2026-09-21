@@ -296,6 +296,7 @@ export async function autopost(forced?: Kind, dry = false): Promise<void> {
   if (kind === 'demo') {
     const d = await demo(recentTopics);
     if ('skip' in d) {
+      console.log(`skipped: ${d.skip}`);
       await sendToTeam(`Ավտոմատ գրառումը բաց թողնվեց (կենդանի պատասխան)՝ ${d.skip}`);
       return;
     }
