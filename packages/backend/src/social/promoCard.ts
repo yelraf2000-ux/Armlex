@@ -25,7 +25,7 @@ export function promoCardSvg(c: PromoCard): string {
   const head = wrap(c.headline, width - 50, 64, true, 4);
   let y = 300;
   const parts: string[] = [];
-  parts.push(t(pad, y, 'font-size="24" font-weight="700" letter-spacing="3" fill="#2563eb"', c.label.toUpperCase()));
+  parts.push(t(pad, y, 'font-size="24" font-weight="700" letter-spacing="3" fill="#2563eb"', c.label.toUpperCase().replace(/ԵՒ/g, 'ԵՎ')));
   y += 84;
   head.forEach((l) => {
     parts.push(t(pad, y, 'font-size="64" font-weight="700" fill="#0f172a"', l));
