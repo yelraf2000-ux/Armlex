@@ -502,3 +502,41 @@ part. The legislator's part boundary carries its conditions; a sentence does
 not. A NAMED part (`Հոդված 150, մաս 1.1`) decides alone; a quote counts only if
 it occurs in exactly one part — «10 տոկոս դրույքաչափով» occurs in four parts of
 Հոդված 150 and would otherwise select all four.
+
+## Analytics: PostHog, EU region, metadata only (2026-09-23)
+
+**What was chosen.** PostHog Cloud EU (Frankfurt) as the single product
+analytics tool — events, funnels, session replay — over Google Analytics or
+Plausible, because the questions that matter are behavioural (where does the
+signup → first question → second question → invite → allowance-wall funnel
+leak; which channel brings signups) and page-view counters cannot answer
+them. The free tier covers the volume by a wide margin at ~300 target firms.
+
+**What never goes there.** Accountants type client facts into the box, so
+every event carries **metadata only** — coverage, latency, counts, ids of
+articles read — never the question, the answer or the article text. Session
+replay is on but masks every input and every element that shows content
+(`.turn-text`, `.norm-body`, `.lp-answer`, the register, …). Single-use
+tokens in the address (`/verify`, `/invite`, `/reset`, `/shared`) are scrubbed
+from every event before it is sent. The content stays in our own Postgres,
+which already has it. Autocapture is OFF for the same reason: it reports the
+text of what was clicked, and here that text is often the law.
+
+**No cookie for a visitor.** Persistence is memory until sign-in, so the
+landing page needs no consent banner. The price: a visitor who reloads before
+registering counts as a new visitor and loses their UTM attribution. Accepted.
+On sign-in the person is identified by their user id (with email, name, plan,
+company) and grouped by **workspace** — the firm is what a B2B sale is to, so
+"active workspaces" is the number to watch, not "active users".
+
+**Where each event lives.** Browser: what was opened, clicked, copied, and
+what the wait felt like. Server: what happened — the funnel steps that decide
+the business and must not be lost to an ad blocker or a closed tab. A question
+is therefore two events: `question_asked` (browser, intent) and
+`question_answered` (server, outcome, with coverage and timings).
+
+**Key handling.** The PostHog *project* key is public by design (write-only,
+in every page's source) and is compiled in on both sides so a deploy needs no
+new configuration; the *personal* API key is a different thing and stays out
+of the repo. Dev sends nothing: the frontend key comes from `.env.production`
+and the server is on only when `NODE_ENV=production` or `POSTHOG_KEY` is set.

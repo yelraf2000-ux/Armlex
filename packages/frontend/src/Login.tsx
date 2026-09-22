@@ -14,6 +14,7 @@ import { BRAND } from './brand.js';
 import { BrandLine } from './BrandLine.js';
 import { BrandMark } from './BrandMark.js';
 import { useSettings } from './Settings.js';
+import { track } from './analytics.js';
 
 export interface Account {
   user: {
@@ -444,6 +445,7 @@ export function Login({
 
       // Which wall people hit on the way in: a taken address, a short
       // password, a wrong one. The server records the successes.
+      track('auth_failed', { tab, error: body.error ?? `http_${res.status}` });
       setError(messageFor(body.error ?? '', res.status));
       /*
         Refusals ABOUT THE ADDRESS go back to the address.

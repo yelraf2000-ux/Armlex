@@ -15,6 +15,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { useSettings } from './Settings.js';
 import type { Account } from './Login.js';
+import { track } from './analytics.js';
 
 export function AccountMenu({
   account,
@@ -79,6 +80,7 @@ export function AccountMenu({
    */
   async function upgrade(): Promise<void> {
     setUpgradeError(null);
+    track('upgrade_clicked', { from: 'menu' });
     const res = await fetch('/api/billing/checkout?plan=pro');
     if (!res.ok) {
       setUpgradeError(t('account.upgradeSoon'));

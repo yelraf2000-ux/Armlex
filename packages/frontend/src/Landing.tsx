@@ -16,6 +16,7 @@ import { MarkdownView } from './MarkdownView.js';
 import { useSettings } from './Settings.js';
 import { navigate, usePath } from './router.js';
 import { BrandMark } from './BrandMark.js';
+import { track } from './analytics.js';
 
 export const PENDING_QUESTION = 'matyan.pendingQuestion';
 export const PENDING_PREVIEW = 'matyan.pendingPreview';
@@ -129,7 +130,11 @@ export function Landing({
   const path = usePath();
   const showAuth: Tab | null =
     path === '/login' ? 'signin' : path === '/registration' ? 'register' : null;
-  const openForm = (tab: Tab): void => navigate(tab === 'signin' ? '/login' : '/registration');
+  /** `from` says which door: the masthead, the lock under a preview, or the preview limit. */
+  const openForm = (tab: Tab, from: 'header' | 'lock' | 'limit' = 'header'): void => {
+    track('auth_form_opened', { tab, from });
+    navigate(tab === 'signin' ? '/login' : '/registration');
+  };
 
   /**
    * The outcome of a Google round trip, read once on first render.
@@ -188,13 +193,15 @@ export function Landing({
     window.scrollTo({ top: 0 });
   }
 
-  async function ask(q: string): Promise<void> {
+  async function ask(q: string, source: 'typed' | 'example' = 'typed'): Promise<void> {
     const text = q.trim();
     if (!text || busy) return;
     setBusy(true);
     setError(null);
     setPreview(null);
     setAskedText(text);
+    const started = Date.now();
+    track('landing_question_asked', { source });
     try {
       const res = await fetch('/api/preview', {
         method: 'POST',
@@ -203,16 +210,25 @@ export function Landing({
       });
       const body = (await res.json()) as PreviewResult & { error?: string; detail?: string };
       if (!res.ok) {
+        track('landing_preview_failed', { error: body.error ?? `http_${res.status}` });
         setError(body.detail ?? t('preview.failed'));
         // Out of free previews is the one error that should still lead
         // somewhere: registering is exactly the answer to it.
-        if (res.status === 429) openForm('register');
+        if (res.status === 429) openForm('register', 'limit');
         return;
       }
+      track('landing_preview_shown', {
+        source,
+        withheld: body.withheld > 0,
+        sources: body.sources,
+        coverage: body.coverage,
+        total_ms: Date.now() - started,
+      });
       setPreview(body);
       sessionStorage.setItem(PENDING_QUESTION, text);
       sessionStorage.setItem(PENDING_PREVIEW, body.id);
     } catch (err) {
+      track('landing_preview_failed', { error: 'network' });
       setError(String(err));
     } finally {
       setBusy(false);
@@ -353,7 +369,7 @@ export function Landing({
               <div className="lp-examples">
                 <span className="lp-examples-label">{t('landing.examples')}</span>
                 {EXAMPLES.map((key) => (
-                  <button key={key} className="lp-example" onClick={() => void ask(t(key))} disabled={busy}>
+                  <button key={key} className="lp-example" onClick={() => void ask(t(key), 'example')} disabled={busy}>
                     {t(key)}
                   </button>
                 ))}
@@ -423,12 +439,12 @@ export function Landing({
                         </span>
                         <h3 className="lp-lock-title">{t('preview.lockTitle')}</h3>
                         <p className="lp-lock-body">{t('preview.lockBody')}</p>
-                        <button className="lp-lock-button" onClick={() => openForm('register')}>
+                        <button className="lp-lock-button" onClick={() => openForm('register', 'lock')}>
                           {t('preview.unlock')}
                         </button>
                         <p className="lp-lock-signin">
                           {t('auth.haveAccount')}{' '}
-                          <button className="auth-switch-link" onClick={() => openForm('signin')}>
+                          <button className="auth-switch-link" onClick={() => openForm('signin', 'lock')}>
                             {t('preview.signIn')}
                           </button>
                         </p>

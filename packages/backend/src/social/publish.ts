@@ -82,12 +82,25 @@ async function storyImage(body: string, imageName: string): Promise<string> {
 }
 
 /** One post to all three, and a story on Facebook and Instagram beside it. */
+/**
+ * The address in the post, with the platform's own door.
+ *
+ * `matyanai.am` becomes `matyanai.am/tg` (or /fb, /ig): the server sends each
+ * to the front page tagged with where the visitor came from, which is the only
+ * way a signup is ever attributed to a channel. Short, because an Instagram
+ * caption is not a link — people type it. An address that already has a path
+ * is left alone.
+ */
+export function withSource(body: string, source: 'tg' | 'fb' | 'ig'): string {
+  return body.replace(/matyanai\.am(?![\w/.-])/g, `matyanai.am/${source}`);
+}
+
 export async function publishEverywhere(body: string, imageName: string): Promise<Published> {
   const imageUrl = `${PUBLIC_URL}/media/${imageName}`;
   const [telegram, facebook, instagram] = await Promise.all([
-    publishTelegram(body, imageUrl),
-    publishFacebook(body, imageUrl),
-    publishInstagram(body, imageUrl),
+    publishTelegram(withSource(body, 'tg'), imageUrl),
+    publishFacebook(withSource(body, 'fb'), imageUrl),
+    publishInstagram(withSource(body, 'ig'), imageUrl),
   ]);
 
   // Stories are a bonus: a failure here must not make the post count as failed.

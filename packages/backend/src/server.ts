@@ -47,6 +47,7 @@ import { chat, discardFailedTurn } from './answer/chat.js';
 import { someInterludes } from './answer/interlude.js';
 import { DEFAULT_MODEL } from './answer/llm.js';
 import { noteHealthy, reportOutage } from './ops/alert.js';
+import { closeAnalytics, track } from './ops/analytics.js';
 import { CONTEXT_OVERFLOW_MESSAGE, isContextOverflow } from './answer/history.js';
 
 const app = Fastify({
@@ -212,6 +213,7 @@ app.post('/api/contact', async (req, reply) => {
       ip: req.ip,
     });
     if (!delivered) req.log.warn('contact message stored but not delivered to Telegram');
+    if (known) track(known.id, 'contact_sent', {}, known.workspace_id);
     return { ok: true };
   } catch (err) {
     req.log.error({ err }, 'contact failed');
@@ -274,6 +276,21 @@ function readQuery(body: QueryBody): string | undefined {
 app.get('/health', async () => ({ ok: true }));
 app.get('/api/health', async () => ({ ok: true }));
 
+/**
+ * Where a visitor came from.
+ *
+ * The posts say «matyanai.am/tg», «/fb», «/ig» — short enough to type from an
+ * Instagram caption, where nothing is a link — and each lands on the front
+ * page carrying the UTM tags that analytics reads. Without this every signup
+ * from a post is "direct", and which channel is worth the effort stays a guess.
+ */
+const SOURCES: Record<string, string> = { tg: 'telegram', fb: 'facebook', ig: 'instagram' };
+for (const [path, source] of Object.entries(SOURCES)) {
+  app.get(`/${path}`, async (_req, reply) =>
+    reply.redirect(`/?utm_source=${source}&utm_medium=social&utm_campaign=autopost`, 302),
+  );
+}
+
 /** Called by the UI on load, to absorb Neon's cold start before the first question. */
 app.get('/api/warm', async () => {
   warmRetrieval();
@@ -327,6 +344,8 @@ app.post<{ Body: ChatBody }>('/api/chat/stream', async (req, reply) => {
   // number the workspace page shows.
   const usage = await workspaceQuota(req.user!);
   if (usage.limit !== null && usage.used >= usage.limit) {
+    // The moment of willingness to pay, if there is one. Counted per firm.
+    track(req.user!.id, 'quota_exceeded', { limit: usage.limit, used: usage.used }, req.user!.workspace_id);
     return reply.code(429).send({
       error: 'quota_exceeded',
       usage,
@@ -357,6 +376,7 @@ app.post<{ Body: ChatBody }>('/api/chat/stream', async (req, reply) => {
   /* Remembered so a failed turn can be taken back off the register. For a new
      conversation the id does not exist until `chat` makes one. */
   let openedId: string | undefined = sessionId;
+  const started = Date.now();
 
   try {
     const result = await chat(
@@ -394,9 +414,43 @@ app.post<{ Body: ChatBody }>('/api/chat/stream', async (req, reply) => {
     // A question that went through is the only honest all-clear, so it is the
     // one that lifts an outstanding outage alert.
     void noteHealthy();
+    /*
+      The outcome, from the side that knows it. The browser reports what the
+      wait felt like; this is what the answer rested on and what it cost — and
+      it cannot be lost to a closed tab. Never the question or the answer.
+    */
+    track(
+      req.user!.id,
+      'question_answered',
+      {
+        continued: sessionId !== undefined,
+        coverage: result.coverage,
+        model: result.model,
+        sources: result.freshChunks.length,
+        carried: result.carriedChunks.length,
+        invalid_quotes: result.invalidQuotes,
+        retrieval_ms: result.timings.retrieval,
+        first_token_ms: result.timings.firstToken,
+        total_ms: Date.now() - started,
+        input_tokens: result.usage.inputTokens,
+        cache_read_tokens: result.usage.cacheReadTokens,
+        output_tokens: result.usage.outputTokens,
+      },
+      req.user!.workspace_id,
+    );
   } catch (err) {
     const e = err as { status?: number; message?: string };
     req.log.error({ err }, 'chat stream failed');
+    track(
+      req.user!.id,
+      'question_failed',
+      {
+        continued: sessionId !== undefined,
+        error: err instanceof VectorLegUnavailableError ? 'search_unavailable' : (e.status ?? 'error'),
+        total_ms: Date.now() - started,
+      },
+      req.user!.workspace_id,
+    );
 
     /*
       Tell the team, if this is the kind of failure no deploy fixes. Twice the
@@ -947,6 +1001,12 @@ if (existsSync(FRONTEND_DIST)) {
   });
   app.log.info(`serving frontend from ${FRONTEND_DIST}`);
 }
+
+// systemd stops the service with SIGTERM, which Node answers by exiting at
+// once — with whatever analytics batch was still queued. Flush first, briefly.
+process.once('SIGTERM', () => {
+  void closeAnalytics().finally(() => process.exit(0));
+});
 
 const port = Number(process.env['PORT'] ?? 3001);
 // 0.0.0.0 in a container: 127.0.0.1 is unreachable from outside it, and the

@@ -22,6 +22,7 @@ import { AccountMenu } from './AccountMenu.js';
 import type { Account } from './Login.js';
 import { useSettings } from './Settings.js';
 import { PENDING_PREVIEW, PENDING_QUESTION } from './Landing.js';
+import { track } from './analytics.js';
 
 interface ChatResponse {
   sessionId: string;
@@ -347,6 +348,16 @@ export function Chat({
     setError(null);
     setQuotaOut(null);
     setLoading(true);
+    /*
+      What the wait felt like, measured from the press of the button: when the
+      sources appeared, when the first word did, when it was all there. Never
+      the question itself — see analytics.ts.
+    */
+    const started = Date.now();
+    const continued = sessionId !== null;
+    let sourcesAt: number | undefined;
+    let firstTokenAt: number | undefined;
+    track('question_asked', { continued });
     /**
      * Whether the question has entered the transcript. Not until the server
      * accepts it: a refused send used to flip an empty screen into a
@@ -394,10 +405,12 @@ export function Chat({
           nobody should retype it on Monday.
         */
         if (res.status === 429 && body.error === 'quota_exceeded') {
+          track('quota_exhausted', { limit: body.usage?.limit ?? 0 });
           setQuotaOut({ limit: body.usage?.limit ?? 0 });
           return;
         }
 
+        track('answer_failed', { error: body.error ?? `http_${res.status}`, continued });
         setError(
           body.detail
             ? body.detail
@@ -492,10 +505,21 @@ export function Chat({
             patchLast({ stage: payload.stage });
           } else if (m[1] === 'chunks') {
             // Articles are known ~1-2s before the first word of the answer.
+            sourcesAt ??= Date.now();
             patchLast({ fresh: payload.chunks });
           } else if (m[1] === 'delta') {
+            firstTokenAt ??= Date.now();
             pending += payload.text ?? '';
           } else if (m[1] === 'done') {
+            track('answer_received', {
+              continued,
+              coverage: payload.coverage ?? null,
+              sources: payload.freshChunks?.length ?? 0,
+              carried: payload.carriedChunks?.length ?? 0,
+              sources_ms: sourcesAt === undefined ? null : sourcesAt - started,
+              first_token_ms: firstTokenAt === undefined ? null : firstTokenAt - started,
+              total_ms: Date.now() - started,
+            });
             if (payload.sessionId) {
               setSessionId(payload.sessionId);
               /*
@@ -520,6 +544,7 @@ export function Chat({
               stage: undefined,
             });
           } else if (m[1] === 'error') {
+            track('answer_failed', { error: payload.error ?? 'stream_error', continued });
             // An exhausted API balance arrives as a 400 from Anthropic and is
             // re-raised as a 502 "chat failed", which reads like an application
             // bug. Name it, so nobody debugs the request shape for an hour.
@@ -532,6 +557,7 @@ export function Chat({
         }
       }
     } catch (err) {
+      track('answer_failed', { error: 'network', continued });
       setError(String(err));
     } finally {
       // Stop pacing and show whatever is still buffered. Text that has been

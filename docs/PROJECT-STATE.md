@@ -40,6 +40,11 @@ below are NOT deployed yet.
   verbatim statute. See `CHANGELOG.md` 2026-09-15 → 09-16.
 - **Design:** `docs/DESIGN.md` adopted, light only, new logo in headers,
   favicons and mail.
+- **Analytics (2026-09-23):** PostHog EU, metadata only, browser + server
+  events, people grouped by workspace, `/tg` `/fb` `/ig` attribution links in
+  the posts. Dashboards not built yet (`OPEN-ITEMS` 64); session replay needs
+  "Record user sessions" switched on in the PostHog project. `DECISIONS.md`
+  §"Analytics" for what is and is not sent.
 - **Next:** the open list is `OPEN-ITEMS.md` §"Open as of 2026-09-17" — first,
   rotate the two secrets (51, raised repeatedly and still not done); then the
   retrieval gap (52) and the quote-per-citation decision (53). Corpus breadth,

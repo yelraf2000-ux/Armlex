@@ -17,6 +17,7 @@ import type { Chunk } from './types.js';
 import { headerField, highlight, opening, parseDates, splitHeader } from './chunkText.js';
 import { partsNamed, range, runs, selectParts } from './parts.js';
 import { useSettings } from './Settings.js';
+import { track } from './analytics.js';
 
 export interface Entry {
   chunk: Chunk;
@@ -165,6 +166,7 @@ function ApparatusEntry({
     const citation = `${chunk.documentTitle}, ${chunk.ref}`;
     try {
       await navigator.clipboard.writeText(`«${text}»\n\n— ${citation}\n${arlisUrl(chunk.arlisId)}`);
+      track('quote_copied', { arlis_id: chunk.arlisId, quoted: marked.length > 0 });
       setCopied(true);
       setTimeout(() => setCopied(false), 2000);
     } catch {
@@ -241,7 +243,13 @@ function ApparatusEntry({
             <button className="btn" onClick={() => void copyQuote()}>
               {copied ? t('norm.copied') : marked.length > 0 ? t('norm.copyQuote') : t('norm.copyArticle')}
             </button>
-            <a className="btn" href={arlisUrl(chunk.arlisId)} target="_blank" rel="noreferrer">
+            <a
+              className="btn"
+              href={arlisUrl(chunk.arlisId)}
+              target="_blank"
+              rel="noreferrer"
+              onClick={() => track('arlis_opened', { arlis_id: chunk.arlisId })}
+            >
               {t('norm.openArlis')}
             </a>
           </div>
@@ -372,6 +380,9 @@ export function NormPanel({
             const id = entry.chunk.articleId;
             const next = !isOpen(id);
             setOpen((o) => ({ ...o, [id]: next }));
+            // Whether anyone reads the statute, or only the answer. The
+            // sources ARE the product; if nobody opens them, that is news.
+            if (next) track('source_opened', { arlis_id: entry.chunk.arlisId, carried: entry.carried });
             // Only report a selection when OPENING. Reporting it on collapse
             // changed `selectedId`, which re-ran the effect above and forced the
             // entry straight back open — so the first entry could never be

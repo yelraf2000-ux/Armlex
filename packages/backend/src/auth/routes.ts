@@ -8,6 +8,7 @@
 import type { FastifyReply, FastifyRequest } from 'fastify';
 import { clearCookie, readCookie, refreshed, setCookie, verify } from './cookie.js';
 import { MIN_PASSWORD, verifyPassword } from './password.js';
+import { track } from '../ops/analytics.js';
 import {
   createWithPassword,
   fillProfile,
@@ -246,7 +247,21 @@ export async function register(req: FastifyRequest, reply: FastifyReply): Promis
   // An account that joined a colleague's firm already has a workspace; one that
   // did not becomes the admin of its own. AFTER the claim, so an invited user
   // does not first own a workspace and then abandon it.
-  await workspaceIdFor(fresh);
+  const workspaceId = await workspaceIdFor(fresh);
+
+  // The top of the funnel that the server can vouch for. The address and the
+  // firm are person properties set by the browser on sign-in, not sent here.
+  track(
+    fresh.id,
+    'user_registered',
+    {
+      method: 'password',
+      from_preview: typeof previewId === 'string',
+      invites: invites.length,
+      company_size: fresh.company_size ?? null,
+    },
+    workspaceId,
+  );
 
   /*
    * With the gate on, registration ends WITHOUT a cookie. Everything above
@@ -308,6 +323,7 @@ export async function login(req: FastifyRequest, reply: FastifyReply): Promise<v
   }
 
   await touchLastSeen(user.id);
+  track(user.id, 'user_signed_in', { method: 'password' }, user.workspace_id);
   return reply
     .header('Set-Cookie', setCookie(user.id, user.session_version))
     .send({ user: publicUser(user), usage: await monthlyUsage(user) });
@@ -330,6 +346,7 @@ export async function verifyEmail(req: FastifyRequest, reply: FastifyReply): Pro
   if (!user) return reply.code(400).send({ error: 'invalid' });
 
   await touchLastSeen(user.id);
+  track(user.id, 'email_verified', {}, user.workspace_id);
   return reply
     .header('Set-Cookie', setCookie(user.id, user.session_version))
     .send({ user: publicUser(user), usage: await monthlyUsage(user) });
@@ -426,7 +443,9 @@ export async function acceptInvite(req: FastifyRequest, reply: FastifyReply): Pr
   }
 
   const user = (await findById(result.userId))!;
-  await workspaceIdFor(user);
+  const workspaceId = await workspaceIdFor(user);
+  // The growth loop closing: a colleague joined a firm that already uses this.
+  track(user.id, 'invite_accepted', {}, workspaceId);
 
   if (verification.isRequired()) {
     const sent = await verification.issueFor(user);
@@ -574,6 +593,7 @@ export async function postWorkspaceInvite(
     { email: body?.email, name: body?.name, admin: body?.admin },
   );
   if (!result.ok) return reply.code(400).send({ error: result.reason });
+  track(req.user!.id, 'invite_sent', { admin: body?.admin === true }, req.user!.workspace_id);
   return reply.send(await readWorkspace(req.user!));
 }
 
@@ -668,6 +688,8 @@ export async function me(req: FastifyRequest, reply: FastifyReply): Promise<void
     // Drives whether the upgrade route is offered at all. Presentation only —
     // every mutation still re-checks the role server-side.
     role: view.role,
+    // For analytics, which groups people by firm. Nothing else reads it.
+    workspaceId: view.id,
     google: googleEnabled(),
   });
 }
@@ -722,7 +744,9 @@ export async function googleCallback(req: FastifyRequest, reply: FastifyReply): 
   // Only a genuinely NEW account settles an invitation — otherwise every later
   // Google sign-in would pay the inviter again.
   if (!before) await claimInvitation(user.id, identity.email);
-  await workspaceIdFor((await findById(user.id)) ?? user);
+  const workspaceId = await workspaceIdFor((await findById(user.id)) ?? user);
   await touchLastSeen(user.id);
+  if (!before) track(user.id, 'user_registered', { method: 'google', from_preview: false, invites: 0 }, workspaceId);
+  track(user.id, 'user_signed_in', { method: 'google' }, workspaceId);
   return reply.header('Set-Cookie', setCookie(user.id, user.session_version)).redirect('/');
 }

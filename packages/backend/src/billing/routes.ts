@@ -3,6 +3,7 @@
  */
 import type { FastifyReply, FastifyRequest } from 'fastify';
 import { db } from '../db/pool.js';
+import { track } from '../ops/analytics.js';
 import {
   billingEnabled,
   checkoutUrl,
@@ -99,6 +100,13 @@ export async function webhook(req: FastifyRequest, reply: FastifyReply): Promise
        WHERE id = ${event.userId}`;
     req.log.info(`[billing] ${event.userId} -> free (${event.status})`);
   }
+
+  // The bottom of the funnel. Deduplicated above, so a replay is not a second sale.
+  track(event.userId, 'subscription_changed', {
+    plan: plan && keeps ? plan : 'free',
+    status: event.status,
+    event: event.eventName,
+  });
 
   return reply.send({ ok: true });
 }

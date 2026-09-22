@@ -12,6 +12,7 @@
 import { useCallback, useEffect, useState } from 'react';
 import { useSettings } from './Settings.js';
 import { Popup } from './Popup.js';
+import { track } from './analytics.js';
 
 interface Member {
   id: string;
@@ -189,6 +190,7 @@ export function Workspace({
    */
   async function upgrade(): Promise<void> {
     setUpgradeError(null);
+    track('upgrade_clicked', { from: 'workspace' });
     const res = await fetch('/api/billing/checkout?plan=pro');
     if (!res.ok) return setUpgradeError(t('account.upgradeSoon'));
     const { url } = (await res.json()) as { url: string };

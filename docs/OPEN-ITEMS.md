@@ -637,3 +637,15 @@ wording is the data.
     asking what case prompted it, since a real conflict would be a finding.
     When encoded: cite the Code for the rule and the decision for the
     procedure, and flag a conflict rather than silently choosing.
+
+64. **PostHog dashboards are not built yet (recorded 2026-09-23).** The events
+    ship; the insights that read them do not exist. Build in the PostHog UI:
+    the signup funnel (`$pageview` → `auth_form_opened` → `user_registered` →
+    `email_verified` → `question_answered` → second `question_answered` →
+    `invite_sent`), the allowance wall (`quota_exceeded` per workspace), the
+    channel table (`utm_source` on `user_registered`), and the wait
+    (`first_token_ms` / `total_ms` on `answer_received`). Needs a signed-in
+    PostHog session, which the agent does not have. Also open: the landing
+    preview is reported from the browser only — a visitor with an ad blocker
+    is invisible there, while `previews` in Postgres still counts them, so the
+    two numbers will disagree by the blocker rate.

@@ -27,6 +27,7 @@ import { Reset } from './Reset.js';
 import { extractQuotes } from './quotes.js';
 import { SettingsProvider, useSettings } from './Settings.js';
 import { BrandMark } from './BrandMark.js';
+import { forgetAccount, identifyAccount } from './analytics.js';
 
 type Mode = 'search' | 'ask' | 'chat';
 
@@ -331,6 +332,7 @@ function Workbench() {
   const signOut = useCallback((): void => {
     void (async () => {
       await fetch('/api/auth/logout', { method: 'POST' });
+      forgetAccount();
       setAccount(null);
       setAuthed(false);
     })();
@@ -375,6 +377,7 @@ function Workbench() {
 
       setAccount(data);
       setAuthed(Boolean(data.user));
+      identifyAccount(data);
     } catch {
       setAuthed(false);
     }

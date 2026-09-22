@@ -1777,6 +1777,22 @@ a fresh workspace, re-inviting the same address then succeeds, and usage reads
   now has its own reason and its own sentence.
 
 
+- **2026-09-23 — Product analytics: PostHog (EU), metadata only.** Until now
+  the only record of what anyone did on the site was the questions table.
+  Now: page views, a masked session replay, and named events on both sides —
+  the browser reports what was opened, clicked and copied and what the wait
+  felt like (`frontend/src/analytics.ts`); the server reports what happened
+  and cannot be lost to a closed tab: `user_registered`, `email_verified`,
+  `user_signed_in`, `invite_sent`/`invite_accepted`, `question_answered` (with
+  coverage, timings, tokens), `question_failed`, `quota_exceeded`,
+  `subscription_changed`, `contact_sent` (`backend/src/ops/analytics.ts`).
+  People are identified by user id on sign-in and grouped by workspace, so
+  the funnel can be counted per firm. No question, answer or article text
+  leaves our database — see `DECISIONS.md`. Attribution: the automatic posts
+  now say `matyanai.am/tg`, `/fb`, `/ig`, each a redirect onto the front
+  page with UTM tags. Production needs nothing configured: the public project
+  key is compiled in on both sides.
+
 - **2026-09-23 — The address is asked for at the first step of registration.**
   It used to be typed after the invitations, so a colleague row repeating it
   could only be answered a step later, on a screen with no such row on it. Step
