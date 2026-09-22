@@ -1730,3 +1730,27 @@ a fresh workspace, re-inviting the same address then succeeds, and usage reads
   `facts.ts` like every other promotional text. Timer
   `armlex-autoreel.timer`: Tue, Thu, Sat 19:00 Yerevan. `/media/:name` now
   serves .mp4 as well, because Meta downloads the file from us.
+
+- **2026-09-23 — Outage alerts, and three failures that read as answers.**
+  `ops/alert.ts` reports to the team's Telegram group the three failures no
+  deploy fixes — the vector leg down, a provider refusing on money, a key
+  rejected — once per kind per half hour, lifted by the next question that
+  goes through. Wired into the chat stream, the preview and the routes that
+  never got August's guard (`/api/ask`, `/api/chat`, `/api/search` now answer
+  503 `search_unavailable`). No new configuration: it uses the
+  `TELEGRAM_BOT_TOKEN` / `TELEGRAM_CHAT_ID` the contact form already has.
+  Closes `OPEN-ITEMS` 55.
+
+- **2026-09-23 — A failed turn shows no sources.** When generation died the
+  answer settled empty and the cited-provisions fallback filed every retrieved
+  provision under it. The fallback exists for an answer that cites in an
+  unrecognised form; without text it is an invention. Closes `OPEN-ITEMS` 54.
+
+- **2026-09-23 — Long consultations no longer crash.** `answer/history.ts`
+  sends the most recent turns that fit 40,000 characters (whole turns, never
+  opening with an assistant message), which is safe because the fact summary
+  and the contextualiser already carry forward what earlier turns established;
+  the turn says when older messages were left out. If the limit is hit anyway
+  both chat routes name it instead of returning an unhandled 502. Closes
+  `OPEN-ITEMS` 12.
+

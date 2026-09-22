@@ -15,10 +15,22 @@ what we intend. This file and its siblings are the state — what is true.
 
 ---
 
-## Since the last status (as of 2026-09-17)
+## Since the last status (as of 2026-09-23)
 
-Production is at commit `04170c2`; `/api/version` confirms. 199 commits total.
+Production is at commit `d7d7f5a`; `/api/version` confirms. The four commits
+below are NOT deployed yet.
 
+- **2026-09-23, bugs closed:** the site now tells the team in Telegram when a
+  provider stops answering (`ops/alert.ts`, `OPEN-ITEMS` 55 — both silent
+  outages, 2026-08-25 embeddings and 2026-09-16 generation, were found by a
+  user); a long consultation no longer ends in an unhandled 502
+  (`answer/history.ts`, item 12); a failed turn no longer files every retrieved
+  provision under an answer that does not exist (item 54); and `/api/ask`,
+  `/api/chat`, `/api/search` and the landing preview finally answer a search
+  outage the way the streaming route has since August.
+- **Social:** 11 automatic posts a week to the channel, Facebook and Instagram
+  with a story beside each, run by a systemd timer on the box. See
+  `CHANGELOG.md` 2026-09-21.
 - **Product:** accounts with workspaces, pooled weekly allowance (5 for the
   creator, +5 per colleague), invitations with rank, email verification and
   password reset all LIVE (Resend configured), Google sign-in, 7-day idle
@@ -29,10 +41,11 @@ Production is at commit `04170c2`; `/api/version` confirms. 199 commits total.
 - **Design:** `docs/DESIGN.md` adopted, light only, new logo in headers,
   favicons and mail.
 - **Next:** the open list is `OPEN-ITEMS.md` §"Open as of 2026-09-17" — first,
-  rotate the two secrets (51); then the retrieval gap (52) and the
-  quote-per-citation decision (53). Corpus breadth, on an expert's advice:
-  SRC official clarifications, double-taxation treaties, more decisions and
-  orders (62); and generation does not know the hierarchy of acts (63).
+  rotate the two secrets (51, raised repeatedly and still not done); then the
+  retrieval gap (52) and the quote-per-citation decision (53). Corpus breadth,
+  on an expert's advice: SRC official clarifications, double-taxation treaties,
+  more decisions and orders (62); and generation does not know the hierarchy of
+  acts (63).
 - Before touching the frontend, read `GOTCHAS.md` §"Frontend and tooling
   traps"; before revisiting a product call, `DECISIONS.md` §"Product decisions,
   2026-09-09 → 09-17".

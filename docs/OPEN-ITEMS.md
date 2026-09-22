@@ -57,13 +57,13 @@ shipped (`DECISIONS.md`). The next priority is answer quality — item 10.
     is both nearly identical and completely wrong. 11 tests, including a
     changed deadline (`20-ը`→`25-ը`) and an inserted negation. Wired into both
     `ask` and `chat`; the removal count is returned in the API response.
-12. **Chat has no context-window handling.** `chat.ts` resends full message
-    history every turn with zero compaction, on top of 4 fresh + up to 5
-    carried chunks per turn (~1.7 tok/char). A long conversation can hit
-    `stop_reason: model_context_window_exceeded` — a clean API error, not
-    silent corruption — but nothing catches it; it currently surfaces as an
-    unhandled 502. Needs compaction, or a hard turn/token cap with a
-    graceful user-facing message.
+12. ~~**Chat has no context-window handling.**~~ **DONE 2026-09-23.**
+    `answer/history.ts` sends only the most recent turns that fit a 40,000
+    character budget — whole turns, never opening with an assistant message —
+    and the turn says when older messages were left out. Safe because the fact
+    summary and the contextualiser carry forward what earlier turns
+    established. Both chat routes also name an overflow («start a new
+    consultation») instead of returning an unhandled 502.
 
 17. ~~**No streaming.**~~ **DONE 2026-08-15.** SSE with stage / chunks / delta /
     done events; quote validation moved into the stream without weakening it
@@ -559,13 +559,19 @@ wording is the data.
     part and show the whole article. Enforce a quote (with a length floor) in
     generation; it changes answers, so measure it. Not yet decided by the user.
 
-54. **A failed answer shows every retrieved provision.** When generation fails
-    (the Anthropic balance ran out on 2026-09-16), the turn settles with no
-    text and the cited-provisions fallback shows all of them beside an answer
-    that does not exist. Offered to show nothing instead; not decided.
+54. ~~**A failed answer shows every retrieved provision.**~~ **DONE
+    2026-09-23.** An empty answer now yields no provisions: the fallback that
+    shows everything is for an answer that cites in an unrecognised form, and
+    without text it is an invention (`frontend/src/cited.ts`).
 
-55. **No alert when the Anthropic balance runs out.** It happened once in
-    production on 2026-09-16: answers silently stopped.
+55. ~~**No alert when the Anthropic balance runs out.**~~ **DONE 2026-09-23.**
+    `backend/src/ops/alert.ts` reports a depleted balance, a dead vector leg
+    and a rejected key to the team's Telegram group, once per kind per half
+    hour, lifted by the next question that goes through. Uses the
+    `TELEGRAM_BOT_TOKEN` / `TELEGRAM_CHAT_ID` already configured for the
+    contact form; without them nothing is sent and nothing breaks. **Still
+    unalerted:** anything that does not run through a question — a failed
+    autopost, a failed crawl, the disk filling.
 
 56. **Old CSS under the design-system layer.** `styles.css` still carries the
     pre-redesign rules the new layer overrides (about +4 KB gzipped). Prune
