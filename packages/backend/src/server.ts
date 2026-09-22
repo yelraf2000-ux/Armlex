@@ -168,7 +168,15 @@ app.post<{ Body: QueryBody }>('/api/preview', async (req, reply) => {
     // answer, least of all to someone meeting the product for the first time.
     void reportOutage(err, 'preview');
     if (err instanceof VectorLegUnavailableError) {
-      return reply.code(503).send({ error: 'search_unavailable' });
+      // With a detail, because the landing page shows it: a visitor meeting the
+      // product for the first time should read "the search is down", not the
+      // bare "preview failed" that could be taken for "no such norm".
+      return reply.code(503).send({
+        error: 'search_unavailable',
+        detail:
+          'Որոնման համակարգը ժամանակավորապես անհասանելի է։ Փորձեք մի փոքր ուշ։ '
+          + 'Սա ՉԻ նշանակում, որ Ձեր հարցին վերաբերող նորմ չկա։',
+      });
     }
     req.log.error({ err }, 'preview failed');
     return reply.code(502).send({ error: 'preview_failed' });
