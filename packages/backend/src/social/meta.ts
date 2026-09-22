@@ -87,16 +87,22 @@ export async function publishFacebookReel(videoUrl: string, description: string)
     const upJson = (await up.json().catch(() => ({}))) as { success?: boolean; error?: { message?: string } };
     if (!up.ok || upJson.error) throw new Error(upJson.error?.message ?? `upload HTTP ${up.status}`);
 
-    // Meta pulls and processes the file; publishing before it is ready fails.
-    for (let i = 0; i < 30; i++) {
+    /*
+     * Wait for the TRANSFER only.
+     *
+     * Processing does not start until `finish` is called — measured on
+     * 2026-09-22, where `processing_phase` sat at `not_started` for five
+     * minutes while the upload had long been `complete`, and the first attempt
+     * timed out waiting for something that could not happen yet.
+     */
+    for (let i = 0; i < 24; i++) {
       const status = (await graph(`/${videoId}`, { fields: 'status' }, 'GET'))['status'] as
-        | { video_status?: string; uploading_phase?: { status?: string }; processing_phase?: { status?: string } }
+        | { video_status?: string; uploading_phase?: { status?: string } }
         | undefined;
-      const phase = status?.processing_phase?.status ?? status?.video_status ?? '';
-      if (phase === 'complete' || phase === 'ready' || status?.video_status === 'ready') break;
-      if (phase === 'error') throw new Error('video processing failed');
+      if (status?.uploading_phase?.status === 'complete' || status?.video_status === 'upload_complete') break;
+      if (status?.uploading_phase?.status === 'error') throw new Error('video upload failed');
       await sleep(5_000);
-      if (i === 29) throw new Error('video not ready after 2.5 minutes');
+      if (i === 23) throw new Error('video still uploading after 2 minutes');
     }
     const done = await graph(`/${page}/video_reels`, {
       video_id: videoId,
