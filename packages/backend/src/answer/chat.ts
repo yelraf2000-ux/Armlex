@@ -509,10 +509,7 @@ export async function chat(
     // Said plainly, so the model does not answer as if it had read turns it
     // was never given.
     sent.dropped > 0
-      ? `
-
-(The earliest ${sent.dropped} message(s) of this conversation are not
-          shown; the established facts above carry what they contained.)`
+      ? `\n\n(The earliest ${sent.dropped} message(s) of this conversation are not shown; the established facts above carry what they contained.)`
       : '',
     `\n\nLegal act fragments:\n\n${renderChunks(fresh, carried)}`,
   ].join('');

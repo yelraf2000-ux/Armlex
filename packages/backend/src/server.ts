@@ -47,6 +47,7 @@ import { chat, discardFailedTurn } from './answer/chat.js';
 import { someInterludes } from './answer/interlude.js';
 import { DEFAULT_MODEL } from './answer/llm.js';
 import { noteHealthy, reportOutage } from './ops/alert.js';
+import { CONTEXT_OVERFLOW_MESSAGE, isContextOverflow } from './answer/history.js';
 
 const app = Fastify({
   logger: { transport: { target: 'pino-pretty' } },
@@ -425,6 +426,17 @@ app.post<{ Body: ChatBody }>('/api/chat/stream', async (req, reply) => {
           'Որոնման համակարգը ժամանակավորապես անհասանելի է, ուստի պատասխան չի տրվում։ ' +
           'Սա ՉԻ նշանակում, որ Ձեր հարցին վերաբերող նորմ չկա։',
       });
+      return;
+    }
+
+    /*
+      A consultation that outgrew the context window. History is trimmed before
+      generation now, so this should not be reachable — but if a single turn's
+      fragments ever do it, the reader is told what to do rather than shown a
+      502 they cannot act on.
+    */
+    if (isContextOverflow(err)) {
+      send('error', { error: 'conversation_too_long', detail: CONTEXT_OVERFLOW_MESSAGE });
       return;
     }
     send('error', { error: 'chat failed', detail: `${e.status ?? ''} ${e.message ?? String(err)}`.trim() });
@@ -890,6 +902,9 @@ app.post<{ Body: ChatBody }>('/api/chat', async (req, reply) => {
     const e = err as { status?: number; message?: string };
     req.log.error({ err }, 'chat failed');
     void reportOutage(err, 'chat (non-streaming)');
+    if (isContextOverflow(err)) {
+      return reply.code(413).send({ error: 'conversation_too_long', detail: CONTEXT_OVERFLOW_MESSAGE });
+    }
     if (err instanceof VectorLegUnavailableError) {
       return reply.code(503).send({
         error: 'search_unavailable',
