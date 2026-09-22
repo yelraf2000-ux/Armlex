@@ -46,6 +46,7 @@ import { ask, isConfigured } from './answer/ask.js';
 import { chat, discardFailedTurn } from './answer/chat.js';
 import { someInterludes } from './answer/interlude.js';
 import { DEFAULT_MODEL } from './answer/llm.js';
+import { noteHealthy, reportOutage } from './ops/alert.js';
 
 const app = Fastify({
   logger: { transport: { target: 'pino-pretty' } },
@@ -158,10 +159,13 @@ app.post<{ Body: QueryBody }>('/api/preview', async (req, reply) => {
   }
 
   try {
-    return await generatePreview(question, req.ip);
+    const preview = await generatePreview(question, req.ip);
+    void noteHealthy();
+    return preview;
   } catch (err) {
     // Same rule as the chat route: search being down must never read as an
     // answer, least of all to someone meeting the product for the first time.
+    void reportOutage(err, 'preview');
     if (err instanceof VectorLegUnavailableError) {
       return reply.code(503).send({ error: 'search_unavailable' });
     }
@@ -372,9 +376,20 @@ app.post<{ Body: ChatBody }>('/api/chat/stream', async (req, reply) => {
       usage: result.usage,
       timings: result.timings,
     });
+    // A question that went through is the only honest all-clear, so it is the
+    // one that lifts an outstanding outage alert.
+    void noteHealthy();
   } catch (err) {
     const e = err as { status?: number; message?: string };
     req.log.error({ err }, 'chat stream failed');
+
+    /*
+      Tell the team, if this is the kind of failure no deploy fixes. Twice the
+      product stopped answering and it was a user who noticed, hours later
+      (2026-08-25 embeddings, 2026-09-16 generation). Not awaited: the reader in
+      front of us gets their error event first, whatever Telegram is doing.
+    */
+    void reportOutage(err, 'chat');
 
     /*
       Take the question back off the register.
@@ -795,8 +810,16 @@ app.post<{ Body: QueryBody }>('/api/search', async (req, reply) => {
   const query = readQuery(req.body);
   if (!query) return reply.code(400).send({ error: 'query is required' });
 
-  const chunks = await retrieve(query, 8);
-  return { query, count: chunks.length, chunks };
+  try {
+    const chunks = await retrieve(query, 8);
+    return { query, count: chunks.length, chunks };
+  } catch (err) {
+    void reportOutage(err, 'search');
+    if (err instanceof VectorLegUnavailableError) {
+      return reply.code(503).send({ error: 'search_unavailable' });
+    }
+    throw err;
+  }
 });
 
 app.post<{ Body: QueryBody }>('/api/ask', async (req, reply) => {
@@ -811,15 +834,23 @@ app.post<{ Body: QueryBody }>('/api/ask', async (req, reply) => {
     });
   }
 
-  // Top 3 only: the generation prompt is grounded, and Armenian tokenises at
-  // ~1.7 tokens/char, so a handful of articles is already a large context.
-  const chunks = await retrieve(query, 3);
-
   try {
-    return await ask(query, chunks);
+    // Top 3 only: the generation prompt is grounded, and Armenian tokenises at
+    // ~1.7 tokens/char, so a handful of articles is already a large context.
+    // Inside the try: retrieval can fail the same way generation can, and a
+    // search outage returned as a 500 is exactly the silence this guard exists
+    // to break.
+    const chunks = await retrieve(query, 3);
+    const answer = await ask(query, chunks);
+    void noteHealthy();
+    return answer;
   } catch (err) {
     const e = err as { status?: number; message?: string };
     req.log.error({ err }, 'ask failed');
+    void reportOutage(err, 'ask');
+    if (err instanceof VectorLegUnavailableError) {
+      return reply.code(503).send({ error: 'search_unavailable' });
+    }
     return reply.code(502).send({
       error: 'generation failed',
       detail: `${e.status ?? ''} ${e.message ?? String(err)}`.trim(),
@@ -846,10 +877,21 @@ app.post<{ Body: ChatBody }>('/api/chat', async (req, reply) => {
   const sessionId = typeof sid === 'string' && sid ? sid : undefined;
 
   try {
-    return await chat(sessionId, message, undefined, undefined, undefined, req.user!.id);
+    const result = await chat(sessionId, message, undefined, undefined, undefined, req.user!.id);
+    void noteHealthy();
+    return result;
   } catch (err) {
     const e = err as { status?: number; message?: string };
     req.log.error({ err }, 'chat failed');
+    void reportOutage(err, 'chat (non-streaming)');
+    if (err instanceof VectorLegUnavailableError) {
+      return reply.code(503).send({
+        error: 'search_unavailable',
+        detail:
+          'Որոնման համակարգը ժամանակավորապես անհասանելի է, ուստի պատասխան չի տրվում։ ' +
+          'Սա ՉԻ նշանակում, որ Ձեր հարցին վերաբերող նորմ չկա։',
+      });
+    }
     return reply.code(502).send({
       error: 'chat failed',
       detail: `${e.status ?? ''} ${e.message ?? String(err)}`.trim(),
