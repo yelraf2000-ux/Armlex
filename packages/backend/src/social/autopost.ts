@@ -93,6 +93,30 @@ async function geminiJson(system: string, user: string): Promise<Promo> {
   };
 }
 
+/**
+ * Just the body of a promotional text, for callers that supply their own
+ * picture — the reels. Held to the same facts, proofread the same way, and
+ * null rather than wrong when the checks refuse it three times.
+ */
+export async function promoBody(brief: string): Promise<string | null> {
+  for (let attempt = 0; attempt < 3; attempt++) {
+    try {
+      const draft = await geminiJson(PROMO_SYSTEM, brief);
+      if (promoProblems(draft).length) continue;
+      try {
+        const edited = await geminiJson(PROOFREAD_SYSTEM, JSON.stringify(draft));
+        if (promoProblems(edited).length === 0) return edited.body;
+      } catch {
+        // proofreading is best effort
+      }
+      return draft.body;
+    } catch {
+      // try again
+    }
+  }
+  return null;
+}
+
 async function problemPost(
   recentTopics: string[],
 ): Promise<{ card: PromoCard; body: string; topic: string } | { skip: string }> {

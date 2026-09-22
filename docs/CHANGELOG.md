@@ -1720,3 +1720,13 @@ a fresh workspace, re-inviting the same address then succeeds, and usage reads
   photo a published post already used. A story failure never fails the post.
   **No clickable link:** neither platform lets an app attach a link sticker or
   swipe-up to a story — only a person can, in the app.
+
+- **2026-09-22 — Reels, three a week.** `social/reels.ts`: takes the next of the
+  22 ready 9:16 videos from `media/reels` (made in `marketing/video`, untracked,
+  copied to the server by hand), burns a short hook line on with ffmpeg and a
+  resvg overlay, and publishes it as a Reel on Instagram (`media_type=REELS`)
+  and Facebook (`/{page}/video_reels`, start → rupload by `file_url` → finish)
+  and as a video in the Telegram channel. Caption from Gemini, held to
+  `facts.ts` like every other promotional text. Timer
+  `armlex-autoreel.timer`: Tue, Thu, Sat 19:00 Yerevan. `/media/:name` now
+  serves .mp4 as well, because Meta downloads the file from us.

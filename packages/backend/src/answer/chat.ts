@@ -14,6 +14,7 @@
  * context, and carried-over chunks are cited the same way as fresh ones.
  */
 import { generate } from './llm.js';
+import { fitHistory } from './history.js';
 import { db } from '../db/pool.js';
 import { retrieve } from '../retrieval/retrieve.js';
 import type { RetrievedChunk } from '../retrieval/retrieve.js';
@@ -479,6 +480,14 @@ export async function chat(
   if (onChunks) onChunks([...fresh, ...carried]);
   onStage?.('reading');
 
+  /*
+    What still fits. The whole transcript used to go back every turn, on top
+    of the statute, and a long consultation ended in an unhandled 502. Almost
+    every conversation is sent whole; a runaway one loses the wording of its
+    oldest turns, never the facts in them — those are in `factSummary` below.
+  */
+  const sent = fitHistory(history);
+
   const userContent = [
     `User message: ${message}`,
     // Repeated in the turn, not left to the system prompt alone. The request
@@ -496,6 +505,14 @@ export async function chat(
     // re-asking what they already told us.
     ctx.factSummary
       ? `\n\nFacts the user has established about their situation:\n${ctx.factSummary}`
+      : '',
+    // Said plainly, so the model does not answer as if it had read turns it
+    // was never given.
+    sent.dropped > 0
+      ? `
+
+(The earliest ${sent.dropped} message(s) of this conversation are not
+          shown; the established facts above carry what they contained.)`
       : '',
     `\n\nLegal act fragments:\n\n${renderChunks(fresh, carried)}`,
   ].join('');
@@ -517,7 +534,7 @@ export async function chat(
 
   const usage = await generate({
     system: SYSTEM,
-    history,
+    history: sent.turns,
     user: userContent,
     onText: (delta) => {
       tFirstToken ||= Date.now();

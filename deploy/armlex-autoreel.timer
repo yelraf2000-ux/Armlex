@@ -1,0 +1,11 @@
+[Unit]
+Description=Three reels a week (Yerevan time)
+
+[Timer]
+OnCalendar=Tue,Thu,Sat *-*-* 19:00:00 Asia/Yerevan
+RandomizedDelaySec=900
+# A missed slot is skipped, not posted late.
+Persistent=false
+
+[Install]
+WantedBy=timers.target

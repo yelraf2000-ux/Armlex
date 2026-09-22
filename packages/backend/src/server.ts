@@ -238,10 +238,16 @@ app.post('/api/telegram/webhook', async (req, reply) => {
  */
 app.get<{ Params: { name: string } }>('/media/:name', async (req, reply) => {
   const { name } = req.params;
-  if (!/^[0-9a-f-]{36}\.jpg$/.test(name)) return reply.code(404).send();
+  // Cards and stories are .jpg; reels are .mp4, which Meta downloads from here
+  // while publishing. Only names this server generated can be asked for.
+  const kind = /^[0-9a-f-]{36}\.(jpg|mp4)$/.exec(name)?.[1];
+  if (!kind) return reply.code(404).send();
   try {
     const bytes = await readFile(join(MEDIA_DIR, name));
-    return reply.type('image/jpeg').header('Cache-Control', 'public, max-age=86400').send(bytes);
+    return reply
+      .type(kind === 'mp4' ? 'video/mp4' : 'image/jpeg')
+      .header('Cache-Control', 'public, max-age=86400')
+      .send(bytes);
   } catch {
     return reply.code(404).send();
   }

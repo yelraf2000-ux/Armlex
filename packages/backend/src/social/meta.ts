@@ -66,6 +66,83 @@ export async function publishFacebook(text: string, imageUrl: string | null): Pr
 const sleep = (ms: number): Promise<void> => new Promise((r) => setTimeout(r, ms));
 
 /**
+ * A Reel on the Page: three phases — start (which hands back an upload id),
+ * transfer (Meta pulls the file from our own URL), finish (publish).
+ * Spec: 9:16, 3–90 s, H.264; 30 published reels per 24 hours.
+ */
+export async function publishFacebookReel(videoUrl: string, description: string): Promise<PublishResult> {
+  if (!facebookEnabled()) return { skipped: 'not_configured' };
+  const page = process.env['META_PAGE_ID']!;
+  const token = process.env['META_PAGE_TOKEN'] ?? '';
+  try {
+    const start = await graph(`/${page}/video_reels`, { upload_phase: 'start' });
+    const videoId = String(start['video_id']);
+    // The transfer is on rupload.facebook.com, not the graph host, and takes
+    // the source address in a header rather than the body.
+    const up = await fetch(`https://rupload.facebook.com/video-upload/v25.0/${videoId}`, {
+      method: 'POST',
+      headers: { Authorization: `OAuth ${token}`, file_url: videoUrl },
+      signal: AbortSignal.timeout(180_000),
+    });
+    const upJson = (await up.json().catch(() => ({}))) as { success?: boolean; error?: { message?: string } };
+    if (!up.ok || upJson.error) throw new Error(upJson.error?.message ?? `upload HTTP ${up.status}`);
+
+    // Meta pulls and processes the file; publishing before it is ready fails.
+    for (let i = 0; i < 30; i++) {
+      const status = (await graph(`/${videoId}`, { fields: 'status' }, 'GET'))['status'] as
+        | { video_status?: string; uploading_phase?: { status?: string }; processing_phase?: { status?: string } }
+        | undefined;
+      const phase = status?.processing_phase?.status ?? status?.video_status ?? '';
+      if (phase === 'complete' || phase === 'ready' || status?.video_status === 'ready') break;
+      if (phase === 'error') throw new Error('video processing failed');
+      await sleep(5_000);
+      if (i === 29) throw new Error('video not ready after 2.5 minutes');
+    }
+    const done = await graph(`/${page}/video_reels`, {
+      video_id: videoId,
+      upload_phase: 'finish',
+      video_state: 'PUBLISHED',
+      description,
+    });
+    return { id: String(done['post_id'] ?? videoId) };
+  } catch (err) {
+    return { error: (err as Error).message.slice(0, 300) };
+  }
+}
+
+/** A Reel on Instagram: the container dance with media_type=REELS. */
+export async function publishInstagramReel(
+  videoUrl: string,
+  caption: string,
+  wait: (ms: number) => Promise<void> = sleep,
+): Promise<PublishResult> {
+  if (!instagramEnabled()) return { skipped: 'not_configured' };
+  const ig = process.env['META_IG_USER_ID']!;
+  try {
+    const container = await graph(`/${ig}/media`, {
+      video_url: videoUrl,
+      media_type: 'REELS',
+      caption,
+      share_to_feed: 'true',
+    });
+    const creationId = String(container['id']);
+    // Video containers take longer than images; Meta's own guidance is to poll.
+    for (let i = 0; i < 40; i++) {
+      const status = await graph(`/${creationId}`, { fields: 'status_code' }, 'GET');
+      const code = String(status['status_code'] ?? '');
+      if (code === 'FINISHED') break;
+      if (code === 'ERROR' || code === 'EXPIRED') return { error: `reel container ${code}` };
+      await wait(5_000);
+      if (i === 39) return { error: 'reel container not ready after 3 minutes' };
+    }
+    const published = await graph(`/${ig}/media_publish`, { creation_id: creationId });
+    return { id: String(published['id'] ?? '') };
+  } catch (err) {
+    return { error: (err as Error).message.slice(0, 300) };
+  }
+}
+
+/**
  * A story on the Page: the photo is uploaded unpublished, then turned into a
  * story. Meta refuses a photo that a published post already used, which is why
  * the story has its own image.

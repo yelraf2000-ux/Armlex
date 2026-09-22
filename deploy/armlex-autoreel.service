@@ -1,0 +1,15 @@
+[Unit]
+Description=MatyanAI automatic reel (Instagram, Facebook, Telegram channel)
+After=armlex.service
+Wants=armlex.service
+
+[Service]
+Type=oneshot
+WorkingDirectory=/opt/armlex
+Environment=NODE_ENV=production
+# As armlex.service: the script loads /opt/armlex/.env through dotenv.
+# Posting is off unless SOCIAL_AUTOPUBLISH=on is set there.
+ExecStart=/usr/bin/npx tsx packages/backend/src/social/reels.ts
+TimeoutStartSec=1800
+StandardOutput=journal
+StandardError=journal
