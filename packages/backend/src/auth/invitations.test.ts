@@ -71,6 +71,27 @@ describe('parseInvites', () => {
   test('one signup may invite at most four colleagues', () => {
     assert.equal(MAX_INVITES, 4);
   });
+
+  test('the registrant cannot be among their own invitees', () => {
+    // The form says so before it posts; this is the rule holding when the form
+    // is not what posted. The other rows survive it.
+    const out = parseInvites(
+      [
+        { email: 'ME@firm.am', name: 'Ես' },
+        { email: 'anna@firm.am', name: 'Աննա' },
+      ],
+      'me@firm.am',
+    );
+    assert.deepEqual(out.map((i) => i.email), ['anna@firm.am']);
+  });
+
+  test('matching is case- and whitespace-insensitive, like every other address', () => {
+    assert.deepEqual(parseInvites([{ email: '  Me@Firm.AM  ' }], 'me@firm.am'), []);
+  });
+
+  test('without an address to compare against, nothing is dropped', () => {
+    assert.equal(parseInvites([{ email: 'me@firm.am' }]).length, 1);
+  });
 });
 
 /*

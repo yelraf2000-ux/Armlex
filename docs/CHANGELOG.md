@@ -1765,3 +1765,14 @@ a fresh workspace, re-inviting the same address then succeeds, and usage reads
   the answer now brings its card into view in the column — only the column
   moves, never the page.
 
+- **2026-09-23 — You cannot invite yourself.** Registration let the new account
+  list its own address among the colleagues to invite, which mailed them a link
+  to join the firm they were creating and offered them the seat they were
+  already sitting in. The form now says so — the address is typed a step after
+  the invitations, so the check runs live from either end, marks the offending
+  row and holds the submit button, with the way back to the row beside the
+  message — and `parseInvites` drops the registrant's own address whatever
+  posted the form. On the workspace page the same invitation was refused as
+  `already_here`, which reads as though a colleague had beaten you to it; it
+  now has its own reason and its own sentence.
+

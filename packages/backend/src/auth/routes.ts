@@ -235,7 +235,9 @@ export async function register(req: FastifyRequest, reply: FastifyReply): Promis
   await claimInvitation(user.id, email);
 
   // And this account may itself be inviting others.
-  const invites = parseInvites((req.body as { invites?: unknown })?.invites);
+  // Their own address among them is dropped, not refused: the form already
+  // says it cannot be invited, and a registration must never be lost to it.
+  const invites = parseInvites((req.body as { invites?: unknown })?.invites, email);
   const bonus = await recordInvites(user.id, invites);
 
   // Re-read: both of the above may have changed the allowance, and the UI

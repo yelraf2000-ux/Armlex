@@ -366,7 +366,13 @@ export type InviteResult =
   | { ok: true }
   | {
       ok: false;
-      reason: 'invalid_email' | 'name_required' | 'role_required' | 'already_here' | 'workspace_full';
+      reason:
+        | 'invalid_email'
+        | 'name_required'
+        | 'role_required'
+        | 'yourself'
+        | 'already_here'
+        | 'workspace_full';
     };
 
 /**
@@ -397,6 +403,17 @@ export async function inviteToWorkspace(
   const name = typeof input.name === 'string' && input.name.trim() ? input.name.trim() : null;
   if (!name) return { ok: false, reason: 'name_required' };
   if (typeof input.admin !== 'boolean') return { ok: false, reason: 'role_required' };
+
+  /*
+    Your own address is refused in its own words.
+
+    It would otherwise fall through to `already_here`, which is true — you are
+    in this firm — but reads as though a colleague of that name had beaten you
+    to it, and leaves the admin looking for someone who is not there. The
+    invitation itself would be a mail to yourself offering the seat you are
+    sitting in.
+  */
+  if (email === normaliseEmail(user.email)) return { ok: false, reason: 'yourself' };
 
   const id = await workspaceIdFor(user);
 

@@ -109,15 +109,25 @@ export interface InviteInput {
  * registration: a typo in the fourth invitation must not cost someone their
  * account. They can invite again later; they cannot un-abandon a signup.
  */
-export function parseInvites(raw: unknown): InviteInput[] {
+export function parseInvites(raw: unknown, ownEmail?: string): InviteInput[] {
   if (!Array.isArray(raw)) return [];
   const seen = new Set<string>();
   const out: InviteInput[] = [];
+  /*
+    You are not your own colleague.
+
+    Inviting yourself would mail you a link to join the firm you just created,
+    and the seat it promises is the one you are already sitting in. The form
+    says so before it gets here; this is the copy of the rule that holds when
+    the form is not what posted.
+  */
+  const own = typeof ownEmail === 'string' ? normaliseEmail(ownEmail) : '';
 
   for (const entry of raw) {
     const e = entry as { email?: unknown; name?: unknown };
     const email = typeof e?.email === 'string' ? normaliseEmail(e.email) : '';
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) continue;
+    if (own && email === own) continue;
     if (seen.has(email)) continue;
     seen.add(email);
     out.push({

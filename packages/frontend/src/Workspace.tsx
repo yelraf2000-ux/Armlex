@@ -119,6 +119,8 @@ export function Workspace({
 
   function messageFor(code: string): string {
     switch (code) {
+      case 'yourself':
+        return t('ws.yourself');
       case 'already_here':
         return t('ws.alreadyHere');
       case 'invalid_email':

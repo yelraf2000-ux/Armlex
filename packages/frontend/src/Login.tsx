@@ -315,7 +315,9 @@ export function Login({
    * never hears about it.
    */
   function continueFromInvites(): void {
-    if (invalidRows > 0) {
+    // `selfInvited` can be true here only on the way BACK — the address is
+    // typed at the next step — and then this is the step that can fix it.
+    if (invalidRows > 0 || selfInvited) {
       setInviteCheck(true);
       return;
     }
@@ -336,8 +338,26 @@ export function Login({
    * either, so this covers the overrun case too.)
    */
   const mismatch = tab === 'register' && confirm !== '' && !password.startsWith(confirm);
+
+  /**
+   * The address being registered is also on the invitation list.
+   *
+   * You cannot be your own colleague: the invitation would mail you a link to
+   * join the firm you are creating, and the seat it offers is the one you are
+   * sitting in. The two fields are a step apart — the colleagues at step 2,
+   * your own address at step 3 — so this can only be judged here, and it is
+   * judged live, both ways round, since the reader may fix it from either end.
+   */
+  const selfInvited =
+    tab === 'register' &&
+    email.trim() !== '' &&
+    filledInvites.some((i) => i.email.trim().toLowerCase() === email.trim().toLowerCase());
+
   const credentialsReady =
-    email.trim() !== '' && password !== '' && (tab === 'signin' || confirm === password);
+    email.trim() !== '' &&
+    password !== '' &&
+    !selfInvited &&
+    (tab === 'signin' || confirm === password);
 
   const profileComplete =
     profile.fullName.trim() !== '' &&
@@ -588,6 +608,20 @@ export function Login({
       ) : null}
 
       {mismatch ? <div className="error">{t('auth.passwordMismatch')}</div> : null}
+      {/*
+        Named where it is discovered, with the way back to the row it is about:
+        the offending line is on the previous step, and an error that cannot be
+        acted on from where it is shown is an error the reader has to solve
+        twice.
+      */}
+      {selfInvited ? (
+        <div className="error" role="alert">
+          {t('auth.selfInvite')}{' '}
+          <button type="button" className="linkish" onClick={() => setStep(2)}>
+            {t('auth.backToInvites')}
+          </button>
+        </div>
+      ) : null}
       {error ? <div className="error">{error}</div> : null}
 
       <button onClick={() => void submit()} disabled={busy || !credentialsReady}>
@@ -870,7 +904,11 @@ export function Login({
                     type="email"
                     aria-label={`${t('auth.email')} ${i + 1}`}
                     aria-invalid={
-                      inviteCheck && !rowEmpty(invite) && !LOOKS_LIKE_EMAIL.test(invite.email.trim())
+                      (inviteCheck &&
+                        !rowEmpty(invite) &&
+                        !LOOKS_LIKE_EMAIL.test(invite.email.trim())) ||
+                      (email.trim() !== '' &&
+                        invite.email.trim().toLowerCase() === email.trim().toLowerCase())
                     }
                     placeholder={t('auth.email')}
                     value={invite.email}
@@ -935,6 +973,14 @@ export function Login({
             {inviteCheck && invalidRows > 0 ? (
               <div className="error" role="alert">
                 {t('auth.inviteFix')}
+              </div>
+            ) : null}
+
+            {/* Reached by going back from the credentials step, where the
+                address was typed. */}
+            {selfInvited ? (
+              <div className="error" role="alert">
+                {t('auth.selfInvite')}
               </div>
             ) : null}
 
