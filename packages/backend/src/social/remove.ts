@@ -50,6 +50,11 @@ export async function linkLines(p: Published): Promise<string[]> {
   lines.push(
     p.instagram.id ? `Instagram: ${await instagramLink(p.instagram.id)}` : `Instagram: ❌ ${p.instagram.error ?? p.instagram.skipped}`,
   );
+  // Stories carry no link of their own and disappear after 24 hours, so they
+  // are reported as done or not done, not as an address.
+  const story = (name: string, r: Published['facebookStory']): string =>
+    !r ? `${name} story: —` : r.id ? `${name} story: ✅` : `${name} story: ❌ ${r.error ?? r.skipped}`;
+  lines.push(story('Facebook', p.facebookStory), story('Instagram', p.instagramStory));
   return lines;
 }
 

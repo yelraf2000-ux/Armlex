@@ -11,7 +11,12 @@
 import { db } from '../db/pool.js';
 import { tg, CAPTION_LIMIT } from './bot.js';
 import { markOwnPost } from './channel.js';
-import { publishFacebook, publishInstagram, type PublishResult } from './meta.js';
+import { readFile, writeFile } from 'node:fs/promises';
+import { randomUUID } from 'node:crypto';
+import { join } from 'node:path';
+import { publishFacebook, publishFacebookStory, publishInstagram, publishInstagramStory, type PublishResult } from './meta.js';
+import { MEDIA_DIR } from './channel.js';
+import { renderStory } from './storyCard.js';
 import { confirmButtons, deleteButton, removeEverywhere, reportPublished } from './remove.js';
 
 const PUBLIC_URL = process.env['PUBLIC_URL'] ?? 'https://matyanai.am';
@@ -53,9 +58,30 @@ export interface Published {
   telegram: PublishResult;
   facebook: PublishResult;
   instagram: PublishResult;
+  /** The story that goes out with the post, on both Meta platforms. */
+  facebookStory?: PublishResult;
+  instagramStory?: PublishResult;
 }
 
-/** One post to all three, at once. `imageName` is a file under the media directory. */
+/**
+ * The story's own image: the post's card on the brand ground, under the post's
+ * opening line. Its own file, because Meta refuses a story photo that a
+ * published post already used.
+ */
+async function storyImage(body: string, imageName: string): Promise<string> {
+  const post = await readFile(join(MEDIA_DIR, imageName));
+  const firstLine = body.split('\n').find((l) => l.trim().length > 0)?.trim() ?? '';
+  const image = renderStory({
+    text: firstLine.length > 110 ? `${firstLine.slice(0, 109).replace(/\s+\S*$/, '')}…` : firstLine,
+    post,
+    footer: 'Ամբողջը՝ մեր էջում',
+  });
+  const name = `${randomUUID()}.jpg`;
+  await writeFile(join(MEDIA_DIR, name), image);
+  return name;
+}
+
+/** One post to all three, and a story on Facebook and Instagram beside it. */
 export async function publishEverywhere(body: string, imageName: string): Promise<Published> {
   const imageUrl = `${PUBLIC_URL}/media/${imageName}`;
   const [telegram, facebook, instagram] = await Promise.all([
@@ -63,7 +89,21 @@ export async function publishEverywhere(body: string, imageName: string): Promis
     publishFacebook(body, imageUrl),
     publishInstagram(body, imageUrl),
   ]);
-  return { telegram, facebook, instagram };
+
+  // Stories are a bonus: a failure here must not make the post count as failed.
+  let facebookStory: PublishResult = { skipped: 'not_configured' };
+  let instagramStory: PublishResult = { skipped: 'not_configured' };
+  try {
+    const storyUrl = `${PUBLIC_URL}/media/${await storyImage(body, imageName)}`;
+    [facebookStory, instagramStory] = await Promise.all([
+      publishFacebookStory(storyUrl),
+      publishInstagramStory(storyUrl),
+    ]);
+  } catch (err) {
+    facebookStory = { error: (err as Error).message.slice(0, 200) };
+    instagramStory = facebookStory;
+  }
+  return { telegram, facebook, instagram, facebookStory, instagramStory };
 }
 
 const answer = (cb: Callback, text: string): Promise<unknown> =>

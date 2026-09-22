@@ -66,6 +66,50 @@ export async function publishFacebook(text: string, imageUrl: string | null): Pr
 const sleep = (ms: number): Promise<void> => new Promise((r) => setTimeout(r, ms));
 
 /**
+ * A story on the Page: the photo is uploaded unpublished, then turned into a
+ * story. Meta refuses a photo that a published post already used, which is why
+ * the story has its own image.
+ *
+ * No link sticker: neither platform lets an app attach one to a story.
+ */
+export async function publishFacebookStory(imageUrl: string): Promise<PublishResult> {
+  if (!facebookEnabled()) return { skipped: 'not_configured' };
+  const page = process.env['META_PAGE_ID']!;
+  try {
+    const photo = await graph(`/${page}/photos`, { url: imageUrl, published: 'false' });
+    const story = await graph(`/${page}/photo_stories`, { photo_id: String(photo['id']) });
+    return { id: String(story['post_id'] ?? story['id'] ?? photo['id']) };
+  } catch (err) {
+    return { error: (err as Error).message.slice(0, 300) };
+  }
+}
+
+/** A story on Instagram: the same container dance with media_type=STORIES. */
+export async function publishInstagramStory(
+  imageUrl: string,
+  wait: (ms: number) => Promise<void> = sleep,
+): Promise<PublishResult> {
+  if (!instagramEnabled()) return { skipped: 'not_configured' };
+  const ig = process.env['META_IG_USER_ID']!;
+  try {
+    const container = await graph(`/${ig}/media`, { image_url: imageUrl, media_type: 'STORIES' });
+    const creationId = String(container['id']);
+    for (let i = 0; i < 24; i++) {
+      const status = await graph(`/${creationId}`, { fields: 'status_code' }, 'GET');
+      const code = String(status['status_code'] ?? '');
+      if (code === 'FINISHED') break;
+      if (code === 'ERROR' || code === 'EXPIRED') return { error: `story container ${code}` };
+      await wait(5_000);
+      if (i === 23) return { error: 'story container not ready after 2 minutes' };
+    }
+    const published = await graph(`/${ig}/media_publish`, { creation_id: creationId });
+    return { id: String(published['id'] ?? '') };
+  } catch (err) {
+    return { error: (err as Error).message.slice(0, 300) };
+  }
+}
+
+/**
  * Container, wait until it is FINISHED, publish. Instagram cannot publish
  * text alone, so a post without an image is skipped, not failed.
  */

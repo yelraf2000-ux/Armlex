@@ -1711,3 +1711,12 @@ a fresh workspace, re-inviting the same address then succeeds, and usage reads
   from the channel (bots: within 48 h), the Page and Instagram
   (`social/remove.ts`; Instagram needs `instagram_manage_contents` on the
   token, else the report gives the link). Status `deleted`, migration 021.
+
+- **2026-09-21 — A story beside every post.** `social/storyCard.ts` draws a
+  1080×1920 story: the post's opening line, the post's own card, and «Ամբողջը՝
+  մեր էջում». `publishEverywhere` publishes it to the Page
+  (`/{page}/photos?published=false` → `/{page}/photo_stories`) and to Instagram
+  (`media_type=STORIES`), with its own image file because Meta refuses a story
+  photo a published post already used. A story failure never fails the post.
+  **No clickable link:** neither platform lets an app attach a link sticker or
+  swipe-up to a story — only a person can, in the app.
