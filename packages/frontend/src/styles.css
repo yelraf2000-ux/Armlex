@@ -4865,6 +4865,17 @@ a:hover { color: var(--primary-700); }
   font-weight: 600;
 }
 
+/* Step 3 states the address instead of asking for it again — it was typed at
+   step 1, and the passwords below are the only thing left to answer. */
+.reg-as {
+  margin: 0 0 var(--space-2);
+  font-size: 13px;
+  line-height: 20px;
+  color: var(--text-secondary);
+}
+.reg-as strong { color: var(--text-primary); font-weight: 600; word-break: break-all; }
+.reg-as .linkish { font-size: 13px; }
+
 .reg-info {
   display: flex;
   gap: 10px;

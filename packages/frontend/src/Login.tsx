@@ -32,6 +32,8 @@ export interface Account {
    * cannot buy it should not be sent to a checkout that is not theirs.
    */
   role?: 'admin' | 'member';
+  /** The firm. Analytics groups people by it; nothing in the UI reads it. */
+  workspaceId?: string;
   /** False when the server has no Google credentials — then the button is not offered. */
   google?: boolean;
 }
@@ -362,7 +364,10 @@ export function Login({
   const profileComplete =
     profile.fullName.trim() !== '' &&
     profile.companyName.trim() !== '' &&
-    profile.companySize !== '';
+    profile.companySize !== '' &&
+    // Shape only. Whether the address is free is the server's answer, and it
+    // comes back at the end — see `submit`, which returns the reader here.
+    LOOKS_LIKE_EMAIL.test(email.trim());
 
   /** Server error codes are stable; the message the user reads is translated. */
   function messageFor(code: string, status: number): string {
@@ -437,7 +442,19 @@ export function Login({
         return;
       }
 
+      // Which wall people hit on the way in: a taken address, a short
+      // password, a wrong one. The server records the successes.
       setError(messageFor(body.error ?? '', res.status));
+      /*
+        Refusals ABOUT THE ADDRESS go back to the address.
+
+        It is typed at step 1 now, so «this address is already registered»
+        would otherwise stand on a screen holding nothing but two password
+        boxes — a correction with nothing to correct it in.
+      */
+      if (tab === 'register' && (body.error === 'email_taken' || body.error === 'invalid_email')) {
+        setStep(1);
+      }
     } catch (err) {
       setError(String(err));
     } finally {
@@ -565,21 +582,39 @@ export function Login({
   */
   const arrivalNote = arrival ? <div className="error">{arrival}</div> : null;
 
-  /* Step 3, and the whole of sign-in: the credentials. */
+  /*
+    Step 3, and the whole of sign-in: the credentials.
+
+    The address is asked for HERE when signing in and at step 1 when
+    registering. It moved because the invitation step sits between them: with
+    the address already known, a colleague row that repeats it is answered as
+    it is typed, instead of a step later on a screen that has no such row on
+    it. What stands here in its place is the address itself, and the way back
+    to the field that holds it.
+  */
   const credentials = (
     <div className="login-row">
-      <Field
-        id="armlex-email"
-        label={t('auth.email')}
-        type="email"
-        autoComplete="email"
-        autoFocus
-        value={email}
-        onChange={(e) => setEmail(e.target.value)}
-        onKeyDown={(e) => {
-          if (e.key === 'Enter') void submit();
-        }}
-      />
+      {tab === 'signin' ? (
+        <Field
+          id="armlex-email"
+          label={t('auth.email')}
+          type="email"
+          autoComplete="email"
+          autoFocus
+          value={email}
+          onChange={(e) => setEmail(e.target.value)}
+          onKeyDown={(e) => {
+            if (e.key === 'Enter') void submit();
+          }}
+        />
+      ) : (
+        <p className="reg-as">
+          {t('reg.registeringAs')} <strong>{email.trim()}</strong>{' '}
+          <button type="button" className="linkish" onClick={() => setStep(1)}>
+            {t('reg.changeEmail')}
+          </button>
+        </p>
+      )}
 
       <PasswordBox
         id="armlex-password"
@@ -755,6 +790,21 @@ export function Login({
               onChange={(e) => setProfile((p) => ({ ...p, fullName: e.target.value }))}
             />
 
+            {/*
+              Before the firm, and before the invitations: this is the address
+              the account will be, and step 2 needs it to recognise a colleague
+              row that repeats it.
+            */}
+            <Field
+              id="armlex-email"
+              label={t('auth.email')}
+              required
+              type="email"
+              autoComplete="email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+            />
+
             <Field
               id="armlex-company"
               label={t('auth.companyName')}
@@ -795,6 +845,10 @@ export function Login({
               version of this sentence is the one they have learned to skim past.
             */}
             <p className="login-why">{t('auth.whyWeAsk')}</p>
+
+            {/* Where an address the server refuses comes back to — the field
+                that can answer it is on this step now. */}
+            {error ? <div className="error">{error}</div> : null}
 
             <button
               className="reg-continue"

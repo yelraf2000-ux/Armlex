@@ -1776,3 +1776,13 @@ a fresh workspace, re-inviting the same address then succeeds, and usage reads
   `already_here`, which reads as though a colleague had beaten you to it; it
   now has its own reason and its own sentence.
 
+
+- **2026-09-23 — The address is asked for at the first step of registration.**
+  It used to be typed after the invitations, so a colleague row repeating it
+  could only be answered a step later, on a screen with no such row on it. Step
+  1 is now name · email · firm · size; step 2 marks the offending row and says
+  «Ինքներդ Ձեզ հրավիրել հնարավոր չէ» as it is typed, and holds the step; step 3
+  states the address being registered with the way back to change it. A taken
+  or malformed address returns the reader to step 1, where the field that can
+  answer it is. Sign-in is unchanged.
+
