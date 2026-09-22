@@ -38,26 +38,25 @@ const PUBLIC_URL = process.env['PUBLIC_URL'] ?? 'https://matyanai.am';
 export const HOOKS = [
   'Ծանո՞թ իրավիճակ է',
   'Հաշվապահի ամենօրյա խնդիրը',
-  'Իսկ եթե պատասխանը լիներ մեկ րոպեում',
   'Ամեն գրասենյակում լինում է',
-  'Հարցը՝ հոդվածով պատասխանով',
   'Ճանաչո՞ւմ եք ձեզ',
-  'Այս րոպեին ինչ-որ տեղ կրկնվում է',
   'Ամեն շաբաթ նույնն է',
+  'Սա ծանոթ է բոլորին',
 ];
 
-/** The hook as a transparent 1080×1920 overlay, drawn with the card font. */
+/**
+ * The hook as a transparent 1080×1920 overlay.
+ *
+ * ONE short line in a slim band near the top: the videos carry their own title
+ * from about y=280 down, and a two-line band covered it — seen on the first
+ * rehearsal. Instagram's own controls take roughly the top 120 and bottom 350
+ * pixels, so the band sits between them.
+ */
 export function hookOverlay(text: string): Buffer {
-  const lines = wrap(text, 880, 58, true, 2);
-  const boxH = lines.length * 76 + 56;
+  const line = wrap(text, 880, 52, true, 1)[0] ?? text;
   const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="1080" height="1920" viewBox="0 0 1080 1920">
-  <rect x="60" y="120" width="960" height="${boxH}" rx="28" fill="#0f172a" opacity="0.72"/>
-  ${lines
-    .map(
-      (l, i) =>
-        `<text x="540" y="${120 + 64 + i * 76}" font-family="${FAMILY}" font-size="58" font-weight="700" fill="#ffffff" text-anchor="middle">${escape(l)}</text>`,
-    )
-    .join('\n  ')}
+  <rect x="120" y="126" width="840" height="104" rx="52" fill="#0f172a" opacity="0.74"/>
+  <text x="540" y="194" font-family="${FAMILY}" font-size="52" font-weight="700" fill="#ffffff" text-anchor="middle">${escape(line)}</text>
 </svg>`;
   return Buffer.from(
     new Resvg(svg, { font: { fontFiles: FONTS, loadSystemFonts: false, defaultFontFamily: FAMILY } })
