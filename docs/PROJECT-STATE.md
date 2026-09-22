@@ -107,11 +107,12 @@ Fixed in code so it cannot happen silently again: retrieval now throws
 search is down and that this does NOT mean no norm exists. See `GOTCHAS.md` —
 "A console warning is not a safety mechanism".
 
-**Still open from this incident:** the UI has not been checked against the new
-`search_unavailable` event (frontend has uncommitted changes, left untouched);
-`ask.ts` and the non-streaming route were not given the same guard; and there is
-no budget alarm on any provider, so the next depletion will also be discovered
-by a user.
+**Closed 2026-09-23:** `/api/ask`, `/api/chat`, `/api/search` and the landing
+preview now answer a search outage the way the streaming route does, the
+preview's message says so in words a visitor reads, and `ops/alert.ts` tells
+the team's Telegram group the moment a provider stops answering. **Still open:**
+no budget alarm at the providers themselves — the alert fires on the first
+failed question, not before the balance runs out.
 
 ## DO THIS NEXT
 
