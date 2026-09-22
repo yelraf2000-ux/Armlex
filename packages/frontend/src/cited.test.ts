@@ -50,9 +50,11 @@ describe('citedIndexes', () => {
     assert.deepEqual(citedIndexes(candidates, 'Հասանելի հատվածները չեն պարունակում պատասխանը։'), [0, 1]);
   });
 
-  test('a turn with no text yet keeps every provision', () => {
+  test('a turn that settled with no text shows no provisions', () => {
+    // The failed turn: generation died, the answer is empty, and the column
+    // used to present every retrieved provision as its basis.
     const candidates = [chunk('Հոդված 8')];
-    assert.deepEqual(citedIndexes(candidates, ''), [0]);
+    assert.deepEqual(citedIndexes(candidates, ''), []);
   });
 });
 

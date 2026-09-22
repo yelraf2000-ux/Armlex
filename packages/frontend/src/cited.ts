@@ -63,8 +63,9 @@ function names(text: string, ref: string, settled = true): boolean {
 /**
  * Filter candidates down to the ones the answer used.
  *
- * Returns everything when nothing matches: an answer citing in a form this
- * does not recognise must not leave the reader with no apparatus at all.
+ * Returns everything when the text matches nothing: an answer citing in a form
+ * this does not recognise must not leave the reader with no apparatus at all.
+ * An EMPTY answer gets nothing instead — see below.
  *
  * `settled` says whether the answer is finished. It governs that fallback and
  * nothing else, because the fallback is the only part of this rule that is not
@@ -84,7 +85,15 @@ export function citedIndexes(
   settled = true,
 ): number[] {
   const all = (): number[] => candidates.map((_, i) => i);
-  if (!answer) return settled ? all() : [];
+  /*
+    No text at all is not "cited in a form we do not recognise" — it is an
+    answer that does not exist. When generation failed (the Anthropic balance
+    ran out on 2026-09-16) the turn settled empty and the fallback filed every
+    retrieved provision under it, presenting sixteen articles as the basis of
+    nothing. The fallback needs text to be the safe direction; without text it
+    is an invention.
+  */
+  if (!answer) return [];
   const quoted = extractQuotes(answer);
   const used: number[] = [];
   candidates.forEach((c, i) => {
