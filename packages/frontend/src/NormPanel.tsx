@@ -125,6 +125,28 @@ function ApparatusEntry({
    * the panel's own scroller moves; the page never does. An article with
    * nothing highlighted opens at its top, which is where it should open.
    */
+  /*
+   * A citation clicked in the answer brings its card into view.
+   *
+   * The column scrolls inside itself now, so an entry can be opened by a
+   * citation and still be nowhere on screen — the click would read as having
+   * done nothing. Only the panel's own scroller moves; the page never does,
+   * because the reader's place in the opinion is exactly what they are
+   * checking against. Already-visible cards are left where they are: pulling a
+   * card the reader can see to the top of the column moves the text under
+   * their eyes for no reason.
+   */
+  const rowRef = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    if (!focused) return;
+    const el = rowRef.current;
+    const scroller = el?.closest('.norm-inner');
+    if (!el || !scroller) return;
+    const top = el.getBoundingClientRect().top - scroller.getBoundingClientRect().top;
+    if (top >= 0 && top <= scroller.clientHeight - 80) return;
+    scroller.scrollTop += top - 16;
+  }, [focused]);
+
   const bodyRef = useRef<HTMLDivElement>(null);
   useEffect(() => {
     if (!open) return;
@@ -151,7 +173,7 @@ function ApparatusEntry({
   }
 
   return (
-    <div className={focused ? 'entry focused' : 'entry'}>
+    <div className={focused ? 'entry focused' : 'entry'} ref={rowRef}>
       <button className="entry-head" onClick={onToggle} aria-expanded={open}>
         <span className="entry-main">
           <span className="entry-line">

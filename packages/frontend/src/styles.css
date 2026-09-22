@@ -405,12 +405,48 @@ a { color: var(--accent); }
 }
 
 /*
- * Also scrolls with the page now, so the whole screen moves as one document
- * rather than as three panes with separate scroll positions. Dropping its own
- * scroller also takes the second scrollbar with it.
+ * The scroller, restored on the owner's request (2026-09-23).
+ *
+ * The two columns hold different documents. Scrolling the opinion to its end
+ * used to carry the sources past the window with it, so a reader checking the
+ * fourth provision against the third paragraph had to scroll one column to
+ * reach the other and lost their place in both. The column is capped to the
+ * window and scrolls inside itself; the page scroll now moves the opinion
+ * alone.
+ *
+ * Two elements, two jobs — see the comment in `NormPanel.tsx`. The <aside>
+ * stretches the grid row so the column's ground ends level with the thread
+ * beside it; THIS element sticks and is capped, so the ground never stops
+ * where the cap falls.
+ *
+ * It also brings back an effect that had quietly stopped working: opening a
+ * long article scrolls it to the highlighted passage by setting `scrollTop` on
+ * `.norm-inner` (`NormPanel.tsx`), which does nothing at all on an element
+ * with no overflow of its own.
  */
 .norm-inner {
   padding: 24px 44px 28px 32px;
+}
+
+/* Below 900px the apparatus stops being a column and follows the opinion down
+   the page, where a scroller of its own would be a box inside a page. */
+@media (min-width: 901px) {
+  .norm-inner {
+    position: sticky;
+    top: 0;
+    max-height: 100dvh;
+    overflow-y: auto;
+    /* The panel is its own document: reaching its end must not carry on into
+       the page behind it. */
+    overscroll-behavior: contain;
+    /* A second scrollbar is the price of a second scroll position; make it the
+       quietest one the platform allows. */
+    scrollbar-width: thin;
+    scrollbar-color: var(--rule-2) transparent;
+    /* The colophon is fixed over the foot of the window, so the last card needs
+       its height to clear it. */
+    padding-bottom: calc(28px + var(--footer-h));
+  }
 }
 
 /* The opinion is a document, so it gets a document's measure — centred in the
@@ -1666,8 +1702,8 @@ body:has(.rail-mini) .page { padding-left: 56px; }
     border-top: 1px solid var(--ink);
     background: var(--paper);
   }
-  /* Nothing to undo any more — the column no longer sticks or scrolls itself
-     at any width, so only the padding changes here. */
+  /* Nothing to undo — the scroller is scoped to 901px and up — so only the
+     padding changes here. */
   .norm-inner { padding: 22px 20px 28px; }
   .thread { padding: 0 20px; min-height: 0; }
   .provenance { padding: 12px 20px 0; }

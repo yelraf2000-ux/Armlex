@@ -1754,3 +1754,14 @@ a fresh workspace, re-inviting the same address then succeeds, and usage reads
   both chat routes name it instead of returning an unhandled 502. Closes
   `OPEN-ITEMS` 12.
 
+- **2026-09-23 — The sources column scrolls on its own** (owner's request).
+  Above 900px `.norm-inner` sticks to the top of the window, is capped to its
+  height and scrolls inside itself; the page scroll now moves the opinion
+  alone. Scrolling the answer to its end used to carry the sources past the
+  window with it. Below 900px nothing changes — there the apparatus follows the
+  opinion down the page, as in print. Two effects come back with it: opening a
+  long article lands on the highlighted passage (it set `scrollTop` on an
+  element that had no overflow, so it did nothing), and a citation clicked in
+  the answer now brings its card into view in the column — only the column
+  moves, never the page.
+
