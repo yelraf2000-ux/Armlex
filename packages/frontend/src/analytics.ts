@@ -71,8 +71,23 @@ function setFlag(key: string, value: boolean): void {
 
 let on = false;
 
+/**
+ * A build running on this machine, not the service.
+ *
+ * `.env.production` is read by `vite build` only, so `npm run dev` was already
+ * silent — but a production build served from the backend on :3001 carries the
+ * key and reported an afternoon of clicking-through as real traffic. At two
+ * visitors a day that is not noise, it is most of the data. PostHog's "filter
+ * out internal users" toggle would hide it after the fact; not sending it is
+ * cheaper and cannot be left switched off.
+ */
+function localBuild(): boolean {
+  const h = location.hostname;
+  return h === 'localhost' || h === '127.0.0.1' || h === '::1' || h === '[::1]' || h.endsWith('.local');
+}
+
 export function initAnalytics(): void {
-  if (!KEY || on) return;
+  if (!KEY || on || localBuild()) return;
   posthog.init(KEY, {
     api_host: HOST,
     defaults: '2026-08-30',
