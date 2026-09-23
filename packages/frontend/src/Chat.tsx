@@ -934,7 +934,10 @@ export function Chat({
           </div>
           <button
             className="quota-out-close"
-            onClick={() => setQuotaOut(null)}
+            onClick={() => {
+              track('quota_panel_closed', { limit: quotaOut.limit });
+              setQuotaOut(null);
+            }}
             aria-label={t('quota.close')}
             title={t('quota.close')}
           >

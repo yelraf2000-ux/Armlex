@@ -210,7 +210,10 @@ export function Landing({
       });
       const body = (await res.json()) as PreviewResult & { error?: string; detail?: string };
       if (!res.ok) {
-        track('landing_preview_failed', { error: body.error ?? `http_${res.status}` });
+        // The free-preview ceiling is a wall, not a failure: its own event,
+        // so "how many visitors ran out" is one number, not a filter.
+        if (res.status === 429) track('preview_limit_hit', { source });
+        else track('landing_preview_failed', { error: body.error ?? `http_${res.status}` });
         setError(body.detail ?? t('preview.failed'));
         // Out of free previews is the one error that should still lead
         // somewhere: registering is exactly the answer to it.
