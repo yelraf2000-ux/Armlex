@@ -9,7 +9,7 @@
  * Still a title page rather than a bare form: the first thing anyone sees of
  * the edition should say what it is.
  */
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { BRAND } from './brand.js';
 import { BrandLine } from './BrandLine.js';
 import { BrandMark } from './BrandMark.js';
@@ -287,6 +287,68 @@ export function Login({
   });
 
   /**
+   * Which fields someone actually put something into, and how far they got.
+   *
+   * Reported once per field on the first CHANGE, never on focus: a focus fires
+   * when the caret is tabbed through an empty box, and the question this
+   * answers is where a person stopped typing, not where the caret passed.
+   * Once per field, not per keystroke — an event per character would be a
+   * transcript of what was typed, arriving one letter at a time.
+   *
+   * The value never travels. These boxes hold a person's name, their firm and
+   * their colleagues' addresses; only the fact that the box was reached goes
+   * out. `signup_step_done` already says who FINISHED a step, and these say
+   * who started one and left, which is the half that was invisible.
+   */
+  const started = useRef<Set<string>>(new Set());
+  const furthest = useRef<1 | 2 | 3>(1);
+  /** Read by the unload handler, which is bound once and would otherwise see
+      whichever tab the form opened on. */
+  const tabRef = useRef(tab);
+  tabRef.current = tab;
+  /** Set when registration succeeds, so leaving afterwards is not abandoning. */
+  const settled = useRef(false);
+
+  function noteField(field: string): void {
+    if (started.current.has(field)) return;
+    started.current.add(field);
+    track('auth_field_started', { tab, step, field });
+  }
+
+  useEffect(() => {
+    if (step > furthest.current) furthest.current = step;
+  }, [step]);
+
+  /**
+   * Where the form was left. Fires on the way out — a closed tab, a back
+   * button, a navigation inside the app — but only if something was typed:
+   * opening the form and leaving it untouched is already `auth_form_opened`
+   * with nothing after it.
+   *
+   * `pagehide` rather than `beforeunload`: it fires for a tab restored from
+   * the back/forward cache and on mobile, where `beforeunload` often does not.
+   */
+  useEffect(() => {
+    function report(): void {
+      if (settled.current || started.current.size === 0) return;
+      settled.current = true;
+      track('auth_abandoned', {
+        tab: tabRef.current,
+        step: furthest.current,
+        fields_started: started.current.size,
+        fields: [...started.current],
+      });
+    }
+    window.addEventListener('pagehide', report);
+    return () => {
+      window.removeEventListener('pagehide', report);
+      report();
+    };
+    // Bound once, for the life of the form: everything it reads is a ref.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  /**
    * Step 2: colleagues to invite. Optional, and visibly so.
    */
   const [invites, setInvites] = useState<Invite[]>(ONE_INVITE);
@@ -425,6 +487,8 @@ export function Login({
       };
 
       if (res.ok) {
+        // Reached the end: leaving from here is finishing, not abandoning.
+        settled.current = true;
         setPassword('');
         setConfirm('');
         // A 200 that withholds the session. Registration succeeded; the
@@ -608,7 +672,10 @@ export function Login({
           autoComplete="email"
           autoFocus
           value={email}
-          onChange={(e) => setEmail(e.target.value)}
+          onChange={(e) => {
+            noteField('email');
+            setEmail(e.target.value);
+          }}
           onKeyDown={(e) => {
             if (e.key === 'Enter') void submit();
           }}
@@ -627,7 +694,10 @@ export function Login({
         label={t('login.password')}
         autoComplete={tab === 'signin' ? 'current-password' : 'new-password'}
         value={password}
-        onChange={setPassword}
+        onChange={(v) => {
+          noteField('password');
+          setPassword(v);
+        }}
         onEnter={() => void submit()}
         reveal={reveal}
         onToggle={() => setReveal((r) => !r)}
@@ -640,7 +710,10 @@ export function Login({
           label={t('auth.confirmPassword')}
           autoComplete="new-password"
           value={confirm}
-          onChange={setConfirm}
+          onChange={(v) => {
+            noteField('password_confirm');
+            setConfirm(v);
+          }}
           onEnter={() => void submit()}
           reveal={reveal}
           onToggle={() => setReveal((r) => !r)}
@@ -800,7 +873,10 @@ export function Login({
               autoComplete="name"
               autoFocus
               value={profile.fullName}
-              onChange={(e) => setProfile((p) => ({ ...p, fullName: e.target.value }))}
+              onChange={(e) => {
+                noteField('full_name');
+                setProfile((p) => ({ ...p, fullName: e.target.value }));
+              }}
             />
 
             {/*
@@ -815,7 +891,10 @@ export function Login({
               type="email"
               autoComplete="email"
               value={email}
-              onChange={(e) => setEmail(e.target.value)}
+              onChange={(e) => {
+                noteField('email');
+                setEmail(e.target.value);
+              }}
             />
 
             <Field
@@ -825,7 +904,10 @@ export function Login({
               type="text"
               autoComplete="organization"
               value={profile.companyName}
-              onChange={(e) => setProfile((p) => ({ ...p, companyName: e.target.value }))}
+              onChange={(e) => {
+                noteField('company_name');
+                setProfile((p) => ({ ...p, companyName: e.target.value }));
+              }}
             />
 
             <span className="login-label reg-label">
@@ -844,7 +926,10 @@ export function Login({
                   role="radio"
                   aria-checked={profile.companySize === size}
                   className={profile.companySize === size ? 'size-option on' : 'size-option'}
-                  onClick={() => setProfile((p) => ({ ...p, companySize: size }))}
+                  onClick={() => {
+                    noteField('company_size');
+                    setProfile((p) => ({ ...p, companySize: size }));
+                  }}
                 >
                   {size}
                 </button>
@@ -964,11 +1049,12 @@ export function Login({
                     aria-invalid={inviteCheck && !rowEmpty(invite) && !invite.name.trim()}
                     placeholder={t('auth.fullName')}
                     value={invite.name}
-                    onChange={(e) =>
+                    onChange={(e) => {
+                      noteField('invite_name');
                       setInvites((list) =>
                         list.map((x, j) => (j === i ? { ...x, name: e.target.value } : x)),
-                      )
-                    }
+                      );
+                    }}
                   />
                   <input
                     type="email"
@@ -982,11 +1068,12 @@ export function Login({
                     }
                     placeholder={t('auth.email')}
                     value={invite.email}
-                    onChange={(e) =>
+                    onChange={(e) => {
+                      noteField('invite_email');
                       setInvites((list) =>
                         list.map((x, j) => (j === i ? { ...x, email: e.target.value } : x)),
-                      )
-                    }
+                      );
+                    }}
                   />
                   {/* The last remaining row is emptied rather than removed: the
                       step always offers one row to fill. */}

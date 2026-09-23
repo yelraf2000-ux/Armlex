@@ -649,3 +649,12 @@ wording is the data.
     preview is reported from the browser only — a visitor with an ad blocker
     is invisible there, while `previews` in Postgres still counts them, so the
     two numbers will disagree by the blocker rate.
+
+    Added 2026-09-23 after the first real visitor reached the form and left:
+    `auth_field_started` ({tab, step, field}) fires once per field on the first
+    keystroke, and `auth_abandoned` ({tab, step, fields_started, fields}) fires
+    on the way out if anything was typed. Between them and `signup_step_done`
+    the drop-off is now visible field by field rather than step by step. No
+    typed value is sent — only which box was reached. The insight to build is
+    a breakdown of `auth_abandoned` by `fields`, which names the field people
+    stop at.
