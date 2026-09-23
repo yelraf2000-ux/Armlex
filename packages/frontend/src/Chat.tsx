@@ -702,7 +702,10 @@ export function Chat({
         */}
         <button
           className={turns.length === 0 ? 'new-case active' : 'new-case'}
-          onClick={reset}
+          onClick={() => {
+            track('new_question_clicked', { from: 'rail' });
+            reset();
+          }}
           disabled={turns.length === 0}
           aria-current={turns.length === 0 ? 'page' : undefined}
         >
@@ -758,6 +761,7 @@ export function Chat({
           </button>
           <button
             onClick={() => {
+              track('new_question_clicked', { from: 'strip' });
               reset();
               setRail(true);
             }}
@@ -818,7 +822,14 @@ export function Chat({
                 it acts on.
               */}
               {turn.role === 'user' && i === 0 && sessionId ? (
-                <button className="turn-share" onClick={() => setShareOpen(true)} title={t('share.share')}>
+                <button
+                  className="turn-share"
+                  onClick={() => {
+                    track('share_opened', { from: 'transcript' });
+                    setShareOpen(true);
+                  }}
+                  title={t('share.share')}
+                >
                   <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
                     <path d="M4 12v7a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-7" />
                     <path d="M12 15V3M8 7l4-4 4 4" />
@@ -888,7 +899,10 @@ export function Chat({
                     key={e.chunk.articleId}
                     className={e.carried ? 'cite carried' : 'cite'}
                     aria-current={selectedId === e.chunk.articleId}
-                    onClick={() => setSelectedId(e.chunk.articleId)}
+                    onClick={() => {
+                      track('citation_clicked', { arlis_id: e.chunk.arlisId, carried: e.carried });
+                      setSelectedId(e.chunk.articleId);
+                    }}
                     title={e.carried ? t('norm.carried') : e.chunk.documentTitle}
                   >
                     <span lang="hy">{e.chunk.ref}</span>

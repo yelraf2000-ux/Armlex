@@ -10,6 +10,7 @@ import { useEffect, useRef, useState } from 'react';
 import { SharePopup } from './SharePopup.js';
 import { Popup } from './Popup.js';
 import { useSettings } from './Settings.js';
+import { track } from './analytics.js';
 
 export interface SessionSummary {
   id: string;
@@ -165,6 +166,7 @@ export function Sessions({
   async function togglePin(s: SessionSummary): Promise<void> {
     const pinned = !s.pinned;
     setMenuFor(null);
+    track('conversation_pinned', { pinned });
     patchLocal(s.id, { pinned });
     // Reorder to match what the server will return on the next load: pinned
     // first, newest within each group. Leaving the row where it was would make
@@ -190,6 +192,7 @@ export function Sessions({
   async function saveRename(s: SessionSummary): Promise<void> {
     const title = draft.trim();
     setRenaming(null);
+    track('conversation_renamed', { cleared: title === '' });
     // An empty name clears back to the first question rather than leaving a
     // blank row; the server treats "" the same way.
     patchLocal(s.id, { title: title || null });
@@ -205,6 +208,7 @@ export function Sessions({
     setMenuFor(null);
     const res = await fetch(`/api/sessions/${s.id}`, { method: 'DELETE' });
     if (!res.ok) return;
+    track('conversation_deleted', { was_open: s.id === currentId });
     setSessions((list) => (list ?? []).filter((x) => x.id !== s.id));
     if (s.id === currentId) onDeleted?.(s.id);
   }
@@ -251,7 +255,10 @@ export function Sessions({
         >
             <button
               className="session-item"
-              onClick={() => onOpen(s.id)}
+              onClick={() => {
+                track('conversation_opened', { pinned: s.pinned });
+                onOpen(s.id);
+              }}
               title={s.title || s.firstMessage}
             >
               {/* No pin glyph: a pinned row says so by sitting in the Pinned
@@ -356,6 +363,7 @@ export function Sessions({
               <button
                 role="menuitem"
                 onClick={() => {
+                  track('share_opened', { from: 'register' });
                   setMenuFor(null);
                   setSharingFor(s.id);
                 }}

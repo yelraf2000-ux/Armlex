@@ -12,6 +12,7 @@ import { BRAND } from './brand.js';
 import { MarkdownView } from './MarkdownView.js';
 import { useSettings } from './Settings.js';
 import { BrandMark } from './BrandMark.js';
+import { track } from './analytics.js';
 
 interface SharedMessage {
   role: string;
@@ -83,7 +84,10 @@ export function Shared({ token }: { token: string }) {
 
       <div className="measure shared-foot">
         <div className="shared-cta">
-          {t('share.ownQuestion')} <a href="/">{t('share.openTool')}</a>
+          {t('share.ownQuestion')}{' '}
+          <a href="/" onClick={() => track('shared_cta_clicked')}>
+            {t('share.openTool')}
+          </a>
         </div>
       </div>
     </div>

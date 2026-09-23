@@ -396,7 +396,13 @@ export function Landing({
                 <div className="lp-overline">{t('preview.yourQuestion')}</div>
                 <h2 className="lp-result-title">{askedText}</h2>
               </div>
-              <button className="lp-new" onClick={goHome}>
+              <button
+                className="lp-new"
+                onClick={() => {
+                  track('landing_new_question');
+                  goHome();
+                }}
+              >
                 {t('preview.newQuestion')}
               </button>
             </header>

@@ -11,6 +11,7 @@ import { useEffect, useRef, useState } from 'react';
 import { TELEGRAM_ACCOUNT } from './brand.js';
 import { useSettings } from './Settings.js';
 import { usePath } from './router.js';
+import { track } from './analytics.js';
 
 type State = 'idle' | 'sending' | 'sent';
 
@@ -54,6 +55,9 @@ export function ContactWidget() {
         body: JSON.stringify({ name, contact, message, page: path, website }),
       });
       if (res.ok) {
+        // The server records it too, but only for a signed-in sender; most
+        // are not, and this is the only count of them.
+        track('contact_submitted', { page: path });
         setState('sent');
         setMessage('');
         return;
@@ -67,7 +71,13 @@ export function ContactWidget() {
   }
 
   const telegram = TELEGRAM_ACCOUNT ? (
-    <a className="contact-telegram" href={`https://t.me/${TELEGRAM_ACCOUNT}`} target="_blank" rel="noopener noreferrer">
+    <a
+      className="contact-telegram"
+      href={`https://t.me/${TELEGRAM_ACCOUNT}`}
+      target="_blank"
+      rel="noopener noreferrer"
+      onClick={() => track('contact_telegram_clicked', { page: path })}
+    >
       <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
         <path d="M21.5 3.6 2.9 10.8c-1.3.5-1.2 1.3-.2 1.6l4.8 1.5 1.8 5.6c.2.7.4 1 .9 1 .4 0 .6-.2.9-.5l2.3-2.2 4.8 3.5c.9.5 1.5.2 1.7-.8l3.2-15c.3-1.3-.5-1.9-1.6-1.4zM9.2 13.4l9-5.7c.4-.3.8-.1.5.2l-7.7 7-.3 3.2-1.5-4.7z" />
       </svg>
@@ -153,6 +163,7 @@ export function ContactWidget() {
       <button
         className={open ? 'contact-button on' : 'contact-button'}
         onClick={() => {
+          if (!open) track('contact_opened', { page: path });
           setOpen((o) => !o);
           if (state === 'sent') setState('idle');
         }}

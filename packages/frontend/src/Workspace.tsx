@@ -170,7 +170,10 @@ export function Workspace({
   async function drop(path: string): Promise<void> {
     setConfirming(null);
     const res = await fetch(path, { method: 'DELETE' });
-    if (res.ok) setView((await res.json()) as WorkspaceView);
+    if (res.ok) {
+      track(path.includes('/members/') ? 'member_removed' : 'invite_revoked');
+      setView((await res.json()) as WorkspaceView);
+    }
   }
 
   /** Promote or demote. Returns the fresh workspace for the same reason. */
@@ -180,7 +183,10 @@ export function Workspace({
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ admin }),
     });
-    if (res.ok) setView((await res.json()) as WorkspaceView);
+    if (res.ok) {
+      track('member_role_changed', { admin });
+      setView((await res.json()) as WorkspaceView);
+    }
   }
 
   /*
@@ -224,7 +230,10 @@ export function Workspace({
                   <button
                     className={adding ? 'ws-add on' : 'ws-add'}
                     aria-expanded={adding}
-                    onClick={() => setAdding((a) => !a)}
+                    onClick={() => {
+                      if (!adding) track('invite_form_opened');
+                      setAdding((a) => !a);
+                    }}
                   >
                     + {t('ws.newMember')}
                   </button>

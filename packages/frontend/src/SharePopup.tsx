@@ -18,6 +18,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { Popup } from './Popup.js';
 import { useSettings } from './Settings.js';
+import { track } from './analytics.js';
 
 export function SharePopup({ sessionId, onClose }: { sessionId: string; onClose: () => void }) {
   const { t } = useSettings();
@@ -51,6 +52,7 @@ export function SharePopup({ sessionId, onClose }: { sessionId: string; onClose:
 
   async function copy(): Promise<void> {
     if (!url) return;
+    track('share_link_copied');
     try {
       await navigator.clipboard.writeText(url);
     } catch {

@@ -225,6 +225,7 @@ export function Login({
   }, [initialTab]);
   /** Switch forms, and tell whoever owns the address. */
   const switchTab = (next: Tab): void => {
+    if (next !== tab) track('auth_tab_switched', { to: next });
     setTab(next);
     onTabChange?.(next);
   };
@@ -325,6 +326,7 @@ export function Login({
       return;
     }
     setInviteCheck(false);
+    track('signup_step_done', { step: 'invites', invites: filledInvites.length });
     setStep(3);
   }
 
@@ -468,6 +470,7 @@ export function Login({
     if (busy || !LOOKS_LIKE_EMAIL.test(email.trim())) return;
     setBusy(true);
     setError(null);
+    track('password_reset_requested');
     try {
       await fetch('/api/auth/forgot', {
         method: 'POST',
@@ -487,6 +490,7 @@ export function Login({
   async function resend(): Promise<void> {
     if (!pending || busy) return;
     setBusy(true);
+    track('verification_resent');
     try {
       await fetch('/api/auth/resend-verification', {
         method: 'POST',
@@ -686,7 +690,13 @@ export function Login({
             {busy ? '…' : t('reset.send')}
           </button>
         ) : (
-          <button className="linkish" onClick={() => setForgot(true)}>
+          <button
+            className="linkish"
+            onClick={() => {
+              track('password_reset_opened');
+              setForgot(true);
+            }}
+          >
             {t('reset.forgot')}
           </button>
         )
@@ -714,6 +724,7 @@ export function Login({
             className="login-google"
             href={`/api/auth/google?intent=${tab === 'register' ? 'register' : 'signin'}`}
             onClick={() => {
+              track('google_clicked', { tab });
               if (tab === 'register' && profileComplete) {
                 sessionStorage.setItem(PENDING_PROFILE, JSON.stringify(profile));
               }
@@ -855,6 +866,9 @@ export function Login({
             <button
               className="reg-continue"
               onClick={() => {
+                // Where registration is abandoned: after the profile, after
+                // the invitations, or at the credentials.
+                track('signup_step_done', { step: 'profile', company_size: profile.companySize });
                 setError(null);
                 setStep(2);
               }}
@@ -1048,6 +1062,7 @@ export function Login({
               type="button"
               className="reg-skip"
               onClick={() => {
+                track('signup_step_done', { step: 'invites', invites: 0, skipped: true });
                 setInvites(ONE_INVITE);
                 setInviteCheck(false);
                 setStep(3);

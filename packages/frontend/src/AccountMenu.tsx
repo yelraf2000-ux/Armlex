@@ -145,6 +145,7 @@ export function AccountMenu({
           <button
             role="menuitem"
             onClick={() => {
+              track('profile_opened');
               close();
               onOpenProfile();
             }}
@@ -154,6 +155,7 @@ export function AccountMenu({
           <button
             role="menuitem"
             onClick={() => {
+              track('workspace_opened');
               close();
               onOpenWorkspace();
             }}
