@@ -120,6 +120,19 @@ export const TAX_CORPUS: CorpusEntry[] = [
   { id: 116284, label: 'ՈՉ ՌԵԶԻԴԵՆՏԻՆ ՎՃԱՐՎԱԾ ԵԿԱՄՈՒՏՆԵՐԻ ՇԱՀՈՒԹԱՀԱՐԿԻ ՀԱՇՎԱՐԿԻ ՁԵՎԸ', expect: 'ministerial_order', expectedActNumber: 'N 326-Ն' },
   { id: 191005, label: 'ՀԱՇՎԱՐԿԱՅԻՆ ՓԱՍՏԱԹՈՒՂԹ ՉՀԱՄԱՐՎՈՂ ԱՅԼ ՓԱՍՏԱԹՂԹԵՐԻ ԴՈՒՐՍԳՐՄԱՆ ԿԱՐԳԸ', expect: 'gov_decision', expectedActNumber: 'N 392-Ն' },
 
+  // --- wave 4: the list a Tax Code rate points at (2026-09-23) -------------
+  // `Հոդված 258` part 1, table row 8 gives 1% turnover tax to activities on
+  // «Կառավարության սահմանած բարձր տեխնոլոգիաների ոլորտի գործունեության
+  // տեսակների ցանկ», and articles 109(4)(1)«բ5», 113(1)(10) and 123(2)(2)
+  // delegate to the same list. Without it the corpus could state the rate and
+  // not say who may use it — the case recorded in `OPEN-ITEMS` 62.3.
+  //
+  // Almost entirely a two-column table of activity codes against the economic
+  // activity classifier (N 874-Ն, 2013), so it is the tabular-extraction risk
+  // in its purest form: a mangled code is an answer that qualifies the wrong
+  // business.
+  { id: 203094, label: 'ԲԱՐՁՐ ՏԵԽՆՈԼՈԳԻԱՆԵՐԻ ՈԼՈՐՏԻ ՊԵՏԱԿԱՆ ԱՋԱԿՑՈՒԹՅԱՆ ԵՆԹԱԿԱ ԳՈՐԾՈՒՆԵՈՒԹՅԱՆ ՏԵՍԱԿՆԵՐԻ ՑԱՆԿԸ', expect: 'gov_decision', expectedActNumber: 'N 142-Ն', note: 'the list Հոդված 258 row 8 delegates' },
+
   // --- controls: individual (-Ա) acts, expected rag_eligible = false ---------
   { id: 229061, label: '[CONTROL] ՓՈԽՎԱՐՉԱՊԵՏԻ ՈՐՈՇՈՒՄ — ԲԵՌԻ ՆԵՐՄՈՒԾՈՒՄ', expect: 'gov_decision', expectedActNumber: 'N 486-Ա', control: true },
   { id: 229087, label: '[CONTROL] ՎԱՐՉԱՊԵՏԻ ՈՐՈՇՈՒՄ — ԱՐՁԱԿՈՒՐԴ', expect: 'gov_decision', expectedActNumber: 'N 681-Ա', control: true },
