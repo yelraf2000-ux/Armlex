@@ -16,6 +16,17 @@ entry with no contact details at all, **D** (219) is a free listing. A paying
 listing is weak evidence of a larger firm — not proof, but better than
 nothing, and it is the only ordering signal available before the first call.
 
+`updated` is Spyur's own «Տեղեկությունների թարմացման ամսաթիվ» — the date the
+entry was last touched. This is the freshness answer: **228 were updated in
+2026, 64 in 2025, and only 6 are older than that.** Spyur is a paid directory
+whose staff re-check entries, so this is not a listing dumped once in 2015.
+It still says when the ENTRY was checked, not that the firm is trading today.
+
+`staff` is «Աշխատողների քանակ», and it is a better call-order signal than
+`tier`: a per-seat product is worth far more to a 16-50 firm than to a
+three-person office. Only 61 firms publish it — 21 of the callable ones have
+16+ staff, and those 21 are the list to start from.
+
 `flag` says whether the row is worth dialling. **261 are `call`.** The rest:
 `no_phone` (19 — Spyur holds none, verified against the pages, not a scrape
 failure), `foreign` (11 — diaspora accountants in Los Angeles and Moscow, real
@@ -30,7 +41,11 @@ common way this list dies is forgetting who has already been rung.
 
 ## Call order
 
-Not by tier descending. The first ten calls are for finding out which opening
+**Start with the 21 callable firms that report 16+ staff** (`staff` = 16-50 or
+51-250). Two of them report 51-250. They are where the per-seat maths works,
+and 21 is a week of calling.
+
+After that, not by tier descending. The first ten calls are for finding out which opening
 works, and spending the 26 tier-A firms on that is expensive — they are worth
 several times a tier-D firm each.
 
@@ -50,9 +65,14 @@ faithful to Spyur.
 
 What that does **not** establish:
 
-- **It is accurate to Spyur, not to reality.** 219 of these are free listings
-  that nobody pays to keep current. A phone may be dead and a director may have
-  left years ago. Only a call settles it.
+- **It is accurate to Spyur, not to reality.** The `updated` column is the best
+  available evidence and it is reassuring — 292 of 298 entries were touched
+  within the last 21 months. But an entry being re-checked is not the same as a
+  firm still trading under that number with that director. Only a call settles
+  it.
+- **237 firms publish no staff count**, so the 21-firm shortlist is "firms that
+  are large AND say so", not "the 21 largest firms". A big firm that withholds
+  the field is invisible to that sort.
 - **Only the first two phones are kept.** ՋԻ ՍՈՖՏ lists three; the CSV has two.
   The Spyur URL on every row has the full set.
 - **Category 845 is not purely accounting firms.** It also holds law firms
