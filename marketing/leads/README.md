@@ -16,6 +16,13 @@ entry with no contact details at all, **D** (219) is a free listing. A paying
 listing is weak evidence of a larger firm — not proof, but better than
 nothing, and it is the only ordering signal available before the first call.
 
+`website` (94 firms) and `facebook` (179) are the firm's own links, with
+Spyur's vanity short-URL and its own social accounts stripped out — a naive
+scrape of that field returns a spyur.am link for 187 rows. **More of these
+firms have a Facebook page than a website**, and 80 have neither. That makes
+Messenger a real second route to an owner who does not answer the phone, and
+it says most of these firms cannot be researched online before a call.
+
 `updated` is Spyur's own «Տեղեկությունների թարմացման ամսաթիվ» — the date the
 entry was last touched. This is the freshness answer: **228 were updated in
 2026, 64 in 2025, and only 6 are older than that.** Spyur is a paid directory
