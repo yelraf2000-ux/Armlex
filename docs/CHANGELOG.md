@@ -1802,3 +1802,29 @@ a fresh workspace, re-inviting the same address then succeeds, and usage reads
   or malformed address returns the reader to step 1, where the field that can
   answer it is. Sign-in is unchanged.
 
+- **2026-09-23 — The high-technology activity list is in the corpus** (arlis
+  203094, government decision N 142-Ն of 2025-02-13). `Հոդված 258` part 1 row 8
+  grants 1% turnover tax to activities on the list the government sets, and
+  articles 109(4)(1)«բ5», 113(1)(10) and 123(2)(2) delegate to the same list;
+  without it the corpus could state the rate and not say who may use it
+  (`OPEN-ITEMS` 62.3). Audited, chunked and checked before ingest: 6 chunks by
+  the points strategy, 2 of 2 tables captured, no anomalies, all 32 activity
+  codes present in the table chunk in source order. Corpus 33 → 34 documents,
+  1,737 → 1,743 chunks, 6,992 → 6,998 vectors, 100% coverage.
+
+  **Measured, before and after, on the box:** every rank metric identical —
+  vector 87.2% hit@5 · 87.2% hit@8 · 85.1% recall@8 · MRR 0.625;
+  vector+rerank-2.5 85.1% · 87.2% · 84.0% · MRR 0.729; 47 golden questions.
+  A near-miss document that costs nothing. On the question it exists for
+  («ծրագրային ապահովման ԱՁ, 1% շրջանառության հարկ, ո՞ր տեսակներն են ցանկում»)
+  the table chunk comes back at **rank 4**, behind `Հոդված 258` at rank 1.
+
+  Both scoring runs logged `[rerank] HTTP 429` fallbacks, so the delivered-set
+  section of that report is not comparable across the two; the rank metrics
+  are, and they did not move.
+
+  **Still to do:** `npx tsx packages/backend/src/ingest/buildRefs.ts --apply`
+  on the box — the new points cite Tax Code articles 109, 113, 123 and 258, and
+  until the graph is rebuilt one-hop expansion cannot carry the Code along when
+  the list ranks. Neon, the rollback copy, does not have this document.
+

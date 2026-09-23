@@ -83,7 +83,9 @@ Improved 80 / worsened 25 / unchanged 145. Noise floor ~6% on verdict flips.
 **Retrieval — 46 golden questions:** 87.0% hit@5 · 89.1% hit@8 · 87.0% recall@8
 · MRR 0.740. Reliability over 3 draws: **87% always, 0% flipping, 13% never**.
 
-**Corpus:** 33 documents · 1,737 chunks · 6,992 vectors · 1,100 ref edges.
+**Corpus:** **34 documents · 1,743 chunks · 6,998 vectors** (2026-09-23: the
+high-technology activity list, arlis 203094 — see `CHANGELOG.md`) · 1,100 ref
+edges, NOT yet rebuilt for the new document.
 
 **Shipped config:** vector top-50 → one-hop expansion → rerank-2.5 → tie-aware
 cut (`RERANK_TIE_DELTA=0.02`) → `FRESH_LIMIT=8`, each chunk reduced by

@@ -614,11 +614,13 @@ wording is the data.
        today only the Code's general rule can be cited.
     3. **More ՈՐՈՇՈՒՄ and ՀՐԱՄԱՆ** — the Code delegates the working detail
        («Կառավարության սահմանած կարգով», «…ցանկում ներառված»): forms, lists,
-       procedures, deadlines. Concrete case: `Հոդված 258` row 8 gives 1%
+       procedures, deadlines. ~~Concrete case: `Հոդված 258` row 8 gives 1%
        turnover tax to activities on «Կառավարության սահմանած բարձր
-       տեխնոլոգիաների ոլորտի գործունեության տեսակների ցանկ» — that list is a
-       government decision we do not hold, so the answer cannot say whether
-       a given IT business qualifies (see item 52).
+       տեխնոլոգիաների ոլորտի գործունեության տեսակների ցանկ»~~ — **that list is
+       now held** (arlis 203094, N 142-Ն, ingested 2026-09-23, rank 4 on the
+       question it exists for, zero cost to the golden set). Its parent law,
+       «Բարձր տեխնոլոգիաների ոլորտի պետական աջակցության մասին», is still not,
+       so the ELIGIBILITY conditions around the list remain uncitable.
     Most other types (constitution drafts, reports, notices, press) do not
     matter for this audience. Add one type at a time and re-score the golden
     set: near-miss documents cost recall (`DECISIONS.md`).
