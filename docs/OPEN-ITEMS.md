@@ -660,3 +660,24 @@ wording is the data.
     typed value is sent — only which box was reached. The insight to build is
     a breakdown of `auth_abandoned` by `fields`, which names the field people
     stop at.
+
+64. **The public preview refuses questions the corpus answers** (found
+    2026-09-23 while verifying the high-technology list). Four calls to the live
+    `/api/preview`, all `coverage: none`:
+    - «Բարձր տեխնոլոգիաների ոլորտի ո՞ր գործունեության տեսակներն են ներառված…» —
+      twice, `sources: 0`, one of them answered in 2.4s, so retrieval never ran:
+      the contextualiser returned `needsRetrieval: false`. The same question run
+      through `probe-question.ts` on the box returns `needsRetrieval: true` and
+      the right document at ranks 1–3. Haiku at `temperature: 0` is not
+      deterministic, and a false `needsRetrieval` produces a confident "no norm
+      exists" — the exact failure this product cannot afford.
+    - «Ծրագրային ապահովման ԱՁ, 1 տոկոս շրջանառության հարկ» — 11 fragments
+      delivered, and the model said they concerned "taxation systems, turnover
+      tax computation, rates and invoices" but answered nothing. Those fragments
+      contain `Հոդված 258`.
+    So a visitor meeting the product for the first time is told the law has
+    nothing for them while the answer sits in the delivered text. Both halves
+    are the cheap path (`gemini-3.5-flash-lite` generation, Haiku
+    contextualiser); the signed-in path uses Sonnet and was not tested here.
+    Measure before changing: the preview is also the conversion surface.
+
