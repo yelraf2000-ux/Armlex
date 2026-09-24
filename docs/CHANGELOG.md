@@ -1828,3 +1828,33 @@ a fresh workspace, re-inviting the same address then succeeds, and usage reads
   until the graph is rebuilt one-hop expansion cannot carry the Code along when
   the list ranks. Neon, the rollback copy, does not have this document.
 
+- **2026-09-24 — The answer reaches a verdict** (owner's request, measured).
+  Two rules in `SYSTEM`: a yes/no question takes «Այո», «Ոչ» or «Կախված է
+  X-ից» as its first sentence, with X named and the branches following; and a
+  missing norm no longer cancels a needed fact (7b) — name the provision you
+  lack and still ask for the client fact that decides the branch.
+
+  **Triage, 60 real accountant questions, same set both arms, Flash-Lite:**
+
+  | | before | after |
+  |---|---|---|
+  | yes/no question answered in sentence 1 | 4/13 · **31%** | 12/13 · **92%** |
+  | coverage full | 30 (50%) | 32 (53%) |
+  | coverage partial | 22 (37%) | 19 (32%) |
+  | answers with an invalid quote | 12 (20%) | 10 (17%) |
+  | unsourced legal number | 5 (8%) | 4 (7%) |
+  | mean length | 939 chars | 895 chars |
+
+  Nothing degraded. **Rule 7b is unproven**: answers asking something on
+  partial/none coverage went 56% → 57%, inside noise — kept because the case it
+  targets (a missing norm AND a missing client fact) is rare in this sample and
+  was the one that prompted the work.
+
+  **Watch:** one question flipped verdict between arms — «համակարգիչների
+  սպասարկում … միկրոձեռնարկատիրություն» got «Այո՛» (Հավելված 3) before and
+  «Ոչ» (Հոդված 267, մաս 5 exclusions) after, BOTH at `full` coverage. The rule
+  did not cause it — the old prompt also answered confidently — but it shows a
+  contestable provision producing opposite confident answers run to run. Three
+  of the 28 flat Այո/Ոչ openings sit on `partial` coverage; tightening those to
+  «Կախված է X-ից» is the obvious next guard, unmeasured.
+
