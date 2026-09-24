@@ -396,6 +396,17 @@ const EXPAND_FROM = 8;
 const EXPAND_ENABLED = process.env['EXPAND_ONE_HOP'] !== '0';
 
 /**
+ * Inbound expansion from by-laws (see the note on `expandOneHop`).
+ *
+ * Off until it is scored on the golden set: it widens the rerank pool, and a
+ * wider pool has cost recall here before (`BENCHMARK.md` — the wider reranker
+ * budget took recall@8 from 87.0% to 85.9%).
+ */
+const EXPAND_BYLAWS = process.env['EXPAND_BYLAWS'] === '1';
+/** Enough for the acts that implement one article; not a second corpus. */
+const BYLAW_LIMIT = 12;
+
+/**
  * Add the provisions that the strongest candidates cite (spec pipeline step 3).
  *
  * Armenian tax law defers constantly, and the deferral often points at the
@@ -408,6 +419,23 @@ const EXPAND_ENABLED = process.env['EXPAND_ONE_HOP'] !== '0';
  * Expansion follows OUTBOUND edges only — what a hit cites, not what cites it.
  * Inbound would drag in every provision referring to a popular article, which
  * is most of the Code for something like Հոդված 53.
+ *
+ * ONE inbound exception, and only one: BY-LAWS that cite the article. The Code
+ * delegates the working detail downward — «Կառավարության սահմանած ցանկում
+ * ներառված գործունեության տեսակներից ստացվող եկամուտներ» (Հոդված 258, row 8) —
+ * and the delegation is one-way in the text: the decision names the article it
+ * implements, the article never names the decision. Forward expansion can
+ * therefore never reach the list that decides the case, and neither can the
+ * vector leg when the question is phrased in the user's facts rather than in
+ * the list's vocabulary. Measured on a real question: a company asking whether
+ * its outsourced programming qualifies for the 1% rate retrieved 254, 258, 256
+ * … and not one chunk of the decision that defines the qualifying activities,
+ * so the answer could only report that the list was missing.
+ *
+ * The inbound objection still stands for the Code citing itself, which is why
+ * this is restricted to `gov_decision` and `ministerial_order`, capped, and
+ * scored 0 like every other expanded candidate — it earns its place from the
+ * reranker or not at all.
  */
 export async function expandOneHop(candidates: RetrievedChunk[]): Promise<RetrievedChunk[]> {
   if (candidates.length === 0) return candidates;
@@ -436,7 +464,31 @@ export async function expandOneHop(candidates: RetrievedChunk[]): Promise<Retrie
     LIMIT 40
   `;
 
-  const added = rows
+  const bylawRows = EXPAND_BYLAWS
+    ? await db()<
+        {
+          id: string;
+          title_hy: string;
+          arlis_id: number;
+          article_number: string;
+          text_hy: string;
+          doc_type: string;
+          act_number: string | null;
+        }[]
+      >`
+        SELECT DISTINCT a.id, d.title_hy, d.arlis_id, a.article_number, a.text_hy,
+               d.doc_type::text AS doc_type, d.act_number
+        FROM article_refs r
+        JOIN articles a ON a.id = r.from_article_id
+        JOIN documents d ON d.id = a.document_id
+        WHERE r.to_article_id = ANY(${seed}::bigint[])
+          AND d.doc_type::text IN ('gov_decision', 'ministerial_order')
+          AND d.rag_eligible AND d.status = 'in_force' AND a.status = 'in_force'
+        LIMIT ${BYLAW_LIMIT}
+      `
+    : [];
+
+  const added = [...rows, ...bylawRows]
     .filter((r) => !have.has(String(r.id)))
     .map((r) => ({
       articleId: String(r.id),
