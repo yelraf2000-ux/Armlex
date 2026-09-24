@@ -240,6 +240,12 @@ function chunkByArticles(blocks: Block[], doc: DocumentContext): Chunk[] {
  * self-contained unit), while prose between tables accumulates into a text
  * chunk for that annex.
  */
+/**
+ * Below this, the text before point 1 is an adoption line and a coat of arms,
+ * not a recital. 200 characters is about one «Հիմք ընդունելով» sentence.
+ */
+const PREAMBLE_MIN_CHARS = 200;
+
 function chunkByPoints(blocks: Block[], doc: DocumentContext): Chunk[] {
   const chunks: Chunk[] = [];
 
@@ -250,6 +256,12 @@ function chunkByPoints(blocks: Block[], doc: DocumentContext): Chunk[] {
 
   // --- operative part: numbered points ------------------------------------
   let current: { number: string; body: Block[] } | undefined;
+  /*
+    Everything before point 1 — which for a decision or an order is the recital
+    naming the articles it implements. It used to fall through this loop into
+    nothing, so a by-law could never be linked to the law it serves.
+  */
+  const lead: Block[] = [];
 
   const flushPoint = (): void => {
     if (!current) return;
@@ -281,8 +293,32 @@ function chunkByPoints(blocks: Block[], doc: DocumentContext): Chunk[] {
     }
     // A table belongs to the point that introduced it.
     if (current) current.body.push(b);
+    else lead.push(b);
   }
   flushPoint();
+
+  /*
+    The recital, inserted FIRST so it reads as the opening of the act.
+
+    Kept only when it is substantial: a bare adoption line («ՀԱՅԱՍՏԱՆԻ
+    ՀԱՆՐԱՊԵՏՈՒԹՅԱՆ ԿԱՌԱՎԱՐՈՒԹՅՈՒՆ / Ո Ր Ո Շ ՈՒ Մ / N 142-Ն») is title-page
+    furniture and would only add a chunk that matches every decision equally.
+    The threshold is the length at which a «Հիմք ընդունելով» sentence has
+    actually been written out.
+  */
+  const leadJoined = joinBlocks(lead);
+  if (leadJoined.text.length >= PREAMBLE_MIN_CHARS) {
+    chunks.unshift(
+      makeChunk(doc, {
+        kind: 'preamble',
+        ord: 0,
+        ref: 'Նախաբան',
+        path: [],
+        text: leadJoined.text,
+        tableCount: leadJoined.tableCount,
+      }),
+    );
+  }
 
   // --- annexes -------------------------------------------------------------
   // Refs double as articles.article_number, which is UNIQUE per document, so

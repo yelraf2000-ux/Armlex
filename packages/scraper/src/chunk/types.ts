@@ -13,7 +13,19 @@
  */
 import type { DocStatus } from '@armlex/shared';
 
-export type ChunkKind = 'article' | 'point' | 'annex_table' | 'annex_text';
+export type ChunkKind =
+  | 'article'
+  | 'point'
+  /**
+   * The opening recital of a decision or order — «Հիմք ընդունելով ... 258-րդ
+   * հոդվածի ... կետը՝ Կառավարությունը որոշում է». It was being dropped as
+   * front matter, and it is the ONLY place a by-law states which articles it
+   * implements, so the citation graph had no edge from any decision to the
+   * Code and nothing could travel that link in either direction.
+   */
+  | 'preamble'
+  | 'annex_table'
+  | 'annex_text';
 
 /** Document-level facts, constant across all chunks of one document. */
 export interface DocumentContext {
